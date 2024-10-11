@@ -32,6 +32,9 @@ dependencies {
 
     testImplementation(platform("org.junit:junit-bom:5.9.1"))
     testImplementation("org.junit.jupiter:junit-jupiter")
+    testImplementation("org.mockito:mockito-core:5.4.0") // Use the latest version
+    testImplementation("org.mockito.kotlin:mockito-kotlin:5.0.0") // Use the latest version
+
 }
 
 tasks.test {
