@@ -1,0 +1,36 @@
+port: 8080
+
+proxies:
+  - path: /httpbin
+    target: http://httpbin.org
+    middleware: ''
+    methods: ['GET', 'POST', 'PUT']
+  - path: /example
+    target: http://example.com
+    middleware: ''
+    methods: ['GET', 'POST', 'PUT']
+  - path: /google
+    target: http://www.google.com
+    middleware: ''
+    methods: ['GET', 'POST', 'PUT']
+  - path: /products
+    target: https://dummyjson.com/products
+    middleware: ''
+    methods: ['GET', 'POST', 'PUT']
+  - path: /task
+    target: https://mini-app.andywiranata.me/template/1on1-meeting-agenda/tasks.json
+    middleware: ''
+    methods: ['GET', 'POST', 'PUT']
+
+#services:
+#  - name: tasksApi
+#    url: https://mini-app.andywiranata.me/template/1on1-meeting-agenda/tasks.json
+#  - name: productApi
+#    url: https://dummyjson.com/products
+#  - name: googleApi
+#    url: http://www.google.com
+#  - name: exampleApi
+#    url: http://example.com
+#  - name: httpbin
+#    url: http://httpbin.org
+
