@@ -11,10 +11,10 @@ import java.nio.charset.Charset;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.InflaterInputStream;
 
-public class ProxyHandler extends ProxyServlet.Transparent {
+public class ProxyHolder extends ProxyServlet.Transparent {
 
     private final String target;
-    public ProxyHandler(String target) {
+    public ProxyHolder(String target) {
         this.target = target;
     }
 
@@ -116,22 +116,3 @@ public class ProxyHandler extends ProxyServlet.Transparent {
     }
 
 }
-
-// if (contentEncoding != null && contentEncoding.contains("br")) {
-//        // Handle Brotli decompression
-//        try (BrotliInputStream brotliInputStream = new BrotliInputStream(
-//        new ByteArrayInputStream(buffer, offset, length))) {
-//byte[] decompressedBuffer = brotliInputStream.readAllBytes();
-//String bodyContent = new String(decompressedBuffer, StandardCharsets.UTF_8);
-//                System.out.println("Decompressed Brotli Response Body: " + bodyContent);
-//            } catch (IOException e) {
-//        e.printStackTrace();
-//                System.out.println("Error decompressing Brotli content.");
-//            }
-//                    } else if (contentType != null && contentType.contains("application/json")) {
-//// Handle JSON content (assuming UTF-8)
-//String bodyContent = new String(buffer, offset, length, StandardCharsets.UTF_8);
-//            System.out.println("Response Body: " + bodyContent);
-//        } else {
-//                System.out.println("Received non-textual content or unsupported encoding.");
-//        }

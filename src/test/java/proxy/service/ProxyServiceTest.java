@@ -4,10 +4,8 @@ import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import proxy.config.AppConfig;
-import proxy.config.ConfigLoaderVO;
-import proxy.service.ProxyService;
+import proxy.config.ConfigLoader;
 
 import java.util.Collections;
 import java.util.List;
@@ -41,7 +39,7 @@ class ProxyServiceTest {
         // Mocking the behavior of config
         when(config.getProxies()).thenReturn(List.of(proxy));
         // Mock the service map retrieval
-        when(ConfigLoaderVO.getServiceMap()).thenReturn(Map.of("testService", "http://testservice.com"));
+        when(ConfigLoader.getServiceMap()).thenReturn(Map.of("testService", "http://testservice.com"));
 
         // Act
         proxyService.setupProxies(context);
@@ -59,7 +57,7 @@ class ProxyServiceTest {
         proxy.setService("nonExistentService");
 
         when(config.getProxies()).thenReturn(List.of(proxy));
-        when(ConfigLoaderVO.getServiceMap()).thenReturn(Collections.emptyMap());
+        when(ConfigLoader.getServiceMap()).thenReturn(Collections.emptyMap());
 
         // Act & Assert
         assertThrows(IllegalArgumentException.class, () -> {

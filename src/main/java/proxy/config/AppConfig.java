@@ -45,7 +45,16 @@ public class AppConfig {
         private String path;
         private String service;
         private String middleware;
+        private Integer cacheTtl;
         private List<String> methods;
+
+        public Integer getCacheTtl() {
+            return cacheTtl;
+        }
+
+        public void setCacheTtl(Integer cacheTtl) {
+            this.cacheTtl = cacheTtl;
+        }
 
         // Getters and setters
         public String getPath() {

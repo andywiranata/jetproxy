@@ -7,22 +7,27 @@ proxies:
     service: httpbinApi
     middleware: ''
     methods: ['GET', 'POST', 'PUT']
+    cacheTtl: 10
   - path: /example
     service: exampleApi
     middleware: ''
     methods: ['GET', 'POST', 'PUT']
+    cacheTtl: 2
   - path: /google
     service: googleApi
     middleware: ''
     methods: ['GET', 'POST', 'PUT']
+    cacheTtl: 2
   - path: /products
     service: productApi
     middleware: ''
     methods: ['GET', 'POST', 'PUT']
+    cacheTtl: 2
   - path: /task
     service: tasksApi
     middleware: ''
     methods: ['GET', 'POST', 'PUT']
+    cacheTtl: 2
 
 services:
   - name: tasksApi

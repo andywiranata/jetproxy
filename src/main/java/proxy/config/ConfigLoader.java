@@ -7,15 +7,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class ConfigLoaderVO {
+public class ConfigLoader {
 
-    // Hold the single instance of AppConfig
     private static AppConfig config;
 
-    // Private constructor to prevent instantiation
-    ConfigLoaderVO() {}
+    ConfigLoader() {}
     private static Map<String, String> serviceMap;
-    // Public method to access the singleton instance of the config
     public static AppConfig getConfig() throws Exception {
         if (config == null) {
             loadConfig();  // Load the config if it's not already loaded
@@ -23,10 +20,9 @@ public class ConfigLoaderVO {
         return config;
     }
 
-    // Private method to load the configuration from YAML file
     private static void loadConfig() throws Exception {
         Yaml yaml = new Yaml();
-        try (InputStream inputStream = ConfigLoaderVO.class.getClassLoader().getResourceAsStream("config.yaml")) {
+        try (InputStream inputStream = ConfigLoader.class.getClassLoader().getResourceAsStream("config.yaml")) {
             if (inputStream == null) {
                 throw new RuntimeException("config.yaml not found in the resources folder");
             }
@@ -93,6 +89,6 @@ public class ConfigLoaderVO {
     }
 
     public static void setServiceMap(Map<String, String> serviceMap) {
-        ConfigLoaderVO.serviceMap = serviceMap;
+        ConfigLoader.serviceMap = serviceMap;
     }
 }
