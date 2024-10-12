@@ -1,38 +1,30 @@
 port: 8080
-
 defaultTimeout: 10000
-
 proxies:
   - path: /httpbin
     service: httpbinApi
     middleware: ''
     methods: ['GET', 'POST', 'PUT']
-    cacheTtl: 10
   - path: /example
     service: exampleApi
     middleware: ''
     methods: ['GET', 'POST', 'PUT']
-    cacheTtl: 2
   - path: /google
     service: googleApi
     middleware: ''
     methods: ['GET', 'POST', 'PUT']
-    cacheTtl: 2
   - path: /products
     service: productApi
     middleware: ''
     methods: ['GET', 'POST', 'PUT']
-    cacheTtl: 2
   - path: /task
     service: tasksApi
     middleware: ''
     methods: ['GET', 'POST', 'PUT']
-    cacheTtl: 2
 
 services:
   - name: tasksApi
     url: https://mini-app.andywiranata.me/template/1on1-meeting-agenda/tasks.json
-    timeout: 5000
   - name: productApi
     url: https://dummyjson.com/products
   - name: googleApi

@@ -45,16 +45,7 @@ public class AppConfig {
         private String path;
         private String service;
         private String middleware;
-        private Integer cacheTtl;
         private List<String> methods;
-
-        public Integer getCacheTtl() {
-            return cacheTtl;
-        }
-
-        public void setCacheTtl(Integer cacheTtl) {
-            this.cacheTtl = cacheTtl;
-        }
 
         // Getters and setters
         public String getPath() {
@@ -93,7 +84,6 @@ public class AppConfig {
     public static class Service {
         private String name;
         private String url;
-        private int timeout; // Optional, default could be set to a specific value
 
         // Getters and setters
         public String getName() {
@@ -112,12 +102,5 @@ public class AppConfig {
             this.url = url;
         }
 
-        public int getTimeout() {
-            return timeout;
-        }
-
-        public void setTimeout(int timeout) {
-            this.timeout = timeout;
-        }
     }
 }
