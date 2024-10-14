@@ -1,11 +1,15 @@
 package proxy.service;
 
+import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.brotli.dec.BrotliInputStream;
 import org.eclipse.jetty.client.api.Response;
 import org.eclipse.jetty.proxy.ProxyServlet;
 import org.eclipse.jetty.util.Callback;
+import proxy.cache.LRUCacheWithTTL;
+import util.RequestUtils;
+
 import java.io.*;
 import java.nio.charset.Charset;
 import java.util.zip.GZIPInputStream;
@@ -14,31 +18,38 @@ import java.util.zip.InflaterInputStream;
 public class ProxyHolder extends ProxyServlet.Transparent {
 
     private final String target;
+    private final LRUCacheWithTTL cache;
+
+
     public ProxyHolder(String target) {
         this.target = target;
+        // TODO REFACTOR
+        this.cache = new LRUCacheWithTTL(2, 10);
     }
 
     @Override
     protected void service(HttpServletRequest request, HttpServletResponse response) {
         try {
-            // Only cache GET requests
-            if ("GET".equalsIgnoreCase(request.getMethod())) {
-                String cacheKey = request.getRequestURI();
+            String requestUri = RequestUtils.getFullPath(request);
 
-                // Check if the response is already in cache
-//                if (MainProxy.cache.containsKey(cacheKey)) {
-//                    String cachedResponse = MainProxy.cache.get(cacheKey);
-//                    response.setStatus(HttpServletResponse.SC_OK);
-//                    response.getWriter().write(cachedResponse);
-//                    System.out.println("Cache hit for: " + cacheKey);
-//                    return;
-//                }
+            String cachedResponse = cache.get(requestUri);
+            if (cachedResponse != null) {
+                // If cached response exists, return it
+                response.getWriter().write(cachedResponse);
+                return;
             }
-            // Proceed with the normal proxy logic
             super.service(request, response);
-        } catch (Exception e) {
-            e.printStackTrace();
+
+
+            // Cache the response
+            cache.put(requestUri, "hello", -1);
+
+        } catch (ServletException e) {
+            throw new RuntimeException(e);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
+
     }
 
     @Override

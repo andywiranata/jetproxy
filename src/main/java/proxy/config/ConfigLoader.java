@@ -13,16 +13,16 @@ public class ConfigLoader {
 
     ConfigLoader() {}
     private static Map<String, String> serviceMap;
-    public static AppConfig getConfig() throws Exception {
+    public static AppConfig getConfig(String ymlPath) throws Exception {
         if (config == null) {
-            loadConfig();  // Load the config if it's not already loaded
+            loadConfig(ymlPath);  // Load the config if it's not already loaded
         }
         return config;
     }
 
-    private static void loadConfig() throws Exception {
+    private static void loadConfig(String ymlPath) throws Exception {
         Yaml yaml = new Yaml();
-        try (InputStream inputStream = ConfigLoader.class.getClassLoader().getResourceAsStream("config.yaml")) {
+        try (InputStream inputStream = ConfigLoader.class.getClassLoader().getResourceAsStream(ymlPath)) {
             if (inputStream == null) {
                 throw new RuntimeException("config.yaml not found in the resources folder");
             }

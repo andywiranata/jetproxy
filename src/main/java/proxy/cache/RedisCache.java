@@ -11,13 +11,13 @@ public class RedisCache implements Cache {
     }
 
     @Override
-    public String get(int key) {
+    public String get(String key) {
         // Retrieve the value from Redis
         return jedis.get(String.valueOf(key));
     }
 
     @Override
-    public void put(int key, String value) {
+    public void put(String key, String value) {
         // Store the value in Redis with TTL
         jedis.setex(String.valueOf(key), (int) ttl, value);
     }

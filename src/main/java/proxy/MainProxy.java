@@ -4,7 +4,9 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import proxy.cache.LRUCacheWithTTL;
 import proxy.config.AppConfig;
+import proxy.config.AppContext;
 import proxy.config.ConfigLoader;
 import proxy.service.ProxyService;
 
@@ -12,22 +14,22 @@ public class MainProxy {
     private static final Logger logger = LoggerFactory.getLogger(MainProxy.class);
 
     public void start() throws Exception {
-        // Load configuration from YAML file
-        AppConfig config = ConfigLoader.getConfig();
+        AppContext appContext = new AppContext.Builder()
+                .withMaxSize(10000) // Optional: Set max size
+                .withMaxHeapMemory(50 * 1024 * 1024) // Optional: Set max heap memory
+                .build("config.yaml"); // Set the configuration file path
 
-        // Create a Jetty server instance on the configured port
-        Server server = new Server(config.getPort());
+        Server server = new Server(appContext.getConfig().getPort());
 
         // Create a ServletContextHandler for managing different context paths
         ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
         context.setContextPath("/");
-
         // Set up proxies
-        ProxyService proxyService = new ProxyService(config);
+        ProxyService proxyService = new ProxyService(appContext.getConfig());
         proxyService.setupProxies(context);
         server.setHandler(context);
         server.start();
-        logger.info("Proxy server started on port {}", config.getPort());
+        logger.info("Proxy server started on port {}",  appContext.getConfig().getPort());
         server.join();
     }
 

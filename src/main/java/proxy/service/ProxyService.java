@@ -4,6 +4,7 @@ import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import proxy.cache.LRUCacheWithTTL;
 import proxy.config.AppConfig;
 import proxy.config.ConfigLoader;
 
@@ -15,6 +16,7 @@ public class ProxyService {
     private static final String TIMEOUT = "timeout";
     private static final Logger logger = LoggerFactory.getLogger(ProxyService.class);
     private final AppConfig config;
+    private  LRUCacheWithTTL lruCacheWithTTL;
 
     public ProxyService(AppConfig config) {
         this.config = config;
