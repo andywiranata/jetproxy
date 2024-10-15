@@ -17,9 +17,10 @@ public class MainProxy {
         AppContext appContext = new AppContext.Builder()
                 .withMaxSize(10000) // Optional: Set max size
                 .withMaxHeapMemory(50 * 1024 * 1024) // Optional: Set max heap memory
-                .build("config.yaml"); // Set the configuration file path
+                .withPathConfig("config.yaml")
+                .build();
 
-        Server server = new Server(appContext.getConfig().getPort());
+        Server server = new Server(AppContext.getInstance().getConfig().getPort());
 
         // Create a ServletContextHandler for managing different context paths
         ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);

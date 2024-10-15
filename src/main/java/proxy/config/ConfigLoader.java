@@ -2,6 +2,7 @@ package proxy.config;
 
 import org.yaml.snakeyaml.Yaml;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.List;
@@ -13,14 +14,18 @@ public class ConfigLoader {
 
     ConfigLoader() {}
     private static Map<String, String> serviceMap;
-    public static AppConfig getConfig(String ymlPath) throws Exception {
+    public static AppConfig getConfig(String ymlPath) {
         if (config == null) {
-            loadConfig(ymlPath);  // Load the config if it's not already loaded
+            try {
+                loadConfig(ymlPath);  // Load the config if it's not already loaded
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
         return config;
     }
 
-    private static void loadConfig(String ymlPath) throws Exception {
+    private static void loadConfig(String ymlPath) throws IOException {
         Yaml yaml = new Yaml();
         try (InputStream inputStream = ConfigLoader.class.getClassLoader().getResourceAsStream(ymlPath)) {
             if (inputStream == null) {

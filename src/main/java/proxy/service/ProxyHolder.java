@@ -8,6 +8,7 @@ import org.eclipse.jetty.client.api.Response;
 import org.eclipse.jetty.proxy.ProxyServlet;
 import org.eclipse.jetty.util.Callback;
 import proxy.cache.LRUCacheWithTTL;
+import proxy.config.AppContext;
 import util.RequestUtils;
 
 import java.io.*;
@@ -18,31 +19,23 @@ import java.util.zip.InflaterInputStream;
 public class ProxyHolder extends ProxyServlet.Transparent {
 
     private final String target;
-    private final LRUCacheWithTTL cache;
-
-
     public ProxyHolder(String target) {
         this.target = target;
-        // TODO REFACTOR
-        this.cache = new LRUCacheWithTTL(2, 10);
     }
 
     @Override
     protected void service(HttpServletRequest request, HttpServletResponse response) {
         try {
             String requestUri = RequestUtils.getFullPath(request);
-
-            String cachedResponse = cache.get(requestUri);
+            String cachedResponse = AppContext.getInstance().getCache().get(requestUri);
             if (cachedResponse != null) {
                 // If cached response exists, return it
                 response.getWriter().write(cachedResponse);
                 return;
             }
             super.service(request, response);
-
-
             // Cache the response
-            cache.put(requestUri, "hello", -1);
+            AppContext.getInstance().getCache().put(requestUri, "hello", 1000);
 
         } catch (ServletException e) {
             throw new RuntimeException(e);
