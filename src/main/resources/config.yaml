@@ -1,5 +1,6 @@
 port: 8080
 defaultTimeout: 10000
+maxCacheMemory: 50 # use MB
 proxies:
   - path: /httpbin
     service: httpbinApi

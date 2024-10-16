@@ -8,6 +8,7 @@ import proxy.cache.LRUCacheWithTTL;
 import proxy.config.AppConfig;
 import proxy.config.AppContext;
 import proxy.config.ConfigLoader;
+import proxy.service.HealthCheckServlet;
 import proxy.service.ProxyService;
 
 public class MainProxy {
@@ -29,6 +30,12 @@ public class MainProxy {
         ProxyService proxyService = new ProxyService(appContext.getConfig());
         proxyService.setupProxies(context);
         server.setHandler(context);
+
+        context.addServlet(HealthCheckServlet.class, "/healthcheck");
+
+        // Register StatisticServlet
+//        context.addServlet(StatisticServlet.class, "/statistic");
+
         server.start();
         logger.info("Proxy server started on port {}",  appContext.getConfig().getPort());
         server.join();

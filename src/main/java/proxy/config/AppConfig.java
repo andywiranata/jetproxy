@@ -7,6 +7,7 @@ public class AppConfig {
     private int defaultTimeout;
     private List<Proxy> proxies;
     private List<Service> services;
+    private int maxCacheMemory; // use MB
 
     // Getters and setters
     public int getPort() {
@@ -39,6 +40,14 @@ public class AppConfig {
 
     public void setServices(List<Service> services) {
         this.services = services;
+    }
+
+    public int getMaxCacheMemory() {
+        return maxCacheMemory;
+    }
+
+    public void setMaxCacheMemory(int maxCacheMemory) {
+        this.maxCacheMemory = maxCacheMemory;
     }
 
     public static class Proxy {

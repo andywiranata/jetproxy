@@ -7,7 +7,8 @@ import org.brotli.dec.BrotliInputStream;
 import org.eclipse.jetty.client.api.Response;
 import org.eclipse.jetty.proxy.ProxyServlet;
 import org.eclipse.jetty.util.Callback;
-import proxy.cache.LRUCacheWithTTL;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import proxy.config.AppContext;
 import util.RequestUtils;
 
@@ -17,6 +18,8 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.InflaterInputStream;
 
 public class ProxyHolder extends ProxyServlet.Transparent {
+
+    private static final Logger logger = LoggerFactory.getLogger(ProxyHolder.class);
 
     private final String target;
     public ProxyHolder(String target) {
@@ -34,12 +37,10 @@ public class ProxyHolder extends ProxyServlet.Transparent {
                 return;
             }
             super.service(request, response);
-            // Cache the response
+
             AppContext.getInstance().getCache().put(requestUri, "hello", 1000);
 
-        } catch (ServletException e) {
-            throw new RuntimeException(e);
-        } catch (IOException e) {
+        } catch (ServletException | IOException e) {
             throw new RuntimeException(e);
         }
 
@@ -47,11 +48,15 @@ public class ProxyHolder extends ProxyServlet.Transparent {
 
     @Override
     protected void onServerResponseHeaders(HttpServletRequest clientRequest, HttpServletResponse proxyResponse, Response serverResponse) {
-        super.onServerResponseHeaders(clientRequest, proxyResponse, serverResponse);
+            super.onServerResponseHeaders(clientRequest, proxyResponse, serverResponse);
+    }
+    @Override
+    protected void onProxyResponseFailure(HttpServletRequest clientRequest, HttpServletResponse proxyResponse, Response serverResponse, Throwable failure) {
+        super.onProxyResponseFailure(clientRequest, proxyResponse, serverResponse, failure);
     }
 
     @Override
-    protected void onResponseContent(HttpServletRequest request,
+   protected void onResponseContent(HttpServletRequest request,
                                      HttpServletResponse response,
                                      Response proxyResponse,
                                      byte[] buffer, int offset, int length, Callback callback) {
@@ -65,8 +70,8 @@ public class ProxyHolder extends ProxyServlet.Transparent {
 
         try {
             InputStream decodedStream;
-            decodedStream = decodeContentStream(new ByteArrayInputStream(buffer, offset, length), contentEncoding);
-
+            decodedStream = decodeContentStream(
+                    new ByteArrayInputStream(buffer, offset, length), contentEncoding);
             // If JSON, handle it
             if (contentType != null && contentType.contains("application/json")) {
                 // Determine charset from Content-Type, fallback to UTF-8
@@ -81,7 +86,7 @@ public class ProxyHolder extends ProxyServlet.Transparent {
                 System.out.println("Received non-textual content or unsupported encoding.");
             }
         } catch (IOException e) {
-//            e.printStackTrace();
+            e.printStackTrace();
             System.out.println("Error processing response content.");
         }
         super.onResponseContent(request,
