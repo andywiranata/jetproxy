@@ -10,7 +10,7 @@ import org.eclipse.jetty.util.Callback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import proxy.config.AppContext;
-import util.RequestUtils;
+import proxy.util.RequestUtils;
 
 import java.io.*;
 import java.nio.charset.Charset;

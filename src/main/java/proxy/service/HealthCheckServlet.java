@@ -1,9 +1,8 @@
 package proxy.service;
 
-import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import util.AbstractJsonServlet;
+import proxy.util.AbstractJsonServlet;
 
 import java.io.IOException;
 

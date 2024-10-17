@@ -29,6 +29,7 @@ dependencies {
     implementation("org.brotli:dec:0.1.2")
 
     implementation("redis.clients:jedis:5.2.0")
+    implementation("com.timgroup:java-statsd-client:3.1.0")
 
     testImplementation(platform("org.junit:junit-bom:5.9.1"))
     testImplementation("org.junit.jupiter:junit-jupiter")

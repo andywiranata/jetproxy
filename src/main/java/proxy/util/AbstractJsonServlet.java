@@ -1,4 +1,4 @@
-package util;
+package proxy.util;
 
 import com.google.gson.Gson;
 import jakarta.servlet.http.HttpServlet;

@@ -36,3 +36,32 @@ public class ProxyService {
         }
     }
 }
+
+//public class MetricsProxyServletWithStrategy extends ProxyServlet.Transparent {
+//
+//    private final MetricsListener metricsListener;
+//
+//    public MetricsProxyServletWithStrategy(MetricsListener metricsListener) {
+//        this.metricsListener = metricsListener;
+//    }
+//
+//    @Override
+//    protected void service(HttpServletRequest request, HttpServletResponse response) throws IOException {
+//        String path = request.getRequestURI();
+//        long timestamp = System.currentTimeMillis();
+//
+//        // Notify listener about proxy path usage
+//        metricsListener.onProxyPathUsed(path, timestamp);
+//
+//        // Proxy the request
+//        super.service(request, response);
+//
+//        // Notify listener about HTTP status and response size
+//        int statusCode = response.getStatus();
+//        metricsListener.onHttpStatusReturned(statusCode, timestamp);
+//
+//        long contentLength = response.getContentLengthLong();
+//        metricsListener.onResponseSizeRecorded(path, contentLength, timestamp);
+//    }
+//}
+
