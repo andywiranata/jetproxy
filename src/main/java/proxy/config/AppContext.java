@@ -9,6 +9,8 @@ public class AppContext {
     private final AppConfig config;
     private final LRUCacheWithTTL cache;
 
+
+
     private AppContext(Builder builder)  {
         this.config = ConfigLoader.getConfig(builder.pathConfigYaml);
         this.cache = new LRUCacheWithTTL(builder.maxSize, builder.maxHeapMemory);

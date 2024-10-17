@@ -1,4 +1,4 @@
-package proxy.listener.metrics;
+package proxy.metric;
 
 import redis.clients.jedis.Jedis;
 

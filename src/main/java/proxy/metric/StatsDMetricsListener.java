@@ -1,4 +1,4 @@
-package proxy.listener.metrics;
+package proxy.metric;
 
 import com.timgroup.statsd.StatsDClient;
 

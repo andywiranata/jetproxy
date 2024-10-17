@@ -20,10 +20,8 @@ import java.util.zip.InflaterInputStream;
 public class ProxyHolder extends ProxyServlet.Transparent {
 
     private static final Logger logger = LoggerFactory.getLogger(ProxyHolder.class);
-    private final String target;
 
-    public ProxyHolder(String target) {
-        this.target = target;
+    public ProxyHolder() {
     }
 
     @Override
@@ -32,10 +30,10 @@ public class ProxyHolder extends ProxyServlet.Transparent {
         String cachedResponse = AppContext.getInstance().getCache().get(requestUri);
 
         if (cachedResponse != null) {
+            // TODO Cache Header
             sendCachedResponse(response, cachedResponse);
             return;
         }
-
         try {
             super.service(request, response);
             // Optionally cache the response here after processing
@@ -88,6 +86,7 @@ public class ProxyHolder extends ProxyServlet.Transparent {
     }
 
     private void cacheResponseContent(String key, String bodyContent) {
+        // TODO configureable ttl
         AppContext.getInstance().getCache().put(key, bodyContent, 5000);
     }
 
@@ -95,7 +94,6 @@ public class ProxyHolder extends ProxyServlet.Transparent {
         if (contentEncoding == null) {
             return inputStream; // No encoding, return original stream
         }
-
         return switch (contentEncoding) {
             case "gzip" -> new GZIPInputStream(inputStream);
             case "deflate" -> new InflaterInputStream(inputStream);  // Handles ZLIB header

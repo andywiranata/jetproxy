@@ -5,9 +5,11 @@ import java.util.List;
 public class AppConfig {
     private int port;
     private int defaultTimeout;
+    private int maxCacheMemory; // in MB
+    private boolean dashboard;
+    private MetricsConfig metrics;
     private List<Proxy> proxies;
     private List<Service> services;
-    private int maxCacheMemory; // use MB
 
     // Getters and setters
     public int getPort() {
@@ -26,6 +28,30 @@ public class AppConfig {
         this.defaultTimeout = defaultTimeout;
     }
 
+    public int getMaxCacheMemory() {
+        return maxCacheMemory;
+    }
+
+    public void setMaxCacheMemory(int maxCacheMemory) {
+        this.maxCacheMemory = maxCacheMemory;
+    }
+
+    public boolean isDashboard() {
+        return dashboard;
+    }
+
+    public void setDashboard(boolean dashboard) {
+        this.dashboard = dashboard;
+    }
+
+    public MetricsConfig getMetrics() {
+        return metrics;
+    }
+
+    public void setMetrics(MetricsConfig metrics) {
+        this.metrics = metrics;
+    }
+
     public List<Proxy> getProxies() {
         return proxies;
     }
@@ -42,19 +68,11 @@ public class AppConfig {
         this.services = services;
     }
 
-    public int getMaxCacheMemory() {
-        return maxCacheMemory;
-    }
-
-    public void setMaxCacheMemory(int maxCacheMemory) {
-        this.maxCacheMemory = maxCacheMemory;
-    }
-
     public static class Proxy {
         private String path;
         private String service;
         private String middleware;
-        private long ttl = -1;
+        private long ttl;
         private List<String> methods;
 
         // Getters and setters
@@ -82,20 +100,20 @@ public class AppConfig {
             this.middleware = middleware;
         }
 
-        public List<String> getMethods() {
-            return methods;
-        }
-
-        public void setMethods(List<String> methods) {
-            this.methods = methods;
-        }
-
         public long getTtl() {
             return ttl;
         }
 
         public void setTtl(long ttl) {
             this.ttl = ttl;
+        }
+
+        public List<String> getMethods() {
+            return methods;
+        }
+
+        public void setMethods(List<String> methods) {
+            this.methods = methods;
         }
     }
 
@@ -119,6 +137,129 @@ public class AppConfig {
         public void setUrl(String url) {
             this.url = url;
         }
+    }
 
+    public static class MetricsConfig {
+        private RedisConfig redis;
+        private StatsdConfig statsd;
+        private InMemoryConfig inMemory;
+
+        // Getters and setters
+        public RedisConfig getRedis() {
+            return redis;
+        }
+
+        public void setRedis(RedisConfig redis) {
+            this.redis = redis;
+        }
+
+        public StatsdConfig getStatsd() {
+            return statsd;
+        }
+
+        public void setStatsd(StatsdConfig statsd) {
+            this.statsd = statsd;
+        }
+
+        public InMemoryConfig getInMemory() {
+            return inMemory;
+        }
+
+        public void setInMemory(InMemoryConfig inMemory) {
+            this.inMemory = inMemory;
+        }
+
+        public static class RedisConfig {
+            private boolean enabled;
+            private String host;
+            private int port;
+            private int database;
+
+            // Getters and setters
+            public boolean isEnabled() {
+                return enabled;
+            }
+
+            public void setEnabled(boolean enabled) {
+                this.enabled = enabled;
+            }
+
+            public String getHost() {
+                return host;
+            }
+
+            public void setHost(String host) {
+                this.host = host;
+            }
+
+            public int getPort() {
+                return port;
+            }
+
+            public void setPort(int port) {
+                this.port = port;
+            }
+
+            public int getDatabase() {
+                return database;
+            }
+
+            public void setDatabase(int database) {
+                this.database = database;
+            }
+        }
+
+        public static class StatsdConfig {
+            private boolean enabled;
+            private String host;
+            private int port;
+            private String prefix;
+
+            // Getters and setters
+            public boolean isEnabled() {
+                return enabled;
+            }
+
+            public void setEnabled(boolean enabled) {
+                this.enabled = enabled;
+            }
+
+            public String getHost() {
+                return host;
+            }
+
+            public void setHost(String host) {
+                this.host = host;
+            }
+
+            public int getPort() {
+                return port;
+            }
+
+            public void setPort(int port) {
+                this.port = port;
+            }
+
+            public String getPrefix() {
+                return prefix;
+            }
+
+            public void setPrefix(String prefix) {
+                this.prefix = prefix;
+            }
+        }
+
+        public static class InMemoryConfig {
+            private boolean enabled;
+
+            // Getters and setters
+            public boolean isEnabled() {
+                return enabled;
+            }
+
+            public void setEnabled(boolean enabled) {
+                this.enabled = enabled;
+            }
+        }
     }
 }

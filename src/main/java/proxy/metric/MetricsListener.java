@@ -1,4 +1,4 @@
-package proxy.listener.metrics;
+package proxy.metric;
 
 public interface MetricsListener {
     void onProxyPathUsed(String path, long timestamp);

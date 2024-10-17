@@ -27,11 +27,11 @@ public class ProxyService {
             if (targetServiceUrl == null) {
                 throw new IllegalArgumentException("Service URL not found for: " + proxyRule.getService());
             }
-            ServletHolder proxyServlet = new ServletHolder(new ProxyHolder(targetServiceUrl));
+            ServletHolder proxyServlet = new ServletHolder(new ProxyHolder());
             proxyServlet.setInitParameter(PROXY_TO, targetServiceUrl);
             proxyServlet.setInitParameter(PREFIX, proxyRule.getPath());
             context.addServlet(proxyServlet, proxyRule.getPath() + "/*");
-//            proxyServlet.setInitParameter(TIMEOUT, String.valueOf(config.getDefaultTimeout()));
+            proxyServlet.setInitParameter(TIMEOUT, String.valueOf(config.getDefaultTimeout()));
             logger.info("Proxy added: {} -> {}", proxyRule.getPath(), targetServiceUrl);
         }
     }
