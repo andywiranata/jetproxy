@@ -54,6 +54,7 @@ public class AppConfig {
         private String path;
         private String service;
         private String middleware;
+        private long ttl = -1;
         private List<String> methods;
 
         // Getters and setters
@@ -87,6 +88,14 @@ public class AppConfig {
 
         public void setMethods(List<String> methods) {
             this.methods = methods;
+        }
+
+        public long getTtl() {
+            return ttl;
+        }
+
+        public void setTtl(long ttl) {
+            this.ttl = ttl;
         }
     }
 

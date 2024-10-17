@@ -5,26 +5,31 @@ proxies:
   - path: /httpbin
     service: httpbinApi
     middleware: ''
+    ttl: 100
     methods: ['GET', 'POST', 'PUT']
   - path: /example
     service: exampleApi
     middleware: ''
+    ttl: 100
     methods: ['GET', 'POST', 'PUT']
   - path: /google
     service: googleApi
     middleware: ''
+    ttl: 100
     methods: ['GET', 'POST', 'PUT']
   - path: /products
     service: productApi
     middleware: ''
+    ttl: 100
     methods: ['GET', 'POST', 'PUT']
   - path: /task
     service: tasksApi
     middleware: ''
+    ttl: 100
     methods: ['GET', 'POST', 'PUT']
 services:
   - name: tasksApi
-    url: https://mini-app.andywiranata.me/template/1on1-meeting-agenda/tasks.json
+    url: http://localhost:5173/template/1on1-meeting-agenda/tasks.json
   - name: productApi
     url: https://dummyjson.com/products
   - name: googleApi

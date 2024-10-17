@@ -82,7 +82,7 @@ public class LRUCacheWithTTL {
                 logger.warn("Memory limit exceeded. Performing cleanup.");
                 cleanup(); // Clean up to free memory if limit exceeded
             }
-
+            logger.info("new key {} {} {}", key, value, ttl);
             cache.put(key, newEntry);
             currentMemoryUsage += newEntrySize;
         } finally {
