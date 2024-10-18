@@ -120,6 +120,8 @@ public class AppConfig {
     public static class Service {
         private String name;
         private String url;
+        private long ttl;
+        private List<String> methods;
 
         // Getters and setters
         public String getName() {
@@ -136,6 +138,22 @@ public class AppConfig {
 
         public void setUrl(String url) {
             this.url = url;
+        }
+
+        public long getTtl() {
+            return ttl;
+        }
+
+        public void setTtl(long ttl) {
+            this.ttl = ttl;
+        }
+
+        public List<String> getMethods() {
+            return methods;
+        }
+
+        public void setMethods(List<String> methods) {
+            this.methods = methods;
         }
     }
 

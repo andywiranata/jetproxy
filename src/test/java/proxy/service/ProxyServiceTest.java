@@ -39,7 +39,7 @@ class ProxyServiceTest {
         // Mocking the behavior of config
         when(config.getProxies()).thenReturn(List.of(proxy));
         // Mock the service map retrieval
-        when(ConfigLoader.getServiceMap()).thenReturn(Map.of("testService", "http://testservice.com"));
+//        when(ConfigLoader.getServiceMap()).thenReturn(Map.of("testService", "http://testservice.com"));
 
         // Act
         proxyService.setupProxies(context);

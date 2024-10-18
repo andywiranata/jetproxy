@@ -7,8 +7,8 @@ import org.eclipse.jetty.client.api.Response;
 import org.eclipse.jetty.util.Callback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import proxy.config.AppConfig;
 import proxy.util.AbstractProxyHandler;
-import proxy.util.RequestUtils;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -17,7 +17,8 @@ import java.io.InputStream;
 public class ProxyHolder extends AbstractProxyHandler {
     private static final Logger logger = LoggerFactory.getLogger(ProxyHolder.class);
 
-    public ProxyHolder() {
+    public ProxyHolder(AppConfig.Service serviceName) {
+        this.configService = serviceName;
     }
 
     @Override
@@ -48,18 +49,26 @@ public class ProxyHolder extends AbstractProxyHandler {
     }
 
     @Override
-    protected void onResponseContent(HttpServletRequest request, HttpServletResponse response, Response proxyResponse, byte[] buffer, int offset, int length, Callback callback) {
-        String contentType = proxyResponse.getHeaders().get("Content-Type");
-        String contentEncoding = proxyResponse.getHeaders().get("Content-Encoding");
+    protected void onResponseContent(HttpServletRequest request,
+                                     HttpServletResponse response,
+                                     Response proxyResponse,
+                                     byte[] buffer,
+                                     int offset,
+                                     int length, Callback callback) {
 
-        try (InputStream decodedStream = decodeContentStream(new ByteArrayInputStream(buffer, offset, length), contentEncoding)) {
-            if (isJsonContent(contentType)) {
-                String bodyContent = readStreamAsString(decodedStream, contentType);
-                cacheResponseContent(request, bodyContent);
+        if (this.configService.getTtl() > 0) {
+            String contentType = proxyResponse.getHeaders().get("Content-Type");
+            String contentEncoding = proxyResponse.getHeaders().get("Content-Encoding");
+            try (InputStream decodedStream = decodeContentStream(new ByteArrayInputStream(buffer, offset, length), contentEncoding)) {
+                if (isJsonContent(contentType)) {
+                    String bodyContent = readStreamAsString(decodedStream, contentType);
+                    cacheResponseContent(request, bodyContent);
+                }
+            } catch (IOException e) {
+                logger.error("Error decode response content {}", e.getMessage());
             }
-        } catch (IOException e) {
-            logger.error("Error decode response content {}", e.getMessage());
         }
+
         super.onResponseContent(request, response, proxyResponse, buffer, offset, length, callback);
     }
 

@@ -11,9 +11,9 @@ public class CompositeMetricsListener implements MetricsListener {
     }
 
     @Override
-    public void onProxyPathUsed(String path, int statusCode, long size, long timestamp) {
+    public void onProxyPathUsed(String path, int statusCode, long size) {
         for (MetricsListener listener : listeners) {
-            listener.onProxyPathUsed(path, statusCode, size, timestamp);
+            listener.onProxyPathUsed(path, statusCode, size);
         }
     }
 }

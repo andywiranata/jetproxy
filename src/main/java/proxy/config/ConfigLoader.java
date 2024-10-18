@@ -13,7 +13,7 @@ public class ConfigLoader {
     private static AppConfig config;
 
     ConfigLoader() {}
-    private static Map<String, String> serviceMap;
+    private static Map<String, AppConfig.Service> serviceMap;
     public static AppConfig getConfig(String ymlPath) {
         if (config == null) {
             try {
@@ -40,7 +40,7 @@ public class ConfigLoader {
     private static void createServiceMap(List<AppConfig.Service> services) {
         serviceMap = new HashMap<>();
         for (AppConfig.Service service : services) {
-            serviceMap.put(service.getName(), service.getUrl());
+            serviceMap.put(service.getName(), service);
         }
     }
 
@@ -89,11 +89,11 @@ public class ConfigLoader {
         }
     }
 
-    public static Map<String, String> getServiceMap() {
+    public static Map<String, AppConfig.Service> getServiceMap() {
         return serviceMap;
     }
 
-    public static void setServiceMap(Map<String, String> serviceMap) {
+    public static void setServiceMap(Map<String, AppConfig.Service> serviceMap) {
         ConfigLoader.serviceMap = serviceMap;
     }
 }

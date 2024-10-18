@@ -19,22 +19,22 @@ proxies:
   - path: /httpbin
     service: httpbinApi
     middleware: ''
-    ttl: 100
+    ttl: -1
     methods: ['GET', 'POST', 'PUT']
   - path: /example
     service: exampleApi
     middleware: ''
-    ttl: 100
+    ttl: -1
     methods: ['GET', 'POST', 'PUT']
   - path: /google
     service: googleApi
     middleware: ''
-    ttl: 100
+    ttl: -1
     methods: ['GET', 'POST', 'PUT']
   - path: /products
     service: productApi
     middleware: ''
-    ttl: 100
+    ttl: -1
     methods: ['GET', 'POST', 'PUT']
   - path: /task
     service: tasksApi

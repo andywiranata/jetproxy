@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import proxy.config.AppContext;
 import proxy.service.HealthCheckServlet;
 import proxy.service.SetupService;
+import proxy.service.StatisticServlet;
 
 public class MainProxy {
     private static final Logger logger = LoggerFactory.getLogger(MainProxy.class);
@@ -29,9 +30,7 @@ public class MainProxy {
         server.setHandler(context);
 
         context.addServlet(HealthCheckServlet.class, "/healthcheck");
-
-        // Register StatisticServlet
-//        context.addServlet(StatisticServlet.class, "/statistic");
+        context.addServlet(StatisticServlet.class, "/stats");
 
         server.start();
         logger.info("Proxy server started on port {}",  appContext.getConfig().getPort());

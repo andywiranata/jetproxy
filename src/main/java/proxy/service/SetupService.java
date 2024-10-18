@@ -23,11 +23,12 @@ public class SetupService {
     public void setupProxies(ServletContextHandler context) {
         List<AppConfig.Proxy> proxies = config.getProxies();
         for (AppConfig.Proxy proxyRule : proxies) {
-            String targetServiceUrl = ConfigLoader.getServiceMap().get(proxyRule.getService());
+            AppConfig.Service service = ConfigLoader.getServiceMap().get(proxyRule.getService());
+            String targetServiceUrl = service.getUrl();
             if (targetServiceUrl == null) {
                 throw new IllegalArgumentException("Service URL not found for: " + proxyRule.getService());
             }
-            ServletHolder proxyServlet = new ServletHolder(new ProxyHolder());
+            ServletHolder proxyServlet = new ServletHolder(new ProxyHolder(service));
             proxyServlet.setInitParameter(PROXY_TO, targetServiceUrl);
             proxyServlet.setInitParameter(PREFIX, proxyRule.getPath());
             context.addServlet(proxyServlet, proxyRule.getPath() + "/*");

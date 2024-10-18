@@ -11,9 +11,11 @@ public class RedisMetricsListener implements MetricsListener {
     }
 
     @Override
-    public void onProxyPathUsed(String path, int statusCode, long size, long timestamp) {
+    public void onProxyPathUsed(String path, int statusCode, long size) {
+        /*
         jedis.zadd("proxy:path:" + path, timestamp, String.valueOf(timestamp));
         jedis.zadd("http:status:" + statusCode, timestamp, String.valueOf(timestamp));
         jedis.zadd("response:size:" + path, timestamp, String.valueOf(size));
+        */
     }
 }

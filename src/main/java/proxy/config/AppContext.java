@@ -33,7 +33,7 @@ public class AppContext {
         return config;
     }
 
-    public Map<String, String> getServiceMap() {
+    public Map<String, AppConfig.Service> getServiceMap() {
         return ConfigLoader.getServiceMap();
     }
 

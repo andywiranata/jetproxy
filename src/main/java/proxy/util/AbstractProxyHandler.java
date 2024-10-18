@@ -3,9 +3,12 @@ package proxy.util;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.brotli.dec.BrotliInputStream;
+import org.eclipse.jetty.client.api.Response;
+import org.eclipse.jetty.http.HttpHeader;
 import org.eclipse.jetty.proxy.ProxyServlet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import proxy.config.AppConfig;
 import proxy.config.AppContext;
 
 import java.io.*;
@@ -16,6 +19,34 @@ import java.util.zip.InflaterInputStream;
 public abstract class AbstractProxyHandler extends ProxyServlet.Transparent {
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractProxyHandler.class);
+    protected AppConfig.Service configService;
+
+    @Override
+    protected void onProxyResponseSuccess(
+            HttpServletRequest clientRequest,
+            HttpServletResponse proxyResponse,
+            Response serverResponse) {
+        // Get the path from the clientRequest
+        String path = clientRequest.getRequestURI();
+        long contentSize = serverResponse.getHeaders().getLongField(HttpHeader.CONTENT_LENGTH.asString());
+        int statusCode = serverResponse.getStatus();
+        logger.info("Proxy from -> {} -> to {}", path, this.configService.getUrl());
+        AppContext
+                .getInstance()
+                .getMetricsListener()
+                .onProxyPathUsed(path,
+                        statusCode,
+                        contentSize);
+        super.onProxyResponseSuccess(clientRequest, proxyResponse, serverResponse);
+    }
+
+    @Override
+    protected void onProxyResponseFailure(HttpServletRequest clientRequest, HttpServletResponse proxyResponse, Response serverResponse, Throwable failure) {
+        String path = clientRequest.getRequestURI();
+        logger.error("Failed proxy from -> {} -> to {}", path, this.configService.getUrl());
+        super.onProxyResponseFailure(clientRequest, proxyResponse, serverResponse, failure);
+
+    }
 
     // Shared logic for checking the cache
     protected String getCachedResponse(HttpServletRequest request) {
@@ -27,7 +58,8 @@ public abstract class AbstractProxyHandler extends ProxyServlet.Transparent {
         return AppContext
                 .getInstance()
                 .getCache()
-                .get(String.format("%s__%s", method, path));
+                .get(String.format("%s__%s",
+                        method, path));
     }
 
     // Shared logic for caching the response
@@ -37,13 +69,12 @@ public abstract class AbstractProxyHandler extends ProxyServlet.Transparent {
         }
         String path = RequestUtils.getFullPath(request);
         String method = request.getMethod();
-        // TODO: Make the TTL configurable
         AppContext
                 .getInstance()
                 .getCache()
                 .put(String.format("%s__%s", method, path),
                         bodyContent,
-                        5000);
+                        configService.getTtl());
 
     }
 
