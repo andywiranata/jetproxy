@@ -48,18 +48,9 @@ public class InMemoryMetricsListener implements MetricsListener {
     }
 
     @Override
-    public void onProxyPathUsed(String path, long timestamp) {
+    public void onProxyPathUsed(String path, int statusCode, long size, long timestamp) {
         metrics.computeIfAbsent(path, k -> new MetricData()).increment(MetricType.SUCCESS);
     }
 
-    @Override
-    public void onHttpStatusReturned(int statusCode, long timestamp) {
-        // Can be extended similarly
-    }
-
-    @Override
-    public void onResponseSizeRecorded(String path, long size, long timestamp) {
-        // Can be extended similarly
-    }
 }
 

@@ -1,6 +1,8 @@
 package proxy.config;
 
 import proxy.cache.LRUCacheWithTTL;
+import proxy.metric.MetricsListener;
+import proxy.metric.MetricsListenerFactory;
 
 import java.util.Map;
 
@@ -8,12 +10,12 @@ public class AppContext {
     private static AppContext instance;
     private final AppConfig config;
     private final LRUCacheWithTTL cache;
-
-
+    private final MetricsListener metricsListener;
 
     private AppContext(Builder builder)  {
         this.config = ConfigLoader.getConfig(builder.pathConfigYaml);
         this.cache = new LRUCacheWithTTL(builder.maxSize, builder.maxHeapMemory);
+        this.metricsListener = MetricsListenerFactory.createMetricsListener(this.config);
     }
 
     public static AppContext getInstance() {
@@ -23,6 +25,9 @@ public class AppContext {
         return instance;
     }
 
+    public MetricsListener getMetricsListener() {
+        return metricsListener;
+    }
 
     public AppConfig getConfig() {
         return config;

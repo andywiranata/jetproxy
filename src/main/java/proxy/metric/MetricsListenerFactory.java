@@ -2,75 +2,41 @@ package proxy.metric;
 
 import com.timgroup.statsd.StatsDClient;
 import com.timgroup.statsd.NonBlockingStatsDClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import proxy.config.AppConfig;
-import redis.clients.jedis.Jedis;
+import proxy.service.ProxyHolder;
 import redis.clients.jedis.Jedis;
 import java.util.ArrayList;
 import java.util.List;
 
 public class MetricsListenerFactory {
+    private static final Logger logger = LoggerFactory.getLogger(MetricsListenerFactory.class);
 
-    public static MetricsListener createMetricsListener() {
+    public static MetricsListener createMetricsListener(AppConfig config) {
         List<MetricsListener> listeners = new ArrayList<>();
+        AppConfig.MetricsConfig.InMemoryConfig inMemoryConfig = config.getMetrics().getInMemory();
+        AppConfig.MetricsConfig.RedisConfig redisConfig = config.getMetrics().getRedis();
+        AppConfig.MetricsConfig.StatsdConfig statsdConfig = config.getMetrics().getStatsd();
 
-        String metricsBackends = System.getenv("METRICS_BACKENDS"); // comma-separated value: "inmemory,redis"
-
-        if (metricsBackends != null) {
-            String[] backends = metricsBackends.split(",");
-            for (String backend : backends) {
-                switch (backend.trim().toLowerCase()) {
-                    case "redis":
-                        String redisHost = System.getenv("REDIS_HOST");
-                        int redisPort = Integer.parseInt(System.getenv("REDIS_PORT"));
-                        Jedis jedis = new Jedis(redisHost, redisPort);
-                        listeners.add(new RedisMetricsListener(jedis));
-                        break;
-                    case "statsd":
-                        // Initialize StatsD client
-                        String statsdHost = System.getenv("STATSD_HOST");
-                        int statsdPort = Integer.parseInt(System.getenv("STATSD_PORT"));
-                        StatsDClient statsDClient = new NonBlockingStatsDClient("my.prefix", statsdHost, statsdPort);
-                        listeners.add(new StatsDMetricsListener(statsDClient));
-                        break;
-                    case "inmemory":
-                        listeners.add(new InMemoryMetricsListener());
-                        break;
-                }
-            }
-        } else {
-            // Default to in-memory if no valid backend is set
+        if (inMemoryConfig.isEnabled()) {
             listeners.add(new InMemoryMetricsListener());
+            logger.info("Metric In Memory Config Enabled");
         }
 
+        if (redisConfig.isEnabled()) {
+            logger.info("Metric Redis Config Enabled");
+        }
+
+        if (statsdConfig.isEnabled()) {
+            StatsDClient statsDClient = new NonBlockingStatsDClient(
+                    statsdConfig.getPrefix(),
+                    statsdConfig.getHost(),
+                    statsdConfig.getPort());
+            listeners.add(new StatsDMetricsListener(statsDClient));
+            logger.info("Metric Statsd Enabled");
+        }
         // Return a composite listener that wraps multiple listeners
         return new CompositeMetricsListener(listeners);
     }
 }
-//
-//public class MetricsListenerFactory {
-//
-//    public static MetricsListener createMetricsListener(AppConfig config) {
-//        String metricsBackend = System.getenv("METRICS_BACKEND");
-//
-//        switch (metricsBackend != null ? metricsBackend.toLowerCase() : "") {
-//            case "redis":
-//                // Initialize Redis client
-//                String redisHost = System.getenv("REDIS_HOST");
-//                int redisPort = Integer.parseInt(System.getenv("REDIS_PORT"));
-//                Jedis jedis = new Jedis(redisHost, redisPort);
-//                return new RedisMetricsListener(jedis);
-//
-//            case "statsd":
-//                // Initialize StatsD client
-//                String statsdHost = System.getenv("STATSD_HOST");
-//                int statsdPort = Integer.parseInt(System.getenv("STATSD_PORT"));
-//                StatsDClient statsDClient = new NonBlockingStatsDClient("my.prefix", statsdHost, statsdPort);
-//                return new StatsDMetricsListener(statsDClient);
-//
-//            case "in-memory":
-//            default:
-//                // Default to in-memory if no valid backend is set
-//                return new InMemoryMetricsListener();
-//        }
-//    }
-//}

@@ -17,7 +17,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 class ProxyServiceTest {
-    private ProxyService proxyService;
+    private SetupService proxyService;
 
     private AppConfig config;
     private ServletContextHandler context;
@@ -26,7 +26,7 @@ class ProxyServiceTest {
     void setUp() {
         config = mock(AppConfig.class);
         context = mock(ServletContextHandler.class);
-        proxyService = new ProxyService(config);
+        proxyService = new SetupService(config);
     }
 
     @Test

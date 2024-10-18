@@ -3,22 +3,18 @@ package proxy.service;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.brotli.dec.BrotliInputStream;
 import org.eclipse.jetty.client.api.Response;
-import org.eclipse.jetty.proxy.ProxyServlet;
 import org.eclipse.jetty.util.Callback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import proxy.config.AppContext;
+import proxy.util.AbstractProxyHandler;
 import proxy.util.RequestUtils;
 
-import java.io.*;
-import java.nio.charset.Charset;
-import java.util.zip.GZIPInputStream;
-import java.util.zip.InflaterInputStream;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 
-public class ProxyHolder extends ProxyServlet.Transparent {
-
+public class ProxyHolder extends AbstractProxyHandler {
     private static final Logger logger = LoggerFactory.getLogger(ProxyHolder.class);
 
     public ProxyHolder() {
@@ -26,28 +22,18 @@ public class ProxyHolder extends ProxyServlet.Transparent {
 
     @Override
     protected void service(HttpServletRequest request, HttpServletResponse response) {
-        String requestUri = RequestUtils.getFullPath(request);
-        String cachedResponse = AppContext.getInstance().getCache().get(requestUri);
-
+        String cachedResponse = getCachedResponse(request);
         if (cachedResponse != null) {
-            // TODO Cache Header
             sendCachedResponse(response, cachedResponse);
             return;
         }
+
         try {
             super.service(request, response);
             // Optionally cache the response here after processing
         } catch (ServletException | IOException e) {
+            logger.error("Error occured {}", e.getMessage());
             handleError(response, e);
-        }
-    }
-
-    private void sendCachedResponse(HttpServletResponse response, String cachedResponse) {
-        response.setContentType("application/json"); // Set content type to JSON
-        try {
-            response.getWriter().write(cachedResponse);
-        } catch (IOException e) {
-            logger.error("Error writing cached response: {}", e.getMessage());
         }
     }
 
@@ -69,57 +55,16 @@ public class ProxyHolder extends ProxyServlet.Transparent {
         try (InputStream decodedStream = decodeContentStream(new ByteArrayInputStream(buffer, offset, length), contentEncoding)) {
             if (isJsonContent(contentType)) {
                 String bodyContent = readStreamAsString(decodedStream, contentType);
-                cacheResponseContent(RequestUtils.getFullPath(request), bodyContent);
-            } else {
-                logger.warn("Received non-textual content or unsupported encoding.");
+                cacheResponseContent(request, bodyContent);
             }
         } catch (IOException e) {
-            logger.error("Error processing response content: {}", e.getMessage());
+            logger.error("Error decode response content {}", e.getMessage());
         }
-
         super.onResponseContent(request, response, proxyResponse, buffer, offset, length, callback);
     }
 
     @Override
     protected void onProxyResponseSuccess(HttpServletRequest clientRequest, HttpServletResponse proxyResponse, Response serverResponse) {
         super.onProxyResponseSuccess(clientRequest, proxyResponse, serverResponse);
-    }
-
-    private void cacheResponseContent(String key, String bodyContent) {
-        // TODO configureable ttl
-        AppContext.getInstance().getCache().put(key, bodyContent, 5000);
-    }
-
-    private InputStream decodeContentStream(InputStream inputStream, String contentEncoding) throws IOException {
-        if (contentEncoding == null) {
-            return inputStream; // No encoding, return original stream
-        }
-        return switch (contentEncoding) {
-            case "gzip" -> new GZIPInputStream(inputStream);
-            case "deflate" -> new InflaterInputStream(inputStream);  // Handles ZLIB header
-            case "br" -> new BrotliInputStream(inputStream);  // Handles Brotli encoding
-            default -> inputStream; // Unknown encoding, return original stream
-        };
-    }
-
-    private boolean isJsonContent(String contentType) {
-        return contentType != null && contentType.contains("application/json");
-    }
-
-    private String readStreamAsString(InputStream inputStream, String contentType) throws IOException {
-        String charset = getCharsetFromContentType(contentType);
-        return new String(inputStream.readAllBytes(), Charset.forName(charset));
-    }
-
-    private String getCharsetFromContentType(String contentType) {
-        if (contentType.contains("charset=")) {
-            return contentType.split("charset=")[1];
-        }
-        return "UTF-8"; // Default to UTF-8 if no charset is specified
-    }
-
-    private void handleError(HttpServletResponse response, Exception e) {
-        logger.error("Error processing request: {}", e.getMessage());
-        response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
     }
 }

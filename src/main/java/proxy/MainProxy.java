@@ -4,12 +4,9 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import proxy.cache.LRUCacheWithTTL;
-import proxy.config.AppConfig;
 import proxy.config.AppContext;
-import proxy.config.ConfigLoader;
 import proxy.service.HealthCheckServlet;
-import proxy.service.ProxyService;
+import proxy.service.SetupService;
 
 public class MainProxy {
     private static final Logger logger = LoggerFactory.getLogger(MainProxy.class);
@@ -27,7 +24,7 @@ public class MainProxy {
         ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
         context.setContextPath("/");
         // Set up proxies
-        ProxyService proxyService = new ProxyService(appContext.getConfig());
+        SetupService proxyService = new SetupService(appContext.getConfig());
         proxyService.setupProxies(context);
         server.setHandler(context);
 

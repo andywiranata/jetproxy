@@ -1,7 +1,6 @@
 package proxy.metric;
 
 public interface MetricsListener {
-    void onProxyPathUsed(String path, long timestamp);
-    void onHttpStatusReturned(int statusCode, long timestamp);
-    void onResponseSizeRecorded(String path, long size, long timestamp);
+    void onProxyPathUsed(String path, int statusCode, long size, long timestamp);
+
 }

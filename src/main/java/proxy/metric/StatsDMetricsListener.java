@@ -11,17 +11,10 @@ public class StatsDMetricsListener implements MetricsListener {
     }
 
     @Override
-    public void onProxyPathUsed(String path, long timestamp) {
+    public void onProxyPathUsed(String path, int statusCode, long size, long timestamp) {
         statsDClient.incrementCounter("proxy.path." + path);
-    }
-
-    @Override
-    public void onHttpStatusReturned(int statusCode, long timestamp) {
         statsDClient.incrementCounter("http.status." + statusCode);
-    }
-
-    @Override
-    public void onResponseSizeRecorded(String path, long size, long timestamp) {
         statsDClient.recordGaugeValue("response.size." + path, size);
     }
+
 }
