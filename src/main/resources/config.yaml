@@ -20,36 +20,36 @@ proxies:
     service: httpbinApi
     middleware: ''
     ttl: -1
-    methods: ['GET', 'POST', 'PUT']
   - path: /example
     service: exampleApi
     middleware: ''
     ttl: -1
-    methods: ['GET', 'POST', 'PUT']
   - path: /google
     service: googleApi
     middleware: ''
     ttl: -1
-    methods: ['GET', 'POST', 'PUT']
   - path: /products
     service: productApi
     middleware: ''
     ttl: -1
-    methods: ['GET', 'POST', 'PUT']
   - path: /task
     service: tasksApi
     middleware: ''
     ttl: 100
-    methods: ['GET', 'POST', 'PUT']
 services:
   - name: tasksApi
     url: http://localhost:5173/template/1on1-meeting-agenda/tasks.json
+    methods: ['GET', 'POST', 'PUT']
   - name: productApi
     url: https://dummyjson.com/products
+    methods: ['GET']
   - name: googleApi
     url: http://www.google.com
+    methods: ['GET', 'POST', 'PUT']
   - name: exampleApi
     url: http://example.com
+    methods: ['GET', 'POST', 'PUT']
   - name: httpbinApi
     url: http://httpbin.org
+    methods: ['GET', 'POST', 'PUT']
 

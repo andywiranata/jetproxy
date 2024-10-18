@@ -4,9 +4,8 @@ import com.timgroup.statsd.StatsDClient;
 import com.timgroup.statsd.NonBlockingStatsDClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import proxy.config.AppConfig;
-import proxy.service.ProxyHolder;
-import redis.clients.jedis.Jedis;
+import proxy.context.AppConfig;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -25,6 +24,7 @@ public class MetricsListenerFactory {
         }
 
         if (redisConfig.isEnabled()) {
+            // TODO redis implement
             logger.info("Metric Redis Config Enabled");
         }
 

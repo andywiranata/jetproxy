@@ -4,6 +4,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.yaml.snakeyaml.Yaml;
+import proxy.context.AppConfig;
+import proxy.context.ConfigLoader;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;

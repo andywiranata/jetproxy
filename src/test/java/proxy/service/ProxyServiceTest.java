@@ -4,12 +4,12 @@ import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import proxy.config.AppConfig;
-import proxy.config.ConfigLoader;
+import proxy.context.AppConfig;
+import proxy.context.ConfigLoader;
+import proxy.service.holder.SetupProxyHolder;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -17,7 +17,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 class ProxyServiceTest {
-    private SetupService proxyService;
+    private SetupProxyHolder proxyService;
 
     private AppConfig config;
     private ServletContextHandler context;
@@ -26,7 +26,7 @@ class ProxyServiceTest {
     void setUp() {
         config = mock(AppConfig.class);
         context = mock(ServletContextHandler.class);
-        proxyService = new SetupService(config);
+        proxyService = new SetupProxyHolder(config);
     }
 
     @Test

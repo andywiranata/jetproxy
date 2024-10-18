@@ -1,4 +1,4 @@
-package proxy.config;
+package proxy.context;
 
 import java.util.List;
 
@@ -73,7 +73,7 @@ public class AppConfig {
         private String service;
         private String middleware;
         private long ttl;
-        private List<String> methods;
+
 
         // Getters and setters
         public String getPath() {
@@ -107,20 +107,11 @@ public class AppConfig {
         public void setTtl(long ttl) {
             this.ttl = ttl;
         }
-
-        public List<String> getMethods() {
-            return methods;
-        }
-
-        public void setMethods(List<String> methods) {
-            this.methods = methods;
-        }
     }
 
     public static class Service {
         private String name;
         private String url;
-        private long ttl;
         private List<String> methods;
 
         // Getters and setters
@@ -138,14 +129,6 @@ public class AppConfig {
 
         public void setUrl(String url) {
             this.url = url;
-        }
-
-        public long getTtl() {
-            return ttl;
-        }
-
-        public void setTtl(long ttl) {
-            this.ttl = ttl;
         }
 
         public List<String> getMethods() {

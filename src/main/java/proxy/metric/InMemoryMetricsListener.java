@@ -2,7 +2,6 @@ package proxy.metric;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import proxy.service.ProxyHolder;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;

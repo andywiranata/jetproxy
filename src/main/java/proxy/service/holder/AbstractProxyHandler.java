@@ -1,4 +1,4 @@
-package proxy.util;
+package proxy.service.holder;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -8,11 +8,13 @@ import org.eclipse.jetty.http.HttpHeader;
 import org.eclipse.jetty.proxy.ProxyServlet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import proxy.config.AppConfig;
-import proxy.config.AppContext;
+import proxy.context.AppConfig;
+import proxy.context.AppContext;
+import proxy.util.RequestUtils;
 
 import java.io.*;
 import java.nio.charset.Charset;
+import java.util.List;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.InflaterInputStream;
 
@@ -20,6 +22,7 @@ public abstract class AbstractProxyHandler extends ProxyServlet.Transparent {
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractProxyHandler.class);
     protected AppConfig.Service configService;
+    protected AppConfig.Proxy proxyRule;
 
     @Override
     protected void onProxyResponseSuccess(
@@ -47,7 +50,6 @@ public abstract class AbstractProxyHandler extends ProxyServlet.Transparent {
         super.onProxyResponseFailure(clientRequest, proxyResponse, serverResponse, failure);
 
     }
-
     // Shared logic for checking the cache
     protected String getCachedResponse(HttpServletRequest request) {
         if (!request.getMethod().equalsIgnoreCase("GET")) {
@@ -74,7 +76,7 @@ public abstract class AbstractProxyHandler extends ProxyServlet.Transparent {
                 .getCache()
                 .put(String.format("%s__%s", method, path),
                         bodyContent,
-                        configService.getTtl());
+                        proxyRule.getTtl());
 
     }
 
@@ -121,9 +123,23 @@ public abstract class AbstractProxyHandler extends ProxyServlet.Transparent {
         return "UTF-8"; // Default to UTF-8 if no charset is specified
     }
 
+    public boolean isMethodNotAllowed(HttpServletRequest request) {
+        List<String> allowedMethods = this.configService.getMethods();
+        String requestMethod = request.getMethod();
+        return !allowedMethods.contains(requestMethod);
+    }
+
     // Shared error handling logic
     protected void handleError(HttpServletResponse response, Exception e) {
         logger.error("Error processing request: {}", e.getMessage());
         response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
     }
+
+    protected void handleMethodNotAllowed(HttpServletResponse response) {
+        logger.warn("Method not allowed processing request {}", this.configService.getName());
+        response.setStatus(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
+    }
+
+
+
 }

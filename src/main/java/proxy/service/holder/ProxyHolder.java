@@ -1,28 +1,35 @@
-package proxy.service;
+package proxy.service.holder;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.eclipse.jetty.client.api.Request;
 import org.eclipse.jetty.client.api.Response;
 import org.eclipse.jetty.util.Callback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import proxy.config.AppConfig;
-import proxy.util.AbstractProxyHandler;
+import proxy.context.AppConfig;
+import proxy.context.AppContext;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 
 public class ProxyHolder extends AbstractProxyHandler {
     private static final Logger logger = LoggerFactory.getLogger(ProxyHolder.class);
 
-    public ProxyHolder(AppConfig.Service serviceName) {
+    public ProxyHolder(AppConfig.Service serviceName, AppConfig.Proxy proxyRule) {
         this.configService = serviceName;
+        this.proxyRule = proxyRule;
     }
 
     @Override
     protected void service(HttpServletRequest request, HttpServletResponse response) {
+        if (isMethodNotAllowed(request)) {
+            handleMethodNotAllowed(response);
+            return;
+        }
         String cachedResponse = getCachedResponse(request);
         if (cachedResponse != null) {
             sendCachedResponse(response, cachedResponse);
@@ -56,7 +63,7 @@ public class ProxyHolder extends AbstractProxyHandler {
                                      int offset,
                                      int length, Callback callback) {
 
-        if (this.configService.getTtl() > 0) {
+        if (this.proxyRule.getTtl() > 0) {
             String contentType = proxyResponse.getHeaders().get("Content-Type");
             String contentEncoding = proxyResponse.getHeaders().get("Content-Encoding");
             try (InputStream decodedStream = decodeContentStream(new ByteArrayInputStream(buffer, offset, length), contentEncoding)) {

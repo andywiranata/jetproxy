@@ -1,22 +1,22 @@
-package proxy.service;
+package proxy.service.holder;
 
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import proxy.config.AppConfig;
-import proxy.config.ConfigLoader;
+import proxy.context.AppConfig;
+import proxy.context.ConfigLoader;
 
 import java.util.List;
 
-public class SetupService {
+public class SetupProxyHolder {
     private static final String PROXY_TO = "proxyTo";
     private static final String PREFIX = "prefix";
     private static final String TIMEOUT = "timeout";
-    private static final Logger logger = LoggerFactory.getLogger(SetupService.class);
+    private static final Logger logger = LoggerFactory.getLogger(SetupProxyHolder.class);
     private final AppConfig config;
 
-    public SetupService(AppConfig config) {
+    public SetupProxyHolder(AppConfig config) {
         this.config = config;
     }
 
@@ -28,7 +28,7 @@ public class SetupService {
             if (targetServiceUrl == null) {
                 throw new IllegalArgumentException("Service URL not found for: " + proxyRule.getService());
             }
-            ServletHolder proxyServlet = new ServletHolder(new ProxyHolder(service));
+            ServletHolder proxyServlet = new ServletHolder(new ProxyHolder(service, proxyRule));
             proxyServlet.setInitParameter(PROXY_TO, targetServiceUrl);
             proxyServlet.setInitParameter(PREFIX, proxyRule.getPath());
             context.addServlet(proxyServlet, proxyRule.getPath() + "/*");

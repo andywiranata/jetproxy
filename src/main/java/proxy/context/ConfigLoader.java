@@ -1,4 +1,4 @@
-package proxy.config;
+package proxy.context;
 
 import org.yaml.snakeyaml.Yaml;
 
@@ -25,7 +25,7 @@ public class ConfigLoader {
         return config;
     }
 
-    static void loadConfig(String ymlPath) throws IOException {
+    public static void loadConfig(String ymlPath) throws IOException {
         Yaml yaml = new Yaml();
         try (InputStream inputStream = ConfigLoader.class.getClassLoader().getResourceAsStream(ymlPath)) {
             if (inputStream == null) {
@@ -69,9 +69,7 @@ public class ConfigLoader {
             if (proxy.getService() == null || proxy.getService().isEmpty()) {
                 throw new IllegalArgumentException("Proxy service cannot be null or empty for path: " + proxy.getPath());
             }
-            if (proxy.getMethods() == null || proxy.getMethods().isEmpty()) {
-                throw new IllegalArgumentException("Proxy methods cannot be null or empty for path: " + proxy.getPath());
-            }
+
         }
     }
 

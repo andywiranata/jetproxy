@@ -2,8 +2,6 @@ package proxy.service;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import proxy.config.AppContext;
-import proxy.metric.InMemoryMetricsListener;
 import proxy.util.AbstractJsonServlet;
 
 import java.io.IOException;

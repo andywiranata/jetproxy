@@ -1,6 +1,7 @@
-package proxy.config;
+package proxy.context;
 
 import proxy.cache.LRUCacheWithTTL;
+import proxy.cache.RedisCache;
 import proxy.metric.MetricsListener;
 import proxy.metric.MetricsListenerFactory;
 
@@ -10,11 +11,14 @@ public class AppContext {
     private static AppContext instance;
     private final AppConfig config;
     private final LRUCacheWithTTL cache;
+    private final RedisCache redisCache;
     private final MetricsListener metricsListener;
 
     private AppContext(Builder builder)  {
+        // initialize instance
         this.config = ConfigLoader.getConfig(builder.pathConfigYaml);
         this.cache = new LRUCacheWithTTL(builder.maxSize, builder.maxHeapMemory);
+        this.redisCache = new RedisCache(this.config);
         this.metricsListener = MetricsListenerFactory.createMetricsListener(this.config);
     }
 

@@ -1,24 +1,29 @@
 package proxy.cache;
+import proxy.context.AppConfig;
 import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
 
 public class RedisCache implements Cache {
-    private final Jedis jedis; // Assuming you're using the Jedis library
-    private final long ttl; // Time-To-Live in seconds
+    private final JedisPool jedisPool;
 
-    public RedisCache(String redisHost, int redisPort, long ttl) {
-        this.jedis = new Jedis(redisHost, redisPort);
-        this.ttl = ttl;
+    public RedisCache(AppConfig config) {
+        AppConfig.MetricsConfig.RedisConfig redisConfig = config.getMetrics().getRedis();
+        this.jedisPool = new JedisPool(
+                redisConfig.getHost(),
+                redisConfig.getPort());
     }
 
     @Override
     public String get(String key) {
-        // Retrieve the value from Redis
-        return jedis.get(String.valueOf(key));
+        try (Jedis jedis = jedisPool.getResource()) {
+            return jedis.get(String.valueOf(key));
+        }
     }
 
     @Override
     public void put(String key, String value) {
-        // Store the value in Redis with TTL
-        jedis.setex(String.valueOf(key), (int) ttl, value);
+        try (Jedis jedis = jedisPool.getResource()) {
+            jedis.setex(String.valueOf(key), -1, value);
+        }
     }
 }
