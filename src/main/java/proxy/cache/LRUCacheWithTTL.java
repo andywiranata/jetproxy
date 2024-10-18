@@ -19,7 +19,7 @@ public class LRUCacheWithTTL {
     private long currentMemoryUsage; // Track current memory usage
 
     // Cache entry with value and timestamp
-    private static class CacheEntry {
+    static class CacheEntry {
         public static final long NO_EXPIRED = -1;
         String value;
         long timestamp;
@@ -78,9 +78,9 @@ public class LRUCacheWithTTL {
             long newEntrySize = newEntry.getSize();
 
             // Check memory usage before adding the new entry
-            while (isMemoryExceeded(newEntrySize)) {
+            if (isMemoryExceeded(newEntrySize)) {
                 logger.warn("Memory limit exceeded. Performing cleanup.");
-                cleanup(); // Clean up to free memory if limit exceeded
+                cleanup(newEntrySize); // Clean up to free memory if limit exceeded
             }
             logger.info("new key {} {} {}", key, value, ttl);
             cache.put(key, newEntry);
@@ -94,9 +94,9 @@ public class LRUCacheWithTTL {
         return (currentMemoryUsage + additionalSize) > maxHeapMemory;
     }
 
-    private void cleanup() {
+    private void cleanup(long additionalSize) {
         // Remove the least recently used entries until memory is below the threshold
-        while (isMemoryExceeded(0) && !cache.isEmpty()) {
+        while (isMemoryExceeded(additionalSize) && !cache.isEmpty()) {
             String eldestKey = cache.entrySet().iterator().next().getKey();
             logger.info("Removing entry {} due to memory cleanup", eldestKey);
             CacheEntry eldestEntry = cache.remove(eldestKey);

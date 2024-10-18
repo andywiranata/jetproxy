@@ -25,7 +25,7 @@ public class ConfigLoader {
         return config;
     }
 
-    private static void loadConfig(String ymlPath) throws IOException {
+    static void loadConfig(String ymlPath) throws IOException {
         Yaml yaml = new Yaml();
         try (InputStream inputStream = ConfigLoader.class.getClassLoader().getResourceAsStream(ymlPath)) {
             if (inputStream == null) {
@@ -45,7 +45,7 @@ public class ConfigLoader {
     }
 
     // Validate the loaded configuration
-    private static void validateConfig(AppConfig config) {
+    public static void validateConfig(AppConfig config) {
         if (config.getPort() <= 0 || config.getPort() > 65535) {
             throw new IllegalArgumentException("Invalid port number: " + config.getPort());
         }
@@ -58,7 +58,7 @@ public class ConfigLoader {
         validateServices(config.getServices());
     }
 
-    private static void validateProxies(List<AppConfig.Proxy> proxies) {
+    public static void validateProxies(List<AppConfig.Proxy> proxies) {
         if (proxies == null || proxies.isEmpty()) {
             throw new IllegalArgumentException("No proxies configured");
         }
@@ -75,7 +75,7 @@ public class ConfigLoader {
         }
     }
 
-    private static void validateServices(List<AppConfig.Service> services) {
+    public static void validateServices(List<AppConfig.Service> services) {
         if (services == null || services.isEmpty()) {
             throw new IllegalArgumentException("No services configured");
         }

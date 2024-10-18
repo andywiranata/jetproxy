@@ -52,7 +52,7 @@ public class InMemoryMetricsListener implements MetricsListener {
     @Override
     public void onProxyPathUsed(String path, int statusCode, long size) {
         metrics.computeIfAbsent(path, k -> new MetricData()).increment(statusCode);
-        logger.info("Stats metric {} 2xx:{} 4xx:{} 5xx:{}",
+        logger.info("Metric Stats -> {} -> 2xx:{} 4xx:{} 5xx:{}",
                 path,
                 metrics.get(path).success2xx,
                 metrics.get(path).clientError4xx,
