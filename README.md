@@ -11,7 +11,10 @@ By automatically discovering services and adjusting routes, this reverse proxy s
 - **Dynamic Routing**: Automatically route traffic to microservices based on service discovery.
 - **HTTP Caching**: Cache HTTP responses to reduce latency and improve performance.
 - **Statistics**: Collect and display metrics for monitoring traffic and performance.
+- **Basic Auth**
+- **Sticky Session**
 - **Rate Limiter**: Protect your services by limiting the number of requests per client.
+- **Docker up and running**, externalize config
 
 ## Tech Stack
 
