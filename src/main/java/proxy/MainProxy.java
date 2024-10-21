@@ -26,8 +26,8 @@ public class MainProxy {
         context.setContextPath("/");
         // Set up proxies
         SetupProxyHolder proxyService = new SetupProxyHolder(appContext.getConfig());
-        proxyService.setupProxies(context);
-        server.setHandler(context);
+
+        proxyService.setupProxies(server, context);
 
         context.addServlet(HealthCheckServlet.class, "/healthcheck");
         context.addServlet(StatisticServlet.class, "/stats");

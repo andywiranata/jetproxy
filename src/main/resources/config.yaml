@@ -1,7 +1,8 @@
 port: 8080
 defaultTimeout: 10000
-maxCacheMemory: 50 # use MB
+maxCacheMemory: 50
 dashboard: true
+
 metrics:
   redis:
     enabled: true
@@ -15,10 +16,11 @@ metrics:
     prefix: my.prefix
   inMemory:
     enabled: true
+
 proxies:
   - path: /httpbin
     service: httpbinApi
-    middleware: ''
+    middleware: 'basicAuth:roleA'
     ttl: -1
   - path: /example
     service: exampleApi
@@ -30,22 +32,25 @@ proxies:
     ttl: -1
   - path: /products
     service: productApi
-    middleware: ''
+    middleware: 'basicAuth:roleA'
     ttl: -1
   - path: /task
     service: tasksApi
-    middleware: ''
-    ttl: 100
+    middleware: 'basicAuth:roleB'
+    ttl: 1000
 services:
   - name: tasksApi
     url: http://localhost:5173/template/1on1-meeting-agenda/tasks.json
     methods: ['GET', 'POST', 'PUT']
+    role: userA
   - name: productApi
     url: https://dummyjson.com/products
     methods: ['GET']
+    role: userA
   - name: googleApi
     url: http://www.google.com
     methods: ['GET', 'POST', 'PUT']
+    role: userB
   - name: exampleApi
     url: http://example.com
     methods: ['GET', 'POST', 'PUT']
@@ -53,3 +58,5 @@ services:
     url: http://httpbin.org
     methods: ['GET', 'POST', 'PUT']
 
+realmPath: src/main/resources/realm.properties
+realmName: MyName
