@@ -10,6 +10,8 @@ public class AppConfig {
     private MetricsConfig metrics;
     private List<Proxy> proxies;
     private List<Service> services;
+    private String realmPath;
+    private String realmName;
 
     // Getters and setters
     public int getPort() {
@@ -113,6 +115,7 @@ public class AppConfig {
         private String name;
         private String url;
         private List<String> methods;
+        private String role;
 
         // Getters and setters
         public String getName() {
@@ -137,6 +140,14 @@ public class AppConfig {
 
         public void setMethods(List<String> methods) {
             this.methods = methods;
+        }
+
+        public String getRole() {
+            return role;
+        }
+
+        public void setRole(String role) {
+            this.role = role;
         }
     }
 
@@ -262,5 +273,21 @@ public class AppConfig {
                 this.enabled = enabled;
             }
         }
+    }
+
+    public String getRealmPath() {
+        return realmPath;
+    }
+
+    public void setRealmPath(String realmPath) {
+        this.realmPath = realmPath;
+    }
+
+    public String getRealmName() {
+        return realmName;
+    }
+
+    public void setRealmName(String realmName) {
+        this.realmName = realmName;
     }
 }
