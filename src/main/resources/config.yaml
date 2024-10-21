@@ -1,7 +1,9 @@
+appName: API-PROXY
 port: 8080
 defaultTimeout: 10000
 maxCacheMemory: 50
 dashboard: true
+rootPath: /
 
 metrics:
   redis:
@@ -60,3 +62,11 @@ services:
 
 realmPath: src/main/resources/realm.properties
 realmName: MyName
+
+users:
+  - username: userA
+    password: passwordA
+    role: roleA
+  - username: userB
+    password: passwordB
+    role: roleB

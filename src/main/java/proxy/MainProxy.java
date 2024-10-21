@@ -23,7 +23,7 @@ public class MainProxy {
 
         // Create a ServletContextHandler for managing different context paths
         ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
-        context.setContextPath("/");
+        context.setContextPath(appContext.getConfig().getRootPath());
         // Set up proxies
         SetupProxyHolder proxyService = new SetupProxyHolder(appContext.getConfig());
 
