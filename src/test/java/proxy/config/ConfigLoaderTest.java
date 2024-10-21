@@ -2,7 +2,9 @@ package proxy.config;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
 import org.yaml.snakeyaml.Yaml;
 import proxy.context.AppConfig;
 import proxy.context.ConfigLoader;
@@ -17,14 +19,15 @@ import static org.mockito.Mockito.*;
 
 class ConfigLoaderTest {
 
+    @Mock
     private Yaml yamlMock;
+    @Mock
     private AppConfig appConfigMock;
 
     @BeforeEach
     void setUp() {
         // Mock Yaml and AppConfig
-        yamlMock = Mockito.mock(Yaml.class);
-        appConfigMock = Mockito.mock(AppConfig.class);
+        MockitoAnnotations.openMocks(this);
     }
 
     @Test
@@ -51,7 +54,6 @@ class ConfigLoaderTest {
         AppConfig.Proxy proxy = new AppConfig.Proxy();
         proxy.setPath("/api");
         proxy.setService("test-service");
-        proxy.setMethods(Arrays.asList("GET", "POST"));
         List<AppConfig.Proxy> proxies = Arrays.asList(proxy);
 
         when(appConfigMock.getPort()).thenReturn(8080);
@@ -69,7 +71,7 @@ class ConfigLoaderTest {
         AppConfig config = ConfigLoader.getConfig("config.yaml");
         assertNotNull(config);
         assertEquals(8080, config.getPort());
-        assertEquals(5000, config.getDefaultTimeout());
+        assertEquals(10000, config.getDefaultTimeout());
         assertFalse(config.getProxies().isEmpty());
         assertFalse(config.getServices().isEmpty());
 

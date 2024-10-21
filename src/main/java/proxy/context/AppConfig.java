@@ -14,7 +14,7 @@ public class AppConfig {
     private int defaultTimeout;
     private int maxCacheMemory; // in MB
     private boolean dashboard;
-    private MetricsConfig metrics;
+    private Storage storage;
     private List<Proxy> proxies;
     private List<Service> services;
     private String realmPath;
@@ -46,7 +46,7 @@ public class AppConfig {
     @Getter
     @Setter
     @ToString
-    public static class MetricsConfig {
+    public static class Storage {
         private RedisConfig redis;
         private StatsdConfig statsd;
         private InMemoryConfig inMemory;

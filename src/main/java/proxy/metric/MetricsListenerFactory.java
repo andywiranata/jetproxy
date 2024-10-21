@@ -14,9 +14,9 @@ public class MetricsListenerFactory {
 
     public static MetricsListener createMetricsListener(AppConfig config) {
         List<MetricsListener> listeners = new ArrayList<>();
-        AppConfig.MetricsConfig.InMemoryConfig inMemoryConfig = config.getMetrics().getInMemory();
-        AppConfig.MetricsConfig.RedisConfig redisConfig = config.getMetrics().getRedis();
-        AppConfig.MetricsConfig.StatsdConfig statsdConfig = config.getMetrics().getStatsd();
+        AppConfig.Storage.InMemoryConfig inMemoryConfig = config.getStorage().getInMemory();
+        AppConfig.Storage.RedisConfig redisConfig = config.getStorage().getRedis();
+        AppConfig.Storage.StatsdConfig statsdConfig = config.getStorage().getStatsd();
 
         if (inMemoryConfig.isEnabled()) {
             listeners.add(new InMemoryMetricsListener());

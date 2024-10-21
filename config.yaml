@@ -20,6 +20,22 @@ storage:
     enabled: true
 
 proxies:
+  - path: /httpbin
+    service: httpbinApi
+    middleware: 'basicAuth:roleA'
+    ttl: -1
+  - path: /example
+    service: exampleApi
+    middleware: ''
+    ttl: -1
+  - path: /google
+    service: googleApi
+    middleware: ''
+    ttl: -1
+  - path: /products
+    service: productApi
+    middleware: 'basicAuth:roleA'
+    ttl: -1
   - path: /task
     service: tasksApi
     middleware: 'basicAuth:roleB'

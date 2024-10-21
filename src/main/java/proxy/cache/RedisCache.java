@@ -7,7 +7,7 @@ public class RedisCache implements Cache {
     private final JedisPool jedisPool;
 
     public RedisCache(AppConfig config) {
-        AppConfig.MetricsConfig.RedisConfig redisConfig = config.getMetrics().getRedis();
+        AppConfig.Storage.RedisConfig redisConfig = config.getStorage().getRedis();
         this.jedisPool = new JedisPool(
                 redisConfig.getHost(),
                 redisConfig.getPort());

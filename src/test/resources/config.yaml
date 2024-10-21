@@ -1,8 +1,11 @@
+appName: API-PROXY
 port: 8080
-defaultTimeout: 5000
-maxCacheMemory: 50 # use MB
+defaultTimeout: 10000
+maxCacheMemory: 50
 dashboard: true
-metrics:
+rootPath: /
+
+dataLayer:
   redis:
     enabled: true
     host: localhost
@@ -15,41 +18,55 @@ metrics:
     prefix: my.prefix
   inMemory:
     enabled: true
+
 proxies:
   - path: /httpbin
     service: httpbinApi
-    middleware: ''
+    middleware: 'basicAuth:roleA'
     ttl: -1
-    methods: ['GET', 'POST', 'PUT']
   - path: /example
     service: exampleApi
     middleware: ''
     ttl: -1
-    methods: ['GET', 'POST', 'PUT']
   - path: /google
     service: googleApi
     middleware: ''
     ttl: -1
-    methods: ['GET', 'POST', 'PUT']
   - path: /products
     service: productApi
-    middleware: ''
+    middleware: 'basicAuth:roleA'
     ttl: -1
-    methods: ['GET', 'POST', 'PUT']
   - path: /task
     service: tasksApi
-    middleware: ''
-    ttl: 100
-    methods: ['GET', 'POST', 'PUT']
+    middleware: 'basicAuth:roleB'
+    ttl: 1000
 services:
   - name: tasksApi
     url: http://localhost:5173/template/1on1-meeting-agenda/tasks.json
+    methods: ['GET', 'POST', 'PUT']
+    role: userA
   - name: productApi
     url: https://dummyjson.com/products
+    methods: ['GET']
+    role: userA
   - name: googleApi
     url: http://www.google.com
+    methods: ['GET', 'POST', 'PUT']
+    role: userB
   - name: exampleApi
     url: http://example.com
+    methods: ['GET', 'POST', 'PUT']
   - name: httpbinApi
     url: http://httpbin.org
+    methods: ['GET', 'POST', 'PUT']
 
+realmPath: src/main/resources/realm.properties
+realmName: MyName
+
+users:
+  - username: userA
+    password: passwordA
+    role: roleA
+  - username: userB
+    password: passwordB
+    role: roleB

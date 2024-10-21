@@ -60,6 +60,10 @@ public class AppContext {
             return this;
         }
         public Builder withPathConfig(String pathConfigYaml) {
+            if (pathConfigYaml.isEmpty()) {
+                this.pathConfigYaml = "config.yaml";
+                return this;
+            }
             this.pathConfigYaml = pathConfigYaml;
             return this;
         }

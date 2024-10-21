@@ -13,10 +13,12 @@ public class MainProxy {
     private static final Logger logger = LoggerFactory.getLogger(MainProxy.class);
 
     public void start() throws Exception {
+        String externalConfigPath = System.getenv("APP_CONFIG_PATH");
+
         AppContext appContext = new AppContext.Builder()
                 .withMaxSize(10000) // Optional: Set max size
                 .withMaxHeapMemory(50 * 1024 * 1024) // Optional: Set max heap memory
-                .withPathConfig("config.yaml")
+                .withPathConfig(externalConfigPath)
                 .build();
 
         Server server = new Server(AppContext.getInstance().getConfig().getPort());

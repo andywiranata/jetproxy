@@ -1,7 +1,12 @@
 package proxy.context;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
+import proxy.service.holder.ProxyHolder;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
@@ -9,7 +14,7 @@ import java.util.List;
 import java.util.Map;
 
 public class ConfigLoader {
-
+    private static final Logger logger = LoggerFactory.getLogger(ConfigLoader.class);
     private static AppConfig config;
 
     ConfigLoader() {}
@@ -27,13 +32,33 @@ public class ConfigLoader {
 
     public static void loadConfig(String ymlPath) throws IOException {
         Yaml yaml = new Yaml();
-        try (InputStream inputStream = ConfigLoader.class.getClassLoader().getResourceAsStream(ymlPath)) {
-            if (inputStream == null) {
-                throw new RuntimeException("config.yaml not found in the resources folder");
+        InputStream inputStream = null;
+
+        // First try to load the file from the external location using FileInputStream
+        try {
+            final InputStream externalInputStream = new FileInputStream(ymlPath);
+            logger.info("Loaded config from external file: {}", ymlPath);
+            inputStream = externalInputStream;  // Only set once, after successful external load
+        } catch (FileNotFoundException e) {
+            logger.warn("config.yaml not found in external location: {}", ymlPath);
+
+            // If file is not found, fallback to loading from the classpath
+            final InputStream resourceInputStream = ConfigLoader.class.getClassLoader().getResourceAsStream(ymlPath);
+            if (resourceInputStream == null) {
+                throw new RuntimeException("config.yaml not found in the classpath or external path");
+            } else {
+                logger.info("Loaded config from classpath resource: {}", ymlPath);
+                inputStream = resourceInputStream;  // Only set once, after successful classpath load
             }
-            config = yaml.loadAs(inputStream, AppConfig.class);
+        }
+
+        // Load the YAML config and process it
+        try (final InputStream finalInputStream = inputStream) {  // Mark inputStream as final
+            config = yaml.loadAs(finalInputStream, AppConfig.class);
             validateConfig(config);  // Validate the loaded config
             createServiceMap(config.getServices());
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to load and parse config.yaml", e);
         }
     }
 
