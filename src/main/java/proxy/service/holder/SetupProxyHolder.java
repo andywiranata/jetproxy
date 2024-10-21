@@ -1,22 +1,21 @@
 package proxy.service.holder;
 
+import org.eclipse.jetty.security.*;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
+import org.eclipse.jetty.util.security.Credential;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import proxy.context.AppConfig;
 import proxy.context.AppContext;
 import proxy.context.ConfigLoader;
 
-import org.eclipse.jetty.security.ConstraintSecurityHandler;
-import org.eclipse.jetty.security.HashLoginService;
 import org.eclipse.jetty.security.authentication.BasicAuthenticator;
 import org.eclipse.jetty.util.security.Constraint;
-import org.eclipse.jetty.security.ConstraintMapping;
-import org.eclipse.jetty.security.LoginService;
 
 import java.util.List;
+import java.util.Map;
 
 public class SetupProxyHolder {
     private static final String PROXY_TO = "proxyTo";
@@ -74,12 +73,22 @@ public class SetupProxyHolder {
         securityHandler.setAuthenticator(new BasicAuthenticator());
 
         // Use a PropertyFileLoginModule and point to the realm.properties
-        LoginService loginService = new HashLoginService(
-                config.getRealmName(),
-                config.getRealmPath());
-        securityHandler.setLoginService(loginService);
+        HashLoginService loginService = new HashLoginService(config.getRealmName());
 
+        UserStore userStore = new UserStore(); // Use UserStore to manage users
+
+        List<AppConfig.User> users = config.getUsers();
+        for (AppConfig.User user : users) {
+            String username = user.getUsername();
+            String password = user.getPassword();
+            String role = user.getRole();
+            // Add users and roles programmatically to UserStore
+            userStore.addUser(username, Credential.getCredential(password), new String[]{role});
+        }
+
+        loginService.setUserStore(userStore);
         // Define constraint for /product for userA (roleA)
+        securityHandler.setLoginService(loginService);
 
         return securityHandler;
     }
