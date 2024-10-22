@@ -34,6 +34,7 @@ proxies:
     ttl: -1
   - path: /products
     service: productApi
+    rule: "(Header('Content-Type', 'application/json') && HeaderPrefix('User-Agent', 'Mozilla')) || HeaderRegex('X-Custom-Header', '^[a-zA-Z0-9]{10}$')"
     middleware: 'basicAuth:roleA'
     ttl: -1
   - path: /task
@@ -65,6 +66,9 @@ realmPath: src/main/resources/realm.properties
 realmName: MyName
 
 users:
+  - username: admin
+    password: admin
+    role: administrator
   - username: userA
     password: passwordA
     role: roleA

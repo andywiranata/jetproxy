@@ -43,7 +43,8 @@ public class ConfigLoader {
             logger.warn("config.yaml not found in external location: {}", ymlPath);
 
             // If file is not found, fallback to loading from the classpath
-            final InputStream resourceInputStream = ConfigLoader.class.getClassLoader().getResourceAsStream(ymlPath);
+            final InputStream resourceInputStream = ConfigLoader.class.getClassLoader()
+                    .getResourceAsStream("config.yaml");
             if (resourceInputStream == null) {
                 throw new RuntimeException("config.yaml not found in the classpath or external path");
             } else {
@@ -58,6 +59,7 @@ public class ConfigLoader {
             validateConfig(config);  // Validate the loaded config
             createServiceMap(config.getServices());
         } catch (Exception e) {
+            logger.error("Failed to load and parse config.yaml", e.getMessage());
             throw new RuntimeException("Failed to load and parse config.yaml", e);
         }
     }

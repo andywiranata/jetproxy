@@ -9,6 +9,9 @@ import proxy.service.HealthCheckServlet;
 import proxy.service.holder.SetupProxyHolder;
 import proxy.service.StatisticServlet;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 public class MainProxy {
     private static final Logger logger = LoggerFactory.getLogger(MainProxy.class);
 
@@ -21,7 +24,9 @@ public class MainProxy {
                 .withPathConfig(externalConfigPath)
                 .build();
 
+
         Server server = new Server(AppContext.getInstance().getConfig().getPort());
+        server.addBean(Executors.newVirtualThreadPerTaskExecutor());
 
         // Create a ServletContextHandler for managing different context paths
         ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);

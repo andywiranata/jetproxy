@@ -31,6 +31,7 @@ public class AppConfig {
         private String service;
         private String middleware;
         private long ttl;
+        private String rule = "";
     }
 
     @Getter

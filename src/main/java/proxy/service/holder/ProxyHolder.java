@@ -8,21 +8,32 @@ import org.eclipse.jetty.util.Callback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import proxy.context.AppConfig;
+import proxy.rule.Rule;
+import proxy.rule.RuleContext;
+import proxy.rule.RuleFactory;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 
 public class ProxyHolder extends AbstractProxyHandler {
     private static final Logger logger = LoggerFactory.getLogger(ProxyHolder.class);
 
-    public ProxyHolder(AppConfig.Service serviceName, AppConfig.Proxy proxyRule) {
+    public ProxyHolder(AppConfig.Service serviceName,
+                       AppConfig.Proxy proxyRule) {
         this.configService = serviceName;
         this.proxyRule = proxyRule;
+        this.ruleContext = RuleFactory.createRulesFromString(proxyRule.getRule());
     }
 
     @Override
     protected void service(HttpServletRequest request, HttpServletResponse response) {
+        if (!ruleContext.evaluate(request)) {
+            handleRuleNotAllowed(response);
+            return;
+        }
+
         if (isMethodNotAllowed(request)) {
             handleMethodNotAllowed(response);
             return;
@@ -37,7 +48,7 @@ public class ProxyHolder extends AbstractProxyHandler {
             super.service(request, response);
             // Optionally cache the response here after processing
         } catch (ServletException | IOException e) {
-            logger.error("Error occured {}", e.getMessage());
+            logger.error("Error occurred {}", e.getMessage());
             handleError(response, e);
         }
     }

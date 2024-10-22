@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import proxy.context.AppConfig;
 import proxy.context.AppContext;
+import proxy.rule.RuleContext;
 import proxy.util.RequestUtils;
 
 import java.io.*;
@@ -23,6 +24,7 @@ public abstract class AbstractProxyHandler extends ProxyServlet.Transparent {
     private static final Logger logger = LoggerFactory.getLogger(AbstractProxyHandler.class);
     protected AppConfig.Service configService;
     protected AppConfig.Proxy proxyRule;
+    protected RuleContext ruleContext;
 
     @Override
     protected void onProxyResponseSuccess(
@@ -138,6 +140,11 @@ public abstract class AbstractProxyHandler extends ProxyServlet.Transparent {
     protected void handleMethodNotAllowed(HttpServletResponse response) {
         logger.warn("Method not allowed processing request {}", this.configService.getName());
         response.setStatus(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
+    }
+
+    protected void handleRuleNotAllowed(HttpServletResponse response) {
+        logger.warn("Rules not allowed processing request {} {}", this.configService.getName(), this.proxyRule.getRule());
+        response.setStatus(HttpServletResponse.SC_NOT_ACCEPTABLE);
     }
 
 

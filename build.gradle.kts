@@ -24,6 +24,7 @@ dependencies {
     // SnakeYAML for parsing YAML files
     implementation("org.yaml:snakeyaml:2.0")
 
+    implementation("org.apache.commons:commons-jexl3:3.2.1")
     // SLF4J API
     implementation("org.slf4j:slf4j-api:2.0.7")
     implementation("ch.qos.logback:logback-classic:1.4.11")
