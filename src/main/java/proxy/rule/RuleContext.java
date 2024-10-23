@@ -16,7 +16,7 @@ public class RuleContext {
     // Evaluates the rules against the request with AND/OR logic
     public boolean evaluate(HttpServletRequest request) {
         if (rules.isEmpty()) {
-            return false;
+            return true;
         }
 
         boolean result = rules.get(0).evaluate(request);

@@ -60,6 +60,9 @@ public class AppConfig {
             private String host;
             private int port;
             private int database;
+            private int maxTotal = 128;
+            private int maxIdle = 64;
+            private int minIdle = 16;
         }
 
         @Getter
@@ -77,6 +80,8 @@ public class AppConfig {
         @ToString
         public static class InMemoryConfig {
             private boolean enabled;
+            private long maxMemory = 50; // MB
+            private int size = 1000;
         }
     }
 

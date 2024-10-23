@@ -3,14 +3,11 @@ package proxy.cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.management.ManagementFactory;
-import java.lang.management.MemoryMXBean;
-import java.lang.management.MemoryUsage;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
 
-public class LRUCacheWithTTL {
+public class LRUCacheWithTTL implements Cache {
     private static final Logger logger = LoggerFactory.getLogger(LRUCacheWithTTL.class);
 
     private final long maxHeapMemory; // Maximum heap memory in bytes
@@ -70,7 +67,7 @@ public class LRUCacheWithTTL {
             lock.unlock();
         }
     }
-
+    @Override
     public void put(String key, String value, long ttl) {
         lock.lock();
         try {

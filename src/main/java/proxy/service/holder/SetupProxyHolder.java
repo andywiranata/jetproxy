@@ -7,6 +7,8 @@ import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.util.security.Credential;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import proxy.auth.AuthProvider;
+import proxy.auth.AuthProviderFactory;
 import proxy.context.AppConfig;
 import proxy.context.AppContext;
 import proxy.context.ConfigLoader;
@@ -65,7 +67,6 @@ public class SetupProxyHolder {
         }
     }
 
-    // Create the Security Handler for Basic Authentication using PropertyFileLoginModule
     protected ConstraintSecurityHandler createBasicAuthSecurityHandler() {
         AppConfig config = AppContext.getInstance().getConfig();
         // Create and configure the security handler
@@ -93,7 +94,6 @@ public class SetupProxyHolder {
         return securityHandler;
     }
 
-    // Helper method to create constraint mappings for each role and path
     protected ConstraintMapping createConstraintMapping(String pathSpec, String role) {
         // Create a constraint that requires authentication for a specific role
         Constraint constraint = new Constraint();

@@ -1,66 +1,53 @@
 package proxy.context;
 
-import proxy.cache.LRUCacheWithTTL;
-import proxy.cache.RedisCache;
+import lombok.Getter;
+import proxy.cache.Cache;
+import proxy.cache.CacheFactory;
+import proxy.cache.RedisPoolManager;
 import proxy.metric.MetricsListener;
 import proxy.metric.MetricsListenerFactory;
 
 import java.util.Map;
 
+@Getter
 public class AppContext {
-    private static AppContext instance;
+    // Volatile keyword ensures visibility of changes to variables across threads
+    private static volatile AppContext instance;
     private final AppConfig config;
-    private final LRUCacheWithTTL cache;
-    private final RedisCache redisCache;
+    private final Cache cache;
     private final MetricsListener metricsListener;
 
-    private AppContext(Builder builder)  {
-        // initialize instance
+    private AppContext(Builder builder) {
+
+        // Initialize instance with config, cache, and metrics listener
         this.config = ConfigLoader.getConfig(builder.pathConfigYaml);
-        this.cache = new LRUCacheWithTTL(builder.maxSize, builder.maxHeapMemory);
-        this.redisCache = new RedisCache(this.config);
+        RedisPoolManager.initializePool(this.config.getStorage().getRedis());
+        this.cache = CacheFactory.createCache(this.config);
         this.metricsListener = MetricsListenerFactory.createMetricsListener(this.config);
     }
 
+    // Thread-safe singleton implementation using double-checked locking
     public static AppContext getInstance() {
-        if (instance == null) {
-            instance = new Builder().build(); // Create default instance if not already created
+        if (instance == null) { // First check (no locking)
+            synchronized (AppContext.class) { // Synchronize only on the first initialization
+                if (instance == null) { // Second check (after acquiring lock)
+                    instance = new Builder().build(); // Create the instance if not already created
+                }
+            }
         }
         return instance;
-    }
-
-    public MetricsListener getMetricsListener() {
-        return metricsListener;
-    }
-
-    public AppConfig getConfig() {
-        return config;
     }
 
     public Map<String, AppConfig.Service> getServiceMap() {
         return ConfigLoader.getServiceMap();
     }
 
-    public LRUCacheWithTTL getCache() {
-        return cache;
-    }
-
     // Builder class
     public static class Builder {
-        private int maxSize = 10000; // Default size
-        private long maxHeapMemory = 50 * 1024 * 1024; // Default max heap memory (50 MB)
         private String pathConfigYaml;
-        public Builder withMaxSize(int maxSize) {
-            this.maxSize = maxSize;
-            return this;
-        }
 
-        public Builder withMaxHeapMemory(long maxHeapMemory) {
-            this.maxHeapMemory = maxHeapMemory;
-            return this;
-        }
         public Builder withPathConfig(String pathConfigYaml) {
-            if (pathConfigYaml.isEmpty()) {
+            if (pathConfigYaml == null || pathConfigYaml.isEmpty()) {
                 this.pathConfigYaml = "config.yaml";
                 return this;
             }
@@ -68,8 +55,7 @@ public class AppContext {
             return this;
         }
 
-
-        public AppContext build()  {
+        public AppContext build() {
             return new AppContext(this);
         }
     }

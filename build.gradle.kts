@@ -1,10 +1,19 @@
 plugins {
+    id("application")
     id("java")
     id("io.freefair.lombok") version "8.0.1" // or the latest version
+    id("maven-publish")
+    id("com.github.johnrengelman.shadow") version "7.1.2"
 }
 
-group = "org.example"
-version = "1.0-SNAPSHOT"
+//group = "me.andywiranata.open"
+version = "1.0"
+
+java {
+//    withJavadocJar()
+//    withSourcesJar()
+}
+
 
 repositories {
     mavenCentral()
@@ -34,10 +43,10 @@ dependencies {
     implementation("redis.clients:jedis:5.2.0")
     implementation("com.timgroup:java-statsd-client:3.1.0")
 
-    implementation("org.projectlombok:lombok:1.18.30")
-    annotationProcessor("org.projectlombok:lombok:1.18.30")
+    implementation("org.projectlombok:lombok:1.18.34")
+    annotationProcessor("org.projectlombok:lombok:1.18.34")
 
-    testAnnotationProcessor("org.projectlombok:lombok:1.18.30")
+    testAnnotationProcessor("org.projectlombok:lombok:1.18.34")
     testImplementation(platform("org.junit:junit-bom:5.9.1"))
     testImplementation("org.junit.jupiter:junit-jupiter")
     testImplementation("org.mockito:mockito-core:5.4.0") // Use the latest version
@@ -52,6 +61,20 @@ tasks.test {
 
 java {
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(21)) // Adjust based on your project's JDK
+        languageVersion.set(JavaLanguageVersion.of(22)) // Adjust based on your project's JDK
     }
+}
+
+tasks.jar {
+    manifest {
+        attributes["Main-Class"] = "proxy.MainProxy" // Replace with your main class
+    }
+}
+
+tasks.named("delombok") {
+    enabled = false
+}
+application {
+    // Replace with your actual main class package name
+    mainClass.set("proxy.MainProxy")
 }

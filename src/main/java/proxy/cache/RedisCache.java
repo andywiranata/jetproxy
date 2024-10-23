@@ -7,10 +7,7 @@ public class RedisCache implements Cache {
     private final JedisPool jedisPool;
 
     public RedisCache(AppConfig config) {
-        AppConfig.Storage.RedisConfig redisConfig = config.getStorage().getRedis();
-        this.jedisPool = new JedisPool(
-                redisConfig.getHost(),
-                redisConfig.getPort());
+        this.jedisPool = RedisPoolManager.getPool();
     }
 
     @Override
@@ -21,9 +18,9 @@ public class RedisCache implements Cache {
     }
 
     @Override
-    public void put(String key, String value) {
+    public void put(String key, String value, long ttl) {
         try (Jedis jedis = jedisPool.getResource()) {
-            jedis.setex(String.valueOf(key), -1, value);
+            jedis.setex(String.valueOf(key), ttl / 1000, value);
         }
     }
 }

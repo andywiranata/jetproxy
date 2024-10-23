@@ -7,10 +7,13 @@ rootPath: /
 
 storage:
   redis:
-    enabled: false
+    enabled: true
     host: localhost
     port: 6379
     database: 1
+    maxTotal: 128
+    maxIdle: 64
+    minIdle: 16
   statsd:
     enabled: false
     host: localhost
@@ -18,6 +21,8 @@ storage:
     prefix: my.prefix
   inMemory:
     enabled: true
+    maxMemory: 50 # MB
+    size: 10000
 
 proxies:
   - path: /httpbin
@@ -40,7 +45,7 @@ proxies:
   - path: /task
     service: tasksApi
     middleware: 'basicAuth:roleB'
-    ttl: 1000
+    ttl: 10000
 
 services:
   - name: tasksApi
