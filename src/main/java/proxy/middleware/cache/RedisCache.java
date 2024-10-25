@@ -6,7 +6,7 @@ import redis.clients.jedis.JedisPool;
 public class RedisCache implements Cache {
     private final JedisPool jedisPool;
 
-    public RedisCache(AppConfig config) {
+    public RedisCache() {
         this.jedisPool = RedisPoolManager.getPool();
     }
 

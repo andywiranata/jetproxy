@@ -15,7 +15,7 @@ public class BasicAuthProvider implements AuthProvider {
 
     @Override
     public ConstraintSecurityHandler createSecurityHandler(String whitelistPath, String roles) {
-        AppConfig config = AppContext.getInstance().getConfig();
+        AppConfig config = AppContext.get().getConfig();
         ConstraintSecurityHandler securityHandler = new ConstraintSecurityHandler();
         securityHandler.setAuthenticator(new BasicAuthenticator());
 

@@ -9,5 +9,8 @@ public enum RuleType {
     QUERY_REGEX,     // Regex match for query parameter
     PATH,            // Exact match for path
     PATH_PREFIX,     // Prefix match for path
-    PATH_REGEX       // Regex match for path
+    PATH_REGEX,       // Regex match for path
+    HOST,
+    HOST_PREFIX,
+    HOST_REGEX
 }

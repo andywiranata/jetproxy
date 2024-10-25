@@ -12,7 +12,7 @@ public class CacheFactory {
         AppConfig.Storage.RedisConfig redisConfig = config.getStorage().getRedis();
 
         if (redisConfig.isEnabled()) {
-            return new RedisCache(config);
+            return new RedisCache();
         }
 
         return new LRUCacheWithTTL(
