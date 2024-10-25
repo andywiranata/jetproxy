@@ -1,4 +1,4 @@
-package proxy.cache;
+package proxy.middleware.cache;
 
 public interface Cache {
     String get(String key);

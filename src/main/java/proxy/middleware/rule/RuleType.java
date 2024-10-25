@@ -1,4 +1,4 @@
-package proxy.rule;
+package proxy.middleware.rule;
 
 public enum RuleType {
     HEADER,          // Exact match for header value

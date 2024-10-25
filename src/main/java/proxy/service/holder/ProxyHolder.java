@@ -8,14 +8,11 @@ import org.eclipse.jetty.util.Callback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import proxy.context.AppConfig;
-import proxy.rule.Rule;
-import proxy.rule.RuleContext;
-import proxy.rule.RuleFactory;
+import proxy.middleware.rule.RuleFactory;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.List;
 
 public class ProxyHolder extends AbstractProxyHandler {
     private static final Logger logger = LoggerFactory.getLogger(ProxyHolder.class);

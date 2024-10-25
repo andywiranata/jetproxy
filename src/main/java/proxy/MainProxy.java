@@ -5,6 +5,7 @@ import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import proxy.context.AppContext;
+import proxy.service.AppShutdownListener;
 import proxy.service.HealthCheckServlet;
 import proxy.service.holder.SetupProxyHolder;
 import proxy.service.StatisticServlet;
@@ -21,11 +22,15 @@ public class MainProxy {
                 .withPathConfig(externalConfigPath)
                 .build();
 
-        Server server = new Server(AppContext.getInstance().getConfig().getPort());
+        Server server = new Server(AppContext.get().getConfig().getPort());
         server.addBean(Executors.newVirtualThreadPerTaskExecutor());
 
         // Create a ServletContextHandler for managing different context paths
         ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
+
+        // Register the AppShutdownListener programmatically
+        context.addEventListener(new AppShutdownListener());
+
         context.setContextPath(appContext.getConfig().getRootPath());
         // Set up proxies
         SetupProxyHolder proxyService = new SetupProxyHolder(appContext.getConfig());
@@ -37,7 +42,9 @@ public class MainProxy {
 
         server.start();
         logger.info("Proxy server started on port {}",  appContext.getConfig().getPort());
+
         server.join();
+
     }
 
     public static void main(String[] args) throws Exception {

@@ -1,4 +1,4 @@
-package proxy.metric;
+package proxy.middleware.metric;
 
 import redis.clients.jedis.Jedis;
 

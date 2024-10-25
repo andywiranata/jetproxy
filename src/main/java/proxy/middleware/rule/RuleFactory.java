@@ -1,4 +1,4 @@
-package proxy.rule;
+package proxy.middleware.rule;
 
 import java.util.ArrayList;
 import java.util.List;

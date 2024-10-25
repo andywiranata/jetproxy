@@ -1,11 +1,11 @@
 package proxy.context;
 
 import lombok.Getter;
-import proxy.cache.Cache;
-import proxy.cache.CacheFactory;
-import proxy.cache.RedisPoolManager;
-import proxy.metric.MetricsListener;
-import proxy.metric.MetricsListenerFactory;
+import proxy.middleware.cache.Cache;
+import proxy.middleware.cache.CacheFactory;
+import proxy.middleware.cache.RedisPoolManager;
+import proxy.middleware.metric.MetricsListener;
+import proxy.middleware.metric.MetricsListenerFactory;
 
 import java.util.Map;
 
@@ -27,7 +27,7 @@ public class AppContext {
     }
 
     // Thread-safe singleton implementation using double-checked locking
-    public static AppContext getInstance() {
+    public static AppContext get() {
         if (instance == null) { // First check (no locking)
             synchronized (AppContext.class) { // Synchronize only on the first initialization
                 if (instance == null) { // Second check (after acquiring lock)

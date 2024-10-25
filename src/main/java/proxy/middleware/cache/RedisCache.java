@@ -1,5 +1,4 @@
-package proxy.cache;
-import proxy.context.AppConfig;
+package proxy.middleware.cache;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 

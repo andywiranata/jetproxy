@@ -1,4 +1,4 @@
-package proxy.auth;
+package proxy.middleware.auth;
 
 public class AuthProviderFactory {
 

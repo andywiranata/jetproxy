@@ -10,7 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import proxy.context.AppConfig;
 import proxy.context.AppContext;
-import proxy.rule.RuleContext;
+import proxy.middleware.rule.RuleContext;
 import proxy.util.RequestUtils;
 
 import java.io.*;
@@ -33,11 +33,12 @@ public abstract class AbstractProxyHandler extends ProxyServlet.Transparent {
             Response serverResponse) {
         // Get the path from the clientRequest
         String path = clientRequest.getRequestURI();
-        long contentSize = serverResponse.getHeaders().getLongField(HttpHeader.CONTENT_LENGTH.asString());
+        long contentSize = serverResponse
+                .getHeaders().getLongField(HttpHeader.CONTENT_LENGTH.asString());
         int statusCode = serverResponse.getStatus();
         logger.info("Proxy from -> {} -> to {}", path, this.configService.getUrl());
         AppContext
-                .getInstance()
+                .get()
                 .getMetricsListener()
                 .onProxyPathUsed(path,
                         statusCode,
@@ -60,7 +61,7 @@ public abstract class AbstractProxyHandler extends ProxyServlet.Transparent {
         String path = RequestUtils.getFullPath(request);
         String method = request.getMethod();
         return AppContext
-                .getInstance()
+                .get()
                 .getCache()
                 .get(String.format("%s__%s",
                         method, path));
@@ -74,7 +75,7 @@ public abstract class AbstractProxyHandler extends ProxyServlet.Transparent {
         String path = RequestUtils.getFullPath(request);
         String method = request.getMethod();
         AppContext
-                .getInstance()
+                .get()
                 .getCache()
                 .put(String.format("%s__%s", method, path),
                         bodyContent,

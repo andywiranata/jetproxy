@@ -7,8 +7,6 @@ import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.util.security.Credential;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import proxy.auth.AuthProvider;
-import proxy.auth.AuthProviderFactory;
 import proxy.context.AppConfig;
 import proxy.context.AppContext;
 import proxy.context.ConfigLoader;
@@ -17,7 +15,6 @@ import org.eclipse.jetty.security.authentication.BasicAuthenticator;
 import org.eclipse.jetty.util.security.Constraint;
 
 import java.util.List;
-import java.util.Map;
 
 public class SetupProxyHolder {
     private static final String PROXY_TO = "proxyTo";
@@ -68,7 +65,7 @@ public class SetupProxyHolder {
     }
 
     protected ConstraintSecurityHandler createBasicAuthSecurityHandler() {
-        AppConfig config = AppContext.getInstance().getConfig();
+        AppConfig config = AppContext.get().getConfig();
         // Create and configure the security handler
         ConstraintSecurityHandler securityHandler = new ConstraintSecurityHandler();
         securityHandler.setAuthenticator(new BasicAuthenticator());

@@ -1,4 +1,4 @@
-package proxy.cache;
+package proxy.middleware.cache;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
