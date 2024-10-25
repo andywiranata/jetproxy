@@ -1,5 +1,8 @@
 package proxy.middleware.metric;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+
 import java.util.List;
 
 public class CompositeMetricsListener implements MetricsListener {
@@ -11,9 +14,10 @@ public class CompositeMetricsListener implements MetricsListener {
     }
 
     @Override
-    public void onProxyPathUsed(String path, int statusCode, long size) {
+    public void captureMetricProxyResponse(HttpServletRequest request, HttpServletResponse response) {
         for (MetricsListener listener : listeners) {
-            listener.onProxyPathUsed(path, statusCode, size);
+            listener.captureMetricProxyResponse(request, response);
         }
     }
+
 }

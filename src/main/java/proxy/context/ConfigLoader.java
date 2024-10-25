@@ -59,6 +59,7 @@ public class ConfigLoader {
             validateConfig(config);  // Validate the loaded config
             createServiceMap(config.getServices());
         } catch (Exception e) {
+            e.printStackTrace();
             logger.error("Failed to load and parse config.yaml", e.getMessage());
             throw new RuntimeException("Failed to load and parse config.yaml", e);
         }

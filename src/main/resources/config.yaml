@@ -27,31 +27,35 @@ storage:
 proxies:
   - path: /httpbin
     service: httpbinApi
-    middleware: 'basicAuth:roleA'
     ttl: -1
   - path: /example
     service: exampleApi
-    middleware: ''
     ttl: -1
   - path: /google
     service: googleApi
-    middleware: ''
     ttl: -1
   - path: /products
     service: productApi
-    rule: "(Header('Content-Type', 'application/json') && HeaderPrefix('User-Agent', 'Mozilla')) || HeaderRegex('X-Custom-Header', '^[a-zA-Z0-9]{10}$')"
-    middleware: 'basicAuth:roleA'
+    middleware:
+      auth: 'basicAuth:roleA'
+      rule: "(Header('Content-Type', 'application/json') && HeaderPrefix('User-Agent', 'Mozilla')) || HeaderRegex('X-Custom-Header', '^[a-zA-Z0-9]{10}$')"
+      circuitBreaker:
+        enabled: true
+        failureThreshold: 50 # 50% failure rate threshold
+        slowCallThreshold: 50 # 50% slow call rate threshold
+        slowCallDuration: 2000 # 2 seconds threshold for slow calls
+        openStateDuration: 10 # 10-second wait in open state
     ttl: -1
   - path: /task
     service: tasksApi
-    middleware: 'basicAuth:roleB'
+    middleware:
+      auth: 'basicAuth:roleB'
     ttl: 10000
 
 services:
   - name: tasksApi
     url: http://localhost:5173/template/1on1-meeting-agenda/tasks.json
     methods: ['GET', 'POST', 'PUT']
-    role: userA
   - name: productApi
     url: https://dummyjson.com/products
     methods: ['GET']
@@ -59,17 +63,12 @@ services:
   - name: googleApi
     url: http://www.google.com
     methods: ['GET', 'POST', 'PUT']
-    role: userB
   - name: exampleApi
     url: http://example.com
     methods: ['GET', 'POST', 'PUT']
   - name: httpbinApi
     url: http://httpbin.org
     methods: ['GET', 'POST', 'PUT']
-
-realmPath: src/main/resources/realm.properties
-realmName: MyName
-
 users:
   - username: admin
     password: admin

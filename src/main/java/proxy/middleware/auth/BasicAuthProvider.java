@@ -19,7 +19,7 @@ public class BasicAuthProvider implements AuthProvider {
         ConstraintSecurityHandler securityHandler = new ConstraintSecurityHandler();
         securityHandler.setAuthenticator(new BasicAuthenticator());
 
-        HashLoginService loginService = new HashLoginService(config.getRealmName());
+        HashLoginService loginService = new HashLoginService("");
         UserStore userStore = new UserStore();
 
         List<AppConfig.User> users = config.getUsers();

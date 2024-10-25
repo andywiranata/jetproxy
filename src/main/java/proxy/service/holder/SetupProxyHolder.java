@@ -2,6 +2,7 @@ package proxy.service.holder;
 
 import org.eclipse.jetty.security.*;
 import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.util.security.Credential;
@@ -34,8 +35,9 @@ public class SetupProxyHolder {
             AppConfig.Service service = ConfigLoader.getServiceMap().get(proxyRule.getService());
             String targetServiceUrl = service.getUrl();
             String whitelistPath = proxyRule.getPath() + "/*";
-            String middleware = proxyRule.getMiddleware();
-            String[] middlewareParts = middleware.split(":");
+            String auhtMiddleware = proxyRule.getMiddleware() != null ?
+                    proxyRule.getMiddleware().getRule(): "";
+            String[] middlewareParts = auhtMiddleware.split(":");
             // Extract "basicAuth" and "roleA"
             String authProvider = (middlewareParts.length > 0 && middlewareParts[0] != null) ? middlewareParts[0] : "";
             String authRoles = (middlewareParts.length > 1 && middlewareParts[1] != null) ? middlewareParts[1] : "";
@@ -62,6 +64,8 @@ public class SetupProxyHolder {
 
             logger.info("Proxy added: {} -> {}", proxyRule.getPath(), targetServiceUrl);
         }
+        FilterHolder metricsFilterHolder = new FilterHolder(new MetricFilter());
+        context.addFilter(metricsFilterHolder, "/*", null);
     }
 
     protected ConstraintSecurityHandler createBasicAuthSecurityHandler() {
@@ -71,7 +75,7 @@ public class SetupProxyHolder {
         securityHandler.setAuthenticator(new BasicAuthenticator());
 
         // Use a PropertyFileLoginModule and point to the realm.properties
-        HashLoginService loginService = new HashLoginService(config.getRealmName());
+        HashLoginService loginService = new HashLoginService("");
 
         UserStore userStore = new UserStore(); // Use UserStore to manage users
 

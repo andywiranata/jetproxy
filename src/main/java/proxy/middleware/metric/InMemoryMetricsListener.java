@@ -1,65 +1,67 @@
 package proxy.middleware.metric;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+@Slf4j
 public class InMemoryMetricsListener implements MetricsListener {
-    private static final Logger logger = LoggerFactory.getLogger(InMemoryMetricsListener.class);
-    private final ConcurrentHashMap<String, MetricData> metrics = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, ConcurrentHashMap<LocalDateTime, MetricData>> metrics = new ConcurrentHashMap<>();
+
+    @Data
     public static class MetricData {
-        private final AtomicInteger success2xx = new AtomicInteger();
-        private final AtomicInteger clientError4xx = new AtomicInteger();
-        private final AtomicInteger serverError5xx = new AtomicInteger();
-        private final AtomicInteger otherCodes = new AtomicInteger();
+        private final ConcurrentHashMap<Integer, AtomicInteger> statusCodeCounters = new ConcurrentHashMap<>();
+        private final AtomicInteger hitCount = new AtomicInteger();
 
         public void increment(int statusCode) {
-            if (statusCode >= 200 && statusCode < 300) {
-                success2xx.incrementAndGet();
-            } else if (statusCode >= 400 && statusCode < 500) {
-                clientError4xx.incrementAndGet();
-            } else if (statusCode >= 500 && statusCode < 600) {
-                serverError5xx.incrementAndGet();
-            } else {
-                otherCodes.incrementAndGet();
-            }
+            statusCodeCounters.computeIfAbsent(statusCode, code -> new AtomicInteger()).incrementAndGet();
+            hitCount.incrementAndGet();
         }
 
-        public int getSuccess2xx() {
-            return success2xx.get();
-        }
-
-        public int getClientError4xx() {
-            return clientError4xx.get();
-        }
-
-        public int getServerError5xx() {
-            return serverError5xx.get();
-        }
-
-        public int getOtherCodes() {
-            return otherCodes.get();
+        public int getStatusCodeCount(int statusCode) {
+            return statusCodeCounters.getOrDefault(statusCode, new AtomicInteger(0)).get();
         }
 
         public int getTotal() {
-            return success2xx.get() + clientError4xx.get() + serverError5xx.get() + otherCodes.get();
+            return statusCodeCounters.values().stream().mapToInt(AtomicInteger::get).sum();
         }
     }
 
     @Override
-    public void onProxyPathUsed(String path, int statusCode, long size) {
-        metrics.computeIfAbsent(path, k -> new MetricData()).increment(statusCode);
-        logger.info("Metric Stats -> {} -> 2xx:{} 4xx:{} 5xx:{}",
-                path,
-                metrics.get(path).success2xx,
-                metrics.get(path).clientError4xx,
-                metrics.get(path).serverError5xx);
+    public void captureMetricProxyResponse(HttpServletRequest request, HttpServletResponse response) {
+        String path = request.getRequestURI();
+        String queryParams = request.getQueryString();
+        String fullPath = queryParams == null ? path : path + "?" + queryParams;
+        int statusCode = response.getStatus();
+
+        LocalDateTime currentHour = LocalDateTime.now().truncatedTo(ChronoUnit.HOURS);
+
+        // Record metrics for the current date and hour
+        metrics.computeIfAbsent(fullPath, k -> new ConcurrentHashMap<>())
+                .computeIfAbsent(currentHour, k -> new MetricData())
+                .increment(statusCode);
+
+        log.info("Captured response for {} at {} -> Status: {}, Total Count: {}",
+                fullPath, currentHour, statusCode, metrics.get(fullPath).get(currentHour).getTotal());
     }
 
-    // Optional: You can add a method to get the metrics data for a specific path
-    public MetricData getMetricsForPath(String path) {
-        return metrics.get(path);
+    public Map<LocalDateTime, MetricData> getMetricsForPathLast24Hours(String path) {
+        Map<LocalDateTime, MetricData> pathMetrics = metrics.get(path);
+        if (pathMetrics == null) {
+            return Map.of();
+        }
+
+        LocalDateTime cutoffTime = LocalDateTime.now().minusHours(24);
+
+        return pathMetrics.entrySet().stream()
+                .filter(entry -> entry.getKey().isAfter(cutoffTime))
+                .collect(ConcurrentHashMap::new, (map, entry) -> map.put(entry.getKey(), entry.getValue()), ConcurrentHashMap::putAll);
     }
 }

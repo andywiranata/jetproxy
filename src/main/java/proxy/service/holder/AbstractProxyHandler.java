@@ -3,13 +3,12 @@ package proxy.service.holder;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.brotli.dec.BrotliInputStream;
-import org.eclipse.jetty.client.api.Response;
-import org.eclipse.jetty.http.HttpHeader;
 import org.eclipse.jetty.proxy.ProxyServlet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import proxy.context.AppConfig;
 import proxy.context.AppContext;
+import proxy.middleware.metric.MetricsListener;
 import proxy.middleware.rule.RuleContext;
 import proxy.util.RequestUtils;
 
@@ -25,34 +24,9 @@ public abstract class AbstractProxyHandler extends ProxyServlet.Transparent {
     protected AppConfig.Service configService;
     protected AppConfig.Proxy proxyRule;
     protected RuleContext ruleContext;
+    protected MetricsListener metricsListener;
 
-    @Override
-    protected void onProxyResponseSuccess(
-            HttpServletRequest clientRequest,
-            HttpServletResponse proxyResponse,
-            Response serverResponse) {
-        // Get the path from the clientRequest
-        String path = clientRequest.getRequestURI();
-        long contentSize = serverResponse
-                .getHeaders().getLongField(HttpHeader.CONTENT_LENGTH.asString());
-        int statusCode = serverResponse.getStatus();
-        logger.info("Proxy from -> {} -> to {}", path, this.configService.getUrl());
-        AppContext
-                .get()
-                .getMetricsListener()
-                .onProxyPathUsed(path,
-                        statusCode,
-                        contentSize);
-        super.onProxyResponseSuccess(clientRequest, proxyResponse, serverResponse);
-    }
 
-    @Override
-    protected void onProxyResponseFailure(HttpServletRequest clientRequest, HttpServletResponse proxyResponse, Response serverResponse, Throwable failure) {
-        String path = clientRequest.getRequestURI();
-        logger.error("Failed proxy from -> {} -> to {}", path, this.configService.getUrl());
-        super.onProxyResponseFailure(clientRequest, proxyResponse, serverResponse, failure);
-
-    }
     // Shared logic for checking the cache
     protected String getCachedResponse(HttpServletRequest request) {
         if (!request.getMethod().equalsIgnoreCase("GET")) {
@@ -144,7 +118,8 @@ public abstract class AbstractProxyHandler extends ProxyServlet.Transparent {
     }
 
     protected void handleRuleNotAllowed(HttpServletResponse response) {
-        logger.warn("Rules not allowed processing request {} {}", this.configService.getName(), this.proxyRule.getRule());
+        logger.warn("Rules not allowed processing request {} {}", this.configService.getName(),
+                this.proxyRule.getMiddleware().getRule());
         response.setStatus(HttpServletResponse.SC_NOT_ACCEPTABLE);
     }
 

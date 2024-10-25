@@ -25,6 +25,7 @@ public class MetricsListenerFactory {
 
         if (redisConfig.isEnabled()) {
             // TODO redis implement
+            listeners.add(new RedisMetricsListener());
             logger.info("Metric Redis Config Enabled");
         }
 

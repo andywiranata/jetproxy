@@ -1,6 +1,10 @@
 package proxy.middleware.metric;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+
 public interface MetricsListener {
-    void onProxyPathUsed(String path, int statusCode, long size);
+    void captureMetricProxyResponse(
+            HttpServletRequest request, HttpServletResponse response);
 
 }

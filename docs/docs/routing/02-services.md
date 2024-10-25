@@ -27,3 +27,4 @@ services:
     methods: ['GET', 'POST']
 ```
  * *Methods* : Services enforce which HTTP methods are allowed for each backend, ensuring proper operation based on the endpoint's capabilities.
+

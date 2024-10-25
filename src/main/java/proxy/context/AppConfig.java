@@ -1,27 +1,27 @@
 package proxy.context;
 
+import io.github.resilience4j.core.lang.Nullable;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
 import java.util.List;
+import java.util.Optional;
 
 @Getter
 @Setter
 @ToString
 public class AppConfig {
+    private String appName;
     private int port;
     private int defaultTimeout;
     private int maxCacheMemory; // in MB
     private boolean dashboard;
+    private String rootPath;
     private Storage storage;
     private List<Proxy> proxies;
     private List<Service> services;
-    private String realmPath;
-    private String realmName;
     private List<User> users;
-    private String appName;
-    private String rootPath;
 
     @Getter
     @Setter
@@ -29,9 +29,28 @@ public class AppConfig {
     public static class Proxy {
         private String path;
         private String service;
-        private String middleware;
+        private Middleware middleware = null;
         private long ttl;
-        private String rule = "";
+    }
+
+    @Getter
+    @Setter
+    @ToString
+    public static class Middleware {
+        private String auth = "";                // for auth configurations, e.g., 'basicAuth:roleA'
+        private String rule = "";                // for rules configuration
+        private CircuitBreaker circuitBreaker; // optional CircuitBreaker configuration
+    }
+
+    @Getter
+    @Setter
+    @ToString
+    public static class CircuitBreaker {
+        private boolean enabled = false;            // Default: disabled
+        private int failureThreshold = 50;          // Default: 50% failure rate threshold
+        private int slowCallThreshold = 50;         // Default: 50% slow call rate threshold
+        private int slowCallDuration = 2000;        // Default: 2 seconds for slow calls
+        private int openStateDuration = 10;         // Default: 10 seconds in open state
     }
 
     @Getter
@@ -41,7 +60,7 @@ public class AppConfig {
         private String name;
         private String url;
         private List<String> methods;
-        private String role;
+        private String role; // role field for access control
     }
 
     @Getter
@@ -81,7 +100,7 @@ public class AppConfig {
         public static class InMemoryConfig {
             private boolean enabled;
             private long maxMemory = 50; // MB
-            private int size = 1000;
+            private int size = 10000; // updated to match YAML
         }
     }
 
