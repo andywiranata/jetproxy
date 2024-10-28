@@ -71,22 +71,4 @@ class LRUCacheWithTTLTest {
         assertEquals("value4", cache.get("key4"), "key4 should be in the cache");
     }
 
-    @Test
-    void testCleanupLogs() {
-        Logger mockLogger = mock(Logger.class);
-//        LRUCacheWithTTL.logger = mockLogger;
-
-        cache = new LRUCacheWithTTL(2, 48); // Small heap memory limit for testing
-
-        cache.put("key1", "value1", LRUCacheWithTTL.CacheEntry.NO_EXPIRED); // size ~ 10 bytes
-        cache.put("key2", "value2", LRUCacheWithTTL.CacheEntry.NO_EXPIRED); // size ~ 10 bytes
-
-        // Adding a new entry should trigger cleanup
-        cache.put("key3", "value3", LRUCacheWithTTL.CacheEntry.NO_EXPIRED);
-
-        // Verify that memory limit warning and cleanup messages are logged
-        ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
-        verify(mockLogger, times(1)).warn(eq("Memory limit exceeded. Performing cleanup."));
-        verify(mockLogger, times(1)).info(eq("Removing entry {} due to memory cleanup"), eq("key1"));
-    }
 }

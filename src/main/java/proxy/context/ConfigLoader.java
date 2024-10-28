@@ -65,7 +65,7 @@ public class ConfigLoader {
         }
     }
 
-    private static void createServiceMap(List<AppConfig.Service> services) {
+    public static void createServiceMap(List<AppConfig.Service> services) {
         serviceMap = new HashMap<>();
         for (AppConfig.Service service : services) {
             serviceMap.put(service.getName(), service);

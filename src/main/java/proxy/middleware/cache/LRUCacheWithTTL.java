@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class LRUCacheWithTTL implements Cache {
-    private static final Logger logger = LoggerFactory.getLogger(LRUCacheWithTTL.class);
+    public static Logger logger = LoggerFactory.getLogger(LRUCacheWithTTL.class);
 
     private final long maxHeapMemory; // Maximum heap memory in bytes
     private final LinkedHashMap<String, CacheEntry> cache;
@@ -16,7 +16,7 @@ public class LRUCacheWithTTL implements Cache {
     private long currentMemoryUsage; // Track current memory usage
 
     // Cache entry with value and timestamp
-    static class CacheEntry {
+    public static class CacheEntry {
         public static final long NO_EXPIRED = -1;
         String value;
         long timestamp;
