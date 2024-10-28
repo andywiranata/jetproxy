@@ -70,5 +70,5 @@ class LRUCacheWithTTLTest {
         assertEquals("value1", cache.get("key1"), "key1 should still be in the cache");
         assertEquals("value4", cache.get("key4"), "key4 should be in the cache");
     }
-    
+
 }
