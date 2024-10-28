@@ -48,7 +48,7 @@ public class InMemoryMetricsListener implements MetricsListener {
                 .computeIfAbsent(currentHour, k -> new MetricData())
                 .increment(statusCode);
 
-        log.info("Captured response for {} at {} -> Status: {}, Total Count: {}",
+        log.debug("Captured response for {} at {} -> Status: {}, Total Count: {}",
                 fullPath, currentHour, statusCode, metrics.get(fullPath).get(currentHour).getTotal());
     }
 

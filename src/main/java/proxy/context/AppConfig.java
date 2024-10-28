@@ -15,8 +15,8 @@ public class AppConfig {
     private String appName;
     private int port;
     private int defaultTimeout;
-    private int maxCacheMemory; // in MB
     private boolean dashboard;
+    private boolean debugMode = false;
     private String rootPath;
     private Storage storage;
     private List<Proxy> proxies;
@@ -31,6 +31,10 @@ public class AppConfig {
         private String service;
         private Middleware middleware = null;
         private long ttl;
+
+        public boolean hasMiddleware() {
+            return middleware != null;
+        }
     }
 
     @Getter
@@ -40,6 +44,9 @@ public class AppConfig {
         private String auth = "";                // for auth configurations, e.g., 'basicAuth:roleA'
         private String rule = "";                // for rules configuration
         private CircuitBreaker circuitBreaker; // optional CircuitBreaker configuration
+        public boolean hasCircuitBreaker() {
+            return circuitBreaker != null;
+        }
     }
 
     @Getter
@@ -51,6 +58,10 @@ public class AppConfig {
         private int slowCallThreshold = 50;         // Default: 50% slow call rate threshold
         private int slowCallDuration = 2000;        // Default: 2 seconds for slow calls
         private int openStateDuration = 10;         // Default: 10 seconds in open state
+        private int waitDurationInOpenState = 1000; // Default: 10-second wait in open state
+        private int permittedNumberOfCallsInHalfOpenState = 10; // Default: 3 calls in half-open state
+        private int minimumNumberOfCalls = 5;        // Default: Minimum of 5 calls before evaluating
+
     }
 
     @Getter

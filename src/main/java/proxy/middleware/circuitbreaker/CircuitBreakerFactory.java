@@ -2,6 +2,7 @@ package proxy.middleware.circuitbreaker;
 
 import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
+import proxy.context.AppConfig;
 
 import java.time.Duration;
 import java.util.Map;
@@ -29,18 +30,15 @@ public class CircuitBreakerFactory {
         return createCircuitBreaker(name, defaultConfig);
     }
 
-    public static CircuitBreakerUtil createCustomCircuitBreaker(String name,
-                                                                int failureThreshold,
-                                                                int slowCallThreshold,
-                                                                long slowCallDuration,
-                                                                long openStateDuration) {
+    public static CircuitBreakerUtil createCircuitBreaker(String name,
+                                                                AppConfig.CircuitBreaker cbConfig) {
         CircuitBreakerConfig customConfig = CircuitBreakerConfig.custom()
-                .failureRateThreshold(failureThreshold)
-                .slowCallRateThreshold(slowCallThreshold)
-                .slowCallDurationThreshold(Duration.ofMillis(slowCallDuration))
-                .waitDurationInOpenState(Duration.ofMillis(openStateDuration))
-                .permittedNumberOfCallsInHalfOpenState(3)
-                .minimumNumberOfCalls(5)
+                .failureRateThreshold(cbConfig.getFailureThreshold())
+                .slowCallRateThreshold(cbConfig.getSlowCallThreshold())
+                .slowCallDurationThreshold(Duration.ofMillis(cbConfig.getSlowCallDuration()))
+                .waitDurationInOpenState(Duration.ofMillis(cbConfig.getWaitDurationInOpenState()))
+                .permittedNumberOfCallsInHalfOpenState(cbConfig.getPermittedNumberOfCallsInHalfOpenState())
+                .minimumNumberOfCalls(cbConfig.getMinimumNumberOfCalls())
                 .build();
 
         return createCircuitBreaker(name, customConfig);

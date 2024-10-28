@@ -16,6 +16,7 @@ public class AppContext {
     private final AppConfig config;
     private final Cache cache;
     private final MetricsListener metricsListener;
+    private final boolean debugMode;
 
     private AppContext(Builder builder) {
 
@@ -24,6 +25,7 @@ public class AppContext {
         RedisPoolManager.initializePool(this.config.getStorage().getRedis());
         this.cache = CacheFactory.createCache(this.config);
         this.metricsListener = MetricsListenerFactory.createMetricsListener(this.config);
+        this.debugMode = this.config.isDebugMode();
     }
 
     // Thread-safe singleton implementation using double-checked locking
