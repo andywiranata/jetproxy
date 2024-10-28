@@ -15,8 +15,3 @@ By automatically discovering services and adjusting routes, this reverse proxy s
 - **Sticky Session**
 - **Rate Limiter**: Protect your services by limiting the number of requests per client.
 - **Docker up and running**, externalize config
-
-## Tech Stack
-
-- **Language**: Java
-- **Server**: Jetty
