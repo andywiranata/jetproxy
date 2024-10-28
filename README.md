@@ -4,7 +4,7 @@ In today's fast-paced microservices architecture, having an efficient and automa
 
 Traditional reverse proxies demand manual configuration for every route, making them impractical in modern setups. This project introduces a **modern API reverse proxy**, designed to automate this process and dynamically route traffic to your microservices with minimal effort.
 
-By automatically discovering services and adjusting routes, this reverse proxy simplifies management, enhances scalability, and reduces operational overhead, allowing you to focus on your services instead of maintaining complex routing configurations.
+By automatically discovering services and adjusting routes, this reverse proxy simplifies management, enhances scalability, and reduces operational overhead, allowing you to focus on your services instead of maintaining complex routing configurations,
 
 ## Features (In Progress)
 
