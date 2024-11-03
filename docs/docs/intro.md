@@ -3,6 +3,7 @@ sidebar_position: 1
 ---
 
 # JetProxy
+![alt text](jetproxy-intro.png)
 
 **JetProxy** is a lightweight, high-performance HTTP proxy library built with Jetty. It is designed for developers seeking a flexible and efficient solution for routing, caching, and managing HTTP requests.
 
