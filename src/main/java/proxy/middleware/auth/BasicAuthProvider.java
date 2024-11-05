@@ -1,21 +1,18 @@
 package proxy.middleware.auth;
+
 import org.eclipse.jetty.security.ConstraintSecurityHandler;
 import org.eclipse.jetty.security.HashLoginService;
 import org.eclipse.jetty.security.authentication.BasicAuthenticator;
 import org.eclipse.jetty.util.security.Credential;
-import org.eclipse.jetty.util.security.Constraint;
-import org.eclipse.jetty.security.ConstraintMapping;
 import org.eclipse.jetty.security.UserStore;
 import proxy.context.AppConfig;
-import proxy.context.AppContext;
 
 import java.util.List;
 
 public class BasicAuthProvider implements AuthProvider {
 
     @Override
-    public ConstraintSecurityHandler createSecurityHandler(String whitelistPath, String roles) {
-        AppConfig config = AppContext.get().getConfig();
+    public ConstraintSecurityHandler createSecurityHandler(AppConfig config) {
         ConstraintSecurityHandler securityHandler = new ConstraintSecurityHandler();
         securityHandler.setAuthenticator(new BasicAuthenticator());
 
@@ -36,16 +33,26 @@ public class BasicAuthProvider implements AuthProvider {
         return securityHandler;
     }
 
-    public ConstraintMapping createConstraintMapping(String pathSpec, String role) {
-        Constraint constraint = new Constraint();
-        constraint.setName(Constraint.__BASIC_AUTH);
-        constraint.setRoles(new String[]{role});
-        constraint.setAuthenticate(true);
+    @Override
+    public boolean shouldEnableAuth(AppConfig.Proxy proxy) {
+        String authProviderType = getAuthProviderType(proxy);
+        String authRoles = getAuthRoles(proxy);
+        return authProviderType.equalsIgnoreCase("basicAuth") && !authRoles.isEmpty();
+    }
 
-        ConstraintMapping mapping = new ConstraintMapping();
-        mapping.setConstraint(constraint);
-        mapping.setPathSpec(pathSpec);
+    @Override
+    public String getAuthRoles(AppConfig.Proxy proxy) {
+        String[] middlewareParts = getMiddlewareParts(proxy);
+        return (middlewareParts.length > 1) ? middlewareParts[1] : "";
+    }
 
-        return mapping;
+    private String getAuthProviderType(AppConfig.Proxy proxy) {
+        String[] middlewareParts = getMiddlewareParts(proxy);
+        return (middlewareParts.length > 0) ? middlewareParts[0] : "";
+    }
+
+    private String[] getMiddlewareParts(AppConfig.Proxy proxy) {
+        String authMiddleware = proxy.getMiddleware() != null ? proxy.getMiddleware().getAuth() : "";
+        return authMiddleware.split(":");
     }
 }

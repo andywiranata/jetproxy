@@ -27,7 +27,7 @@ public abstract class AbstractProxyHandler extends ProxyServlet.Transparent {
     protected AppConfig.Proxy proxyRule;
     protected RuleContext ruleContext;
     protected MetricsListener metricsListener;
-    protected Optional<CircuitBreakerUtil> circuitBreakerUtil;
+    protected CircuitBreakerUtil circuitBreakerUtil;
 
 
 
@@ -125,6 +125,14 @@ public abstract class AbstractProxyHandler extends ProxyServlet.Transparent {
         logger.warn("Rules not allowed processing request {} {}", this.configService.getName(),
                 this.proxyRule.getMiddleware().getRule());
         response.setStatus(HttpServletResponse.SC_NOT_ACCEPTABLE);
+    }
+
+    protected boolean hasCircuitBreaker() {
+        return this.circuitBreakerUtil != null;
+    }
+
+    protected boolean hasRuleContext() {
+        return this.ruleContext != null;
     }
 
 

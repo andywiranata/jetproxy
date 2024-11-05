@@ -14,6 +14,8 @@ import proxy.context.ConfigLoader;
 
 import org.eclipse.jetty.security.authentication.BasicAuthenticator;
 import org.eclipse.jetty.util.security.Constraint;
+import proxy.middleware.auth.AuthProvider;
+import proxy.middleware.auth.AuthProviderFactory;
 
 import java.util.List;
 
@@ -30,17 +32,13 @@ public class SetupProxyHolder {
 
     public void setupProxies(Server server, ServletContextHandler context) {
         List<AppConfig.Proxy> proxies = config.getProxies();
-        ConstraintSecurityHandler securityHandler = createBasicAuthSecurityHandler();
+        AuthProvider authProvider = AuthProviderFactory.getAuthProvider("basicAuth");
+        ConstraintSecurityHandler securityHandler = authProvider.createSecurityHandler(this.config);
+
         for (AppConfig.Proxy proxyRule : proxies) {
             AppConfig.Service service = ConfigLoader.getServiceMap().get(proxyRule.getService());
             String targetServiceUrl = service.getUrl();
             String whitelistPath = proxyRule.getPath() + "/*";
-            String auhtMiddleware = proxyRule.getMiddleware() != null ?
-                    proxyRule.getMiddleware().getRule(): "";
-            String[] middlewareParts = auhtMiddleware.split(":");
-            // Extract "basicAuth" and "roleA"
-            String authProvider = (middlewareParts.length > 0 && middlewareParts[0] != null) ? middlewareParts[0] : "";
-            String authRoles = (middlewareParts.length > 1 && middlewareParts[1] != null) ? middlewareParts[1] : "";
 
             if (targetServiceUrl == null) {
                 throw new IllegalArgumentException("Service URL not found for: " + proxyRule.getService());
@@ -50,12 +48,11 @@ public class SetupProxyHolder {
             proxyServlet.setInitParameter(PREFIX, proxyRule.getPath());
             proxyServlet.setInitParameter(TIMEOUT, String.valueOf(config.getDefaultTimeout()));
 
-            if (authProvider.equalsIgnoreCase("basicAuth")) {
-                if (!authRoles.isEmpty()) {
-                    securityHandler.addConstraintMapping(
-                            createConstraintMapping(whitelistPath, authRoles));
+            if (authProvider.shouldEnableAuth(proxyRule)) {
+                securityHandler.addConstraintMapping(
+                        createConstraintMapping(whitelistPath
+                                , authProvider.getAuthRoles(proxyRule)));
 
-                }
             }
             context.addServlet(proxyServlet, proxyRule.getPath() + "/*");
             securityHandler.setHandler(context);
@@ -66,33 +63,6 @@ public class SetupProxyHolder {
         }
         FilterHolder metricsFilterHolder = new FilterHolder(new MetricFilter());
         context.addFilter(metricsFilterHolder, "/*", null);
-    }
-
-    protected ConstraintSecurityHandler createBasicAuthSecurityHandler() {
-        AppConfig config = AppContext.get().getConfig();
-        // Create and configure the security handler
-        ConstraintSecurityHandler securityHandler = new ConstraintSecurityHandler();
-        securityHandler.setAuthenticator(new BasicAuthenticator());
-
-        // Use a PropertyFileLoginModule and point to the realm.properties
-        HashLoginService loginService = new HashLoginService("");
-
-        UserStore userStore = new UserStore(); // Use UserStore to manage users
-
-        List<AppConfig.User> users = config.getUsers();
-        for (AppConfig.User user : users) {
-            String username = user.getUsername();
-            String password = user.getPassword();
-            String role = user.getRole();
-            // Add users and roles programmatically to UserStore
-            userStore.addUser(username, Credential.getCredential(password), new String[]{role});
-        }
-
-        loginService.setUserStore(userStore);
-        // Define constraint for /product for userA (roleA)
-        securityHandler.setLoginService(loginService);
-
-        return securityHandler;
     }
 
     protected ConstraintMapping createConstraintMapping(String pathSpec, String role) {

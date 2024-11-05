@@ -43,7 +43,7 @@ proxies:
   - path: /task
     service: tasksApi
     middleware:
-      auth: 'basicAuth:roleB'
+      auth: 'basicAuth:roleB::firebaseAuth'
     ttl: 10000
 
 services:
@@ -54,6 +54,18 @@ services:
     url: https://dummyjson.com/products
     methods: ['GET']
     role: userA
+
+#authorizationProvider:
+#  forwardAuth:
+#    enabled: true
+#    url: http://auth.svc.com/products
+#  firebaseAuth:
+#    enabled: true
+#  auth0:
+#    enabled: true
+#  supabase:
+#    enabled: true
+
 
 users:
   - username: admin
