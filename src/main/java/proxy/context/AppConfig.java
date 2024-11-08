@@ -6,7 +6,6 @@ import lombok.Setter;
 import lombok.ToString;
 
 import java.util.List;
-import java.util.Optional;
 
 @Getter
 @Setter
@@ -41,9 +40,24 @@ public class AppConfig {
     @Setter
     @ToString
     public static class Middleware {
-        private String auth = "";                // for auth configurations, e.g., 'basicAuth:roleA'
-        private String rule = "";                // for rules configuration
-        private CircuitBreaker circuitBreaker; // optional CircuitBreaker configuration
+        @Nullable
+        private String basicAuth; // Updated basicAuth field to be nullable
+
+        @Nullable
+        private ForwardAuth forwardAuth;
+
+        private String rule = "";
+
+        private CircuitBreaker circuitBreaker;
+
+        public boolean hasBasicAuth() {
+            return basicAuth != null;
+        }
+
+        public boolean hasForwardAuth() {
+            return forwardAuth != null;
+        }
+
         public boolean hasCircuitBreaker() {
             return circuitBreaker != null;
         }
@@ -52,16 +66,25 @@ public class AppConfig {
     @Getter
     @Setter
     @ToString
-    public static class CircuitBreaker {
-        private boolean enabled = false;            // Default: disabled
-        private int failureThreshold = 50;          // Default: 50% failure rate threshold
-        private int slowCallThreshold = 50;         // Default: 50% slow call rate threshold
-        private int slowCallDuration = 2000;        // Default: 2 seconds for slow calls
-        private int openStateDuration = 10;         // Default: 10 seconds in open state
-        private int waitDurationInOpenState = 1000; // Default: 10-second wait in open state
-        private int permittedNumberOfCallsInHalfOpenState = 10; // Default: 3 calls in half-open state
-        private int minimumNumberOfCalls = 5;        // Default: Minimum of 5 calls before evaluating
+    public static class ForwardAuth {
+        private String path;
+        private String service;
+        private String authRequestHeaders;
+        private String authResponseHeaders;
+    }
 
+    @Getter
+    @Setter
+    @ToString
+    public static class CircuitBreaker {
+        private boolean enabled = false;
+        private int failureThreshold = 50;
+        private int slowCallThreshold = 50;
+        private int slowCallDuration = 2000;
+        private int openStateDuration = 10;
+        private int waitDurationInOpenState = 1000;
+        private int permittedNumberOfCallsInHalfOpenState = 10;
+        private int minimumNumberOfCalls = 5;
     }
 
     @Getter
@@ -71,7 +94,7 @@ public class AppConfig {
         private String name;
         private String url;
         private List<String> methods;
-        private String role; // role field for access control
+        private String role;
     }
 
     @Getter
@@ -110,8 +133,8 @@ public class AppConfig {
         @ToString
         public static class InMemoryConfig {
             private boolean enabled;
-            private long maxMemory = 50; // MB
-            private int size = 10000; // updated to match YAML
+            private long maxMemory = 50;
+            private int size = 10000;
         }
     }
 

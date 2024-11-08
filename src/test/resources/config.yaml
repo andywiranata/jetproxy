@@ -55,17 +55,11 @@ services:
     methods: ['GET']
     role: userA
 
-#authorizationProvider:
-#  forwardAuth:
-#    enabled: true
-#    url: http://auth.svc.com/products
-#  firebaseAuth:
-#    enabled: true
-#  auth0:
-#    enabled: true
-#  supabase:
-#    enabled: true
-
+authorizationProvider:
+  forwardAuth:
+    url: http://example.com/auth
+    authRequestHeaders: "Accept,X-CustomHeader"
+    authResponseHeaders: "X-Auth-User,X-Secret,X-forwarded*"
 
 users:
   - username: admin

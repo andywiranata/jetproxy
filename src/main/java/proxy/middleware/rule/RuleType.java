@@ -14,3 +14,4 @@ public enum RuleType {
     HOST_PREFIX,
     HOST_REGEX
 }
+
