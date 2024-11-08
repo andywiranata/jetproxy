@@ -25,10 +25,24 @@ storage:
     size: 10000
 
 proxies:
+  - path: /httpbin
+    service: httpbinApi
+    ttl: -1
+  - path: /example
+    service: exampleApi
+    ttl: -1
+  - path: /google
+    service: googleApi
+    ttl: -1
   - path: /products
     service: productApi
     middleware:
-      auth: 'basicAuth:roleA'
+      basicAuth: 'basicAuth:roleA'
+      forwardAuth:
+        path: /login
+        service: forwardAuth
+        authRequestHeaders: "Accept,X-CustomHeader"
+        authResponseHeaders: "X-Auth-User,X-Secret,X-forwarded*"
       rule: "(Header('Content-Type', 'application/json') && HeaderPrefix('User-Agent', 'Mozilla')) || HeaderRegex('X-Custom-Header', '^[a-zA-Z0-9]{10}$')"
       circuitBreaker:
         enabled: true
@@ -43,7 +57,7 @@ proxies:
   - path: /task
     service: tasksApi
     middleware:
-      auth: 'basicAuth:roleB::firebaseAuth'
+      basicAuth: 'basicAuth:roleB'
     ttl: 10000
 
 services:
@@ -54,12 +68,18 @@ services:
     url: https://dummyjson.com/products
     methods: ['GET']
     role: userA
-
-authorizationProvider:
-  forwardAuth:
+  - name: googleApi
+    url: http://www.google.com
+    methods: ['GET', 'POST', 'PUT']
+  - name: exampleApi
+    url: http://example.com
+    methods: ['GET', 'POST', 'PUT']
+  - name: httpbinApi
+    url: http://httpbin.org
+    methods: ['GET', 'POST', 'PUT']
+  - name: forwardAuth
     url: http://example.com/auth
-    authRequestHeaders: "Accept,X-CustomHeader"
-    authResponseHeaders: "X-Auth-User,X-Secret,X-forwarded*"
+    methods: ['POST']
 
 users:
   - username: admin
@@ -71,3 +91,7 @@ users:
   - username: userB
     password: passwordB
     role: roleB
+
+
+
+

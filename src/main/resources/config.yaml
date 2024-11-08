@@ -25,15 +25,15 @@ storage:
     size: 10000
 
 proxies:
-#  - path: /httpbin
-#    service: httpbinApi
-#    ttl: -1
-#  - path: /example
-#    service: exampleApi
-#    ttl: -1
-#  - path: /google
-#    service: googleApi
-#    ttl: -1
+  - path: /httpbin
+    service: httpbinApi
+    ttl: -1
+  - path: /example
+    service: exampleApi
+    ttl: -1
+  - path: /google
+    service: googleApi
+    ttl: -1
   - path: /products
     service: productApi
     middleware:
@@ -57,7 +57,7 @@ proxies:
   - path: /task
     service: tasksApi
     middleware:
-#      basicAuth: 'basicAuth:roleB'
+      basicAuth: 'basicAuth:roleB'
     ttl: 10000
 
 services:

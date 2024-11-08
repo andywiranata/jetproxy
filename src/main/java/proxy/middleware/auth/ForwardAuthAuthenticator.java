@@ -34,7 +34,7 @@ public class ForwardAuthAuthenticator implements Authenticator {
     @Override
     public Authentication validateRequest(ServletRequest servletRequest,
                                           ServletResponse servletResponse, boolean mandatory) {
-        System.out.println("validateRequest called");
+        System.out.println("validateRequest called madatory:: "+ mandatory);
 
         HttpServletRequest request = (HttpServletRequest) servletRequest;
         HttpServletResponse response = (HttpServletResponse) servletResponse;

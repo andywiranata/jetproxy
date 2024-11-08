@@ -15,12 +15,12 @@ public class BasicAuthProvider implements AuthProvider {
 
     @Override
     public ConstraintSecurityHandler createSecurityHandler(AppConfig config) {
-        MultiLayerAuthenticator multiLayerAuthenticator = new MultiLayerAuthenticator();
-        multiLayerAuthenticator.addAuthenticator(new BasicAuthenticator());          // Basic Authentication
-        multiLayerAuthenticator.addAuthenticator(new ForwardAuthAuthenticator());
+//        MultiLayerAuthenticator multiLayerAuthenticator = new MultiLayerAuthenticator();
+//        multiLayerAuthenticator.addAuthenticator(new BasicAuthenticator());          // Basic Authentication
+//        multiLayerAuthenticator.addAuthenticator(new ForwardAuthAuthenticator());
 
         ConstraintSecurityHandler securityHandler = new ConstraintSecurityHandler();
-        securityHandler.setAuthenticator(multiLayerAuthenticator);
+//        securityHandler.setAuthenticator(multiLayerAuthenticator);
 
         HashLoginService loginService = new HashLoginService("");
         UserStore userStore = new UserStore();
