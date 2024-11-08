@@ -36,7 +36,8 @@ public class ProxyHolder extends AbstractProxyHandler {
                 .filter(AppConfig.Middleware::hasCircuitBreaker)
                 .map(AppConfig.Middleware::getCircuitBreaker)
                 .filter(AppConfig.CircuitBreaker::isEnabled)
-                .map(cbConfig -> CircuitBreakerFactory.createCircuitBreaker("cb::" + proxyRule.getPath(), cbConfig));
+                .map(cbConfig -> CircuitBreakerFactory.createCircuitBreaker("cb::" + proxyRule.getPath(), cbConfig))
+                .orElse(null);
 
 
         this.metricsListener = AppContext.get().getMetricsListener();
@@ -70,7 +71,7 @@ public class ProxyHolder extends AbstractProxyHandler {
                         paramsLog);
             }
 
-            if (!ruleContext.evaluate(request)) {
+            if (hasRuleContext() && !ruleContext.evaluate(request)) {
                 logger.debug("Request denied by rule evaluation. URI: {}, Method: {}, IP: {}",
                         request.getRequestURI(), request.getMethod(), request.getRemoteAddr());
                 handleRuleNotAllowed(response);
@@ -92,16 +93,16 @@ public class ProxyHolder extends AbstractProxyHandler {
                 return;
             }
 
-            if (circuitBreakerUtil.isPresent()
-                    && circuitBreakerUtil.get().getCircuitBreaker().getState() == CircuitBreaker.State.OPEN) {
+            if (hasCircuitBreaker() &&
+                     circuitBreakerUtil.getCircuitBreaker().getState() == CircuitBreaker.State.OPEN) {
                 response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
                 return;
             }
 
             try {
-                if (circuitBreakerUtil.isPresent()) {
+                if (hasCircuitBreaker()) {
                     // Execute the service request within the circuit breaker
-                    circuitBreakerUtil.get().executeRunnableWithCircuitBreaker(() -> {
+                    circuitBreakerUtil.executeRunnableWithCircuitBreaker(() -> {
                         try {
                             super.service(request, response);
                         } catch (Exception e) {

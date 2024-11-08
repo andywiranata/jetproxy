@@ -11,9 +11,9 @@ public class RuleFactory {
     public static RuleContext createRulesFromString(String ruleString) {
         List<Rule> rules = new ArrayList<>();
         List<String> operators = new ArrayList<>();
-
         // Regex to match rule patterns (e.g., Header('Content-Type', 'application/json'))
-        Pattern pattern = Pattern.compile("(Header|HeaderPrefix|HeaderRegex|Query|QueryPrefix|QueryRegex|Path|PathPrefix|PathRegex)\\((.*?)\\)");
+        Pattern pattern = Pattern.compile(
+                "(Host|HostPrefix|HostRegex|Header|HeaderPrefix|HeaderRegex|Query|QueryPrefix|QueryRegex|Path|PathPrefix|PathRegex)\\((.*?)\\)");
         Matcher matcher = pattern.matcher(ruleString);
 
         // Iterate over each match and create the appropriate Rule instance
@@ -41,6 +41,12 @@ public class RuleFactory {
     // Converts a string rule type into a RuleType enum
     private static RuleType getRuleType(String ruleType) {
         switch (ruleType) {
+            case "Host":
+                return RuleType.HOST;
+            case "HostPrefix":
+                return RuleType.HOST_PREFIX;
+            case "HostRegex":
+                return RuleType.HOST_REGEX;
             case "Header":
                 return RuleType.HEADER;
             case "HeaderPrefix":

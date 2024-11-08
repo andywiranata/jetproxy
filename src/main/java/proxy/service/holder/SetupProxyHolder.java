@@ -1,20 +1,24 @@
 package proxy.service.holder;
 
 import org.eclipse.jetty.security.*;
+import org.eclipse.jetty.security.authentication.BasicAuthenticator;
+import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.servlet.FilterHolder;
+import org.eclipse.jetty.server.handler.HandlerCollection;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
-import org.eclipse.jetty.util.security.Credential;
+import org.eclipse.jetty.util.security.Constraint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import proxy.context.AppConfig;
-import proxy.context.AppContext;
 import proxy.context.ConfigLoader;
 
-import org.eclipse.jetty.security.authentication.BasicAuthenticator;
-import org.eclipse.jetty.util.security.Constraint;
+import proxy.middleware.auth.AuthProviderFactory;
+import proxy.middleware.auth.BasicAuthProvider;
+import proxy.middleware.auth.ForwardAuthAuthenticator;
+import proxy.middleware.auth.MultiLayerAuthenticator;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class SetupProxyHolder {
@@ -30,17 +34,16 @@ public class SetupProxyHolder {
 
     public void setupProxies(Server server, ServletContextHandler context) {
         List<AppConfig.Proxy> proxies = config.getProxies();
-        ConstraintSecurityHandler securityHandler = createBasicAuthSecurityHandler();
+        MultiLayerAuthenticator multiLayerAuthenticator = new MultiLayerAuthenticator();
+
+        BasicAuthProvider basicAuthProvider = (BasicAuthProvider) AuthProviderFactory.getAuthProvider("basicAuth");
+        ConstraintSecurityHandler basicAuthSecurityHandler = basicAuthProvider.createSecurityHandler(this.config);
+
         for (AppConfig.Proxy proxyRule : proxies) {
             AppConfig.Service service = ConfigLoader.getServiceMap().get(proxyRule.getService());
             String targetServiceUrl = service.getUrl();
+            List<Authenticator> authenticators = new ArrayList<>();
             String whitelistPath = proxyRule.getPath() + "/*";
-            String auhtMiddleware = proxyRule.getMiddleware() != null ?
-                    proxyRule.getMiddleware().getRule(): "";
-            String[] middlewareParts = auhtMiddleware.split(":");
-            // Extract "basicAuth" and "roleA"
-            String authProvider = (middlewareParts.length > 0 && middlewareParts[0] != null) ? middlewareParts[0] : "";
-            String authRoles = (middlewareParts.length > 1 && middlewareParts[1] != null) ? middlewareParts[1] : "";
 
             if (targetServiceUrl == null) {
                 throw new IllegalArgumentException("Service URL not found for: " + proxyRule.getService());
@@ -49,63 +52,52 @@ public class SetupProxyHolder {
             proxyServlet.setInitParameter(PROXY_TO, targetServiceUrl);
             proxyServlet.setInitParameter(PREFIX, proxyRule.getPath());
             proxyServlet.setInitParameter(TIMEOUT, String.valueOf(config.getDefaultTimeout()));
+            // demo
 
-            if (authProvider.equalsIgnoreCase("basicAuth")) {
-                if (!authRoles.isEmpty()) {
-                    securityHandler.addConstraintMapping(
-                            createConstraintMapping(whitelistPath, authRoles));
-
-                }
-            }
             context.addServlet(proxyServlet, proxyRule.getPath() + "/*");
-            securityHandler.setHandler(context);
-            server.setHandler(context);
-            server.setHandler(securityHandler);
-
             logger.info("Proxy added: {} -> {}", proxyRule.getPath(), targetServiceUrl);
+
+            if (basicAuthProvider.shouldEnableAuth(proxyRule)) {
+                authenticators.add(new BasicAuthenticator());
+                basicAuthSecurityHandler
+                        .addConstraintMapping(basicAuthProvider
+                        .createConstraintMapping
+                                (whitelistPath, basicAuthProvider.getAuthRoles(proxyRule)));
+            }
+            if (shouldEnableForwardAuth(proxyRule)) {
+                authenticators.add(new ForwardAuthAuthenticator());
+                basicAuthSecurityHandler
+                        .addConstraintMapping(createForwardAuthConstraintMapping
+                                (whitelistPath, null));
+            }
+            multiLayerAuthenticator.registerAuthenticators(whitelistPath, authenticators);
+
         }
-        FilterHolder metricsFilterHolder = new FilterHolder(new MetricFilter());
-        context.addFilter(metricsFilterHolder, "/*", null);
+        basicAuthSecurityHandler.setAuthenticator(multiLayerAuthenticator);
+        // Set each security handler to handle the context separately
+        basicAuthSecurityHandler.setHandler(context);
+        // Combine handlers in a HandlerCollection
+        HandlerCollection handlers = new HandlerCollection();
+        handlers.setHandlers(new Handler[]{
+                basicAuthSecurityHandler, context});
+
+        // FilterHolder metricsFilterHolder = new FilterHolder(new MetricFilter());
+        // context.addFilter(metricsFilterHolder, "/*", null);
+        server.setHandler(handlers);
     }
 
-    protected ConstraintSecurityHandler createBasicAuthSecurityHandler() {
-        AppConfig config = AppContext.get().getConfig();
-        // Create and configure the security handler
-        ConstraintSecurityHandler securityHandler = new ConstraintSecurityHandler();
-        securityHandler.setAuthenticator(new BasicAuthenticator());
-
-        // Use a PropertyFileLoginModule and point to the realm.properties
-        HashLoginService loginService = new HashLoginService("");
-
-        UserStore userStore = new UserStore(); // Use UserStore to manage users
-
-        List<AppConfig.User> users = config.getUsers();
-        for (AppConfig.User user : users) {
-            String username = user.getUsername();
-            String password = user.getPassword();
-            String role = user.getRole();
-            // Add users and roles programmatically to UserStore
-            userStore.addUser(username, Credential.getCredential(password), new String[]{role});
-        }
-
-        loginService.setUserStore(userStore);
-        // Define constraint for /product for userA (roleA)
-        securityHandler.setLoginService(loginService);
-
-        return securityHandler;
+    public boolean shouldEnableForwardAuth(AppConfig.Proxy proxy) {
+        return proxy.getMiddleware() != null && proxy.getMiddleware().hasForwardAuth();
     }
-
-    protected ConstraintMapping createConstraintMapping(String pathSpec, String role) {
-        // Create a constraint that requires authentication for a specific role
+    public ConstraintMapping createForwardAuthConstraintMapping(String pathSpec, String role) {
         Constraint constraint = new Constraint();
-        constraint.setName(Constraint.__BASIC_AUTH);
-        constraint.setRoles(new String[]{role});
-        constraint.setAuthenticate(true);
+        constraint.setName("forwardAuth");
+        constraint.setAuthenticate(true); // Set authenticate to true
+        constraint.setRoles(new String[]{"user", "admin"});
 
-        // Create a mapping between the constraint and the path
         ConstraintMapping mapping = new ConstraintMapping();
-        mapping.setConstraint(constraint);
         mapping.setPathSpec(pathSpec);
+        mapping.setConstraint(constraint);
 
         return mapping;
     }
