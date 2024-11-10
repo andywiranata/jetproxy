@@ -52,35 +52,32 @@ public class SetupProxyHolder {
             proxyServlet.setInitParameter(PROXY_TO, targetServiceUrl);
             proxyServlet.setInitParameter(PREFIX, proxyRule.getPath());
             proxyServlet.setInitParameter(TIMEOUT, String.valueOf(config.getDefaultTimeout()));
-            // demo
 
             context.addServlet(proxyServlet, proxyRule.getPath() + "/*");
-            logger.info("Proxy added: {} -> {}", proxyRule.getPath(), targetServiceUrl);
 
             if (basicAuthProvider.shouldEnableAuth(proxyRule)) {
                 authenticators.add(new BasicAuthenticator());
                 basicAuthSecurityHandler
                         .addConstraintMapping(basicAuthProvider
                         .createConstraintMapping
-                                (whitelistPath, basicAuthProvider.getAuthRoles(proxyRule)));
+                                (whitelistPath,
+                                        basicAuthProvider.getAuthRoles(proxyRule)));
             }
             if (shouldEnableForwardAuth(proxyRule)) {
-                authenticators.add(new ForwardAuthAuthenticator());
+                authenticators.add(new ForwardAuthAuthenticator(proxyRule.getMiddleware()));
                 basicAuthSecurityHandler
                         .addConstraintMapping(createForwardAuthConstraintMapping
-                                (whitelistPath, null));
+                                (whitelistPath,
+                                        null));
             }
             multiLayerAuthenticator.registerAuthenticators(whitelistPath, authenticators);
-
+            logger.info("Proxy added: {} -> {}", proxyRule.getPath(), targetServiceUrl);
         }
         basicAuthSecurityHandler.setAuthenticator(multiLayerAuthenticator);
-        // Set each security handler to handle the context separately
         basicAuthSecurityHandler.setHandler(context);
-        // Combine handlers in a HandlerCollection
         HandlerCollection handlers = new HandlerCollection();
         handlers.setHandlers(new Handler[]{
                 basicAuthSecurityHandler, context});
-
         // FilterHolder metricsFilterHolder = new FilterHolder(new MetricFilter());
         // context.addFilter(metricsFilterHolder, "/*", null);
         server.setHandler(handlers);

@@ -9,15 +9,43 @@ import org.eclipse.jetty.security.ServerAuthException;
 import org.eclipse.jetty.security.UserAuthentication;
 import org.eclipse.jetty.server.Authentication;
 import org.eclipse.jetty.server.UserIdentity;
+import proxy.context.AppConfig;
+import proxy.context.ConfigLoader;
+import proxy.logger.DebugAwareLogger;
+import proxy.middleware.rule.header.HeaderAction;
+import proxy.middleware.rule.header.HeaderActionFactory;
 
 import javax.security.auth.Subject;
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.security.Principal;
+import java.util.*;
 
 public class ForwardAuthAuthenticator implements Authenticator {
+    private static final DebugAwareLogger logger = DebugAwareLogger.getLogger(ForwardAuthAuthenticator.class);
+
+    private final String path;
+    private final List<HeaderAction> headerActions; // Actions to handle headers
+    private final List<String> authResponseHeaderPatterns;
+    private final AppConfig.Service service;
+
+    public ForwardAuthAuthenticator(AppConfig.Middleware appMiddleware) {
+        assert appMiddleware.getForwardAuth() != null;
+
+        String serviceName = appMiddleware.getForwardAuth().getService();
+        String authRequestHeaderRules = appMiddleware.getForwardAuth().getAuthRequestHeaders();
+        String authResponseHeaders = appMiddleware.getForwardAuth().getAuthResponseHeaders();
+
+        this.service = ConfigLoader.getServiceMap().get(serviceName);
+        this.path = appMiddleware.getForwardAuth().getPath();
+        this.headerActions = HeaderActionFactory.createActions(authRequestHeaderRules);
+        this.authResponseHeaderPatterns = Arrays.asList(authResponseHeaders.split(","));
+    }
 
     @Override
     public void setConfiguration(AuthConfiguration authConfiguration) {
-        System.out.println("setConfiguration");
+        logger.debug("setConfiguration");
     }
 
     @Override
@@ -27,37 +55,85 @@ public class ForwardAuthAuthenticator implements Authenticator {
 
     @Override
     public void prepareRequest(ServletRequest servletRequest) {
-        System.out.println("prepareRequest");
-
+        logger.debug("prepareRequest");
     }
 
     @Override
     public Authentication validateRequest(ServletRequest servletRequest,
                                           ServletResponse servletResponse, boolean mandatory) {
-        System.out.println("validateRequest called madatory:: "+ mandatory);
+        logger.debug("validateRequest called mandatory: " + mandatory);
 
         HttpServletRequest request = (HttpServletRequest) servletRequest;
         HttpServletResponse response = (HttpServletResponse) servletResponse;
 
-        // Simulate successful token validation by always returning an authenticated user
-        return new UserAuthentication(getAuthMethod(), new MockUserIdentity());
+        try {
+            // Extract headers to forward
+            Map<String, String> forwardHeaders = getForwardHeaders(request);
+
+            // Perform the forward authentication request
+            HttpURLConnection connection = performForwardAuthRequest(forwardHeaders);
+
+            // Validate the response
+            if (connection.getResponseCode() == HttpURLConnection.HTTP_OK) {
+                logger.debug("Authentication successful");
+                return new UserAuthentication(getAuthMethod(), new MockUserIdentity());
+            } else {
+                logger.warn("Authentication failed with status: " + connection.getResponseCode());
+                response.sendError(HttpURLConnection.HTTP_UNAUTHORIZED, "Unauthorized");
+                return Authentication.UNAUTHENTICATED;
+            }
+        } catch (IOException e) {
+            logger.error("Error during authentication", e);
+            try {
+                response.sendError(HttpURLConnection.HTTP_INTERNAL_ERROR, "Internal Server Error");
+            } catch (IOException ignored) {
+            }
+            return Authentication.UNAUTHENTICATED;
+        }
     }
 
     @Override
     public boolean secureResponse(ServletRequest servletRequest, ServletResponse servletResponse, boolean b, Authentication.User user) throws ServerAuthException {
-        System.out.println("secureResponse");
-        return false;
+        logger.debug("secureResponse");
+        return true;
     }
+
+    private Map<String, String> getForwardHeaders(HttpServletRequest request) {
+        Map<String, String> headersToForward = new HashMap<>();
+
+        // Execute all header actions to populate headersToForward
+        for (HeaderAction action : headerActions) {
+            action.execute(request, headersToForward);
+        }
+
+        return headersToForward;
+    }
+
+    private HttpURLConnection performForwardAuthRequest(Map<String, String> headers) throws IOException {
+        URL url = new URL(service.getUrl() + path);
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        connection.setRequestMethod("POST");
+        connection.setDoOutput(true);
+
+        // Set headers
+        for (Map.Entry<String, String> entry : headers.entrySet()) {
+            connection.setRequestProperty(entry.getKey(), entry.getValue());
+        }
+
+        connection.connect();
+        return connection;
+    }
+
     // Inner class to represent a mock authenticated user
     private static class MockUserIdentity implements UserIdentity {
         @Override
         public Subject getSubject() {
-            return new Subject(); // Empty subject for this mock implementation
+            return new Subject();
         }
 
         @Override
         public Principal getUserPrincipal() {
-            return () -> "mockUser"; // Mock user name
+            return () -> "mockUser";
         }
 
         @Override
