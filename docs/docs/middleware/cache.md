@@ -1,7 +1,7 @@
 ---
-sidebar_position: 4
+sidebar_position: 6
 ---
 
-# HTTP Header
+# Cache Policy
 
 Add **Markdown or React** files to `src/pages` to create a **standalone page**:

@@ -52,7 +52,5 @@ services:
   - name: secureApiService
     url: https://secure.backend.example.com
     methods: ['GET', 'POST']
-
-
 ```
 

@@ -1,7 +1,7 @@
 ---
-sidebar_position: 5
+sidebar_position: 7
 ---
 
-# Cache Policy
+# Circuite Breaker
 
 Add **Markdown or React** files to `src/pages` to create a **standalone page**:
