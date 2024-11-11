@@ -1,7 +1,7 @@
 ---
-sidebar_position: 6
+sidebar_position: 5
 ---
 
-# Circuite Breaker
+# HTTP Header
 
 Add **Markdown or React** files to `src/pages` to create a **standalone page**:

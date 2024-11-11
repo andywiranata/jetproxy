@@ -1,7 +1,7 @@
 ---
-sidebar_position: 2
+sidebar_position: 4
 ---
 
-# Authorization (Basic Auth)
+# HTTP Rules
 
 Add **Markdown or React** files to `src/pages` to create a **standalone page**:
