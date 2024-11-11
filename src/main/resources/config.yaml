@@ -39,9 +39,9 @@ proxies:
     middleware:
       basicAuth: 'basicAuth:roleA'
       forwardAuth:
-        path: /login
-        service: forwardAuth
-        authRequestHeaders: "Accept,X-CustomHeader"
+        path: /verify
+        service: authApi
+        authRequestHeaders: "Forward(X-Custom-*);Forward(Authorization)"
         authResponseHeaders: "X-Auth-User,X-Secret,X-forwarded*"
       rule: "(Header('Content-Type', 'application/json') && HeaderPrefix('User-Agent', 'Mozilla')) || HeaderRegex('X-Custom-Header', '^[a-zA-Z0-9]{10}$')"
       circuitBreaker:
@@ -77,8 +77,8 @@ services:
   - name: httpbinApi
     url: http://httpbin.org
     methods: ['GET', 'POST', 'PUT']
-  - name: forwardAuth
-    url: http://example.com/auth
+  - name: authApi
+    url: http://localhost:30001
     methods: ['POST']
 
 users:

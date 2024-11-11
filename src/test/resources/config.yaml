@@ -1,5 +1,5 @@
 appName: API-PROXY
-port: 8080
+port: 8081
 defaultTimeout: 10000
 dashboard: true
 rootPath: /
@@ -39,7 +39,7 @@ proxies:
     middleware:
       basicAuth: 'basicAuth:roleA'
       forwardAuth:
-        path: /login
+        path: /verify
         service: forwardAuth
         authRequestHeaders: "Accept,X-CustomHeader"
         authResponseHeaders: "X-Auth-User,X-Secret,X-forwarded*"
@@ -78,7 +78,7 @@ services:
     url: http://httpbin.org
     methods: ['GET', 'POST', 'PUT']
   - name: forwardAuth
-    url: http://example.com/auth
+    url: http://localhost/3000
     methods: ['POST']
 
 users:
