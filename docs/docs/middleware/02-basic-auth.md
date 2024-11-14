@@ -46,3 +46,4 @@ curl --location 'http://localhost:8080/products' \
 --header 'Content-Type: application/json' \
 --header 'Authorization: Basic dXNlckI6dXNlckI='
 ```
+
