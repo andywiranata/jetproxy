@@ -36,6 +36,14 @@ proxies:
     ttl: -1
   - path: /user
     service: userApi
+    middleware:
+      forwardAuth:
+        path: /verify
+        service: authApi
+        authRequestHeaders: "Forward(X-Custom-*);Forward(Authorization)"
+      header:
+        requestHeaders: "Remove(x-header-*);Remove(Authorization);Append(X-Custom-Header,-jetty)"
+        responseHeaders: "Add(X-Powered-By,jetty-server)"
     ttl: -1
   - path: /products
     service: productApi
@@ -61,7 +69,7 @@ proxies:
     middleware:
       header:
         requestHeaders: "Forward(X-Custom-*);Forward(Authorization)"
-        responseHeaders: "*"
+        responseHeaders: "Append(x-ganteng,andy)"
       basicAuth: 'basicAuth:roleB'
       forwardAuth:
         path: /verify

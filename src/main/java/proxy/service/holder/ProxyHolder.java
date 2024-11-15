@@ -1,13 +1,9 @@
 package proxy.service.holder;
 
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.ServletRequest;
-import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletRequestWrapper;
 import jakarta.servlet.http.HttpServletResponse;
-import org.eclipse.jetty.client.api.Request;
 import org.eclipse.jetty.client.api.Response;
 import org.eclipse.jetty.util.Callback;
 import proxy.context.AppConfig;
@@ -155,7 +151,6 @@ public class ProxyHolder extends AbstractProxyHandler {
                         header -> header.getName(),
                         header -> header.getValue()
                 ));
-
         // Apply response header actions
         Map<String, String> modifiedHeaders = new HashMap<>();
         for (HeaderAction action : headerResponseActions) {
@@ -166,11 +161,6 @@ public class ProxyHolder extends AbstractProxyHandler {
         for (Map.Entry<String, String> entry : modifiedHeaders.entrySet()) {
             proxyResponse.setHeader(entry.getKey(), entry.getValue());
         }
-        // Modify the headers
-        proxyResponse.setHeader("X-Custom-Header", "CustomValue");
-
-        // Optionally remove or change existing headers
-        proxyResponse.setHeader("X-Powered-By", "Jetty Proxy");
 
     }
 
@@ -204,7 +194,6 @@ public class ProxyHolder extends AbstractProxyHandler {
 
         super.onResponseContent(request, response, proxyResponse, buffer, offset, length, callback);
     }
-
     private HttpServletRequestWrapper modifyRequestHeaders(HttpServletRequest request) {
         // Create a mutable map for headers
         Map<String, String> modifiedHeaders = Collections.list(request.getHeaderNames()).stream()
