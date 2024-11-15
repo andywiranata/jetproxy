@@ -58,6 +58,11 @@ proxies:
     service: tasksApi
     middleware:
       basicAuth: 'basicAuth:roleB'
+      forwardAuth:
+        path: /verify
+        service: forwardAuth
+        authRequestHeaders: "Accept,X-CustomHeader"
+        authResponseHeaders: "X-Auth-User,X-Secret,X-forwarded*"
     ttl: 10000
 
 services:
@@ -78,7 +83,7 @@ services:
     url: http://httpbin.org
     methods: ['GET', 'POST', 'PUT']
   - name: forwardAuth
-    url: http://localhost/3000
+    url: http://localhost/30001
     methods: ['POST']
 
 users:

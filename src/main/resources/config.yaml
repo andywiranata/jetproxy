@@ -34,6 +34,9 @@ proxies:
   - path: /google
     service: googleApi
     ttl: -1
+  - path: /user
+    service: userApi
+    ttl: -1
   - path: /products
     service: productApi
     middleware:
@@ -42,7 +45,6 @@ proxies:
         path: /verify
         service: authApi
         authRequestHeaders: "Forward(X-Custom-*);Forward(Authorization)"
-        authResponseHeaders: "X-Auth-User,X-Secret,X-forwarded*"
       rule: "(Header('Content-Type', 'application/json') && HeaderPrefix('User-Agent', 'Mozilla')) || HeaderRegex('X-Custom-Header', '^[a-zA-Z0-9]{10}$')"
       circuitBreaker:
         enabled: true
@@ -57,7 +59,15 @@ proxies:
   - path: /task
     service: tasksApi
     middleware:
+      header:
+        requestHeaders: "Forward(X-Custom-*);Forward(Authorization)"
+        responseHeaders: "*"
       basicAuth: 'basicAuth:roleB'
+      forwardAuth:
+        path: /verify
+        service: authApi
+        authRequestHeaders: "Forward(X-Custom-*);Forward(Authorization)"
+      rule: "(Header('Content-Type', 'application/json') && HeaderPrefix('User-Agent', 'Mozilla')) || HeaderRegex('X-Custom-Header', '^[a-zA-Z0-9]{10}$')"
     ttl: 10000
 
 services:
@@ -80,6 +90,9 @@ services:
   - name: authApi
     url: http://localhost:30001
     methods: ['POST']
+  - name: userApi
+    url: http://localhost:30001/user
+    methods: ['GET']
 
 users:
   - username: admin

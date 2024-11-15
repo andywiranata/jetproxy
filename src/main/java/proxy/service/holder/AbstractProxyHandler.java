@@ -11,10 +11,12 @@ import proxy.context.AppContext;
 import proxy.middleware.circuitbreaker.CircuitBreakerUtil;
 import proxy.middleware.metric.MetricsListener;
 import proxy.middleware.rule.RuleContext;
+import proxy.middleware.rule.header.HeaderAction;
 import proxy.util.RequestUtils;
 
 import java.io.*;
 import java.nio.charset.Charset;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.zip.GZIPInputStream;
@@ -28,6 +30,9 @@ public abstract class AbstractProxyHandler extends ProxyServlet.Transparent {
     protected RuleContext ruleContext;
     protected MetricsListener metricsListener;
     protected CircuitBreakerUtil circuitBreakerUtil;
+    protected List<HeaderAction> headerRequestActions = Collections.emptyList();;
+    protected List<HeaderAction> headerResponseActions;
+
 
 
 

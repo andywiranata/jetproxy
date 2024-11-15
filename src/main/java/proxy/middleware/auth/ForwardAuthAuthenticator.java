@@ -27,20 +27,19 @@ public class ForwardAuthAuthenticator implements Authenticator {
 
     private final String path;
     private final List<HeaderAction> headerActions; // Actions to handle headers
-    private final List<String> authResponseHeaderPatterns;
     private final AppConfig.Service service;
+    private final String requestMethod;
 
     public ForwardAuthAuthenticator(AppConfig.Middleware appMiddleware) {
         assert appMiddleware.getForwardAuth() != null;
 
         String serviceName = appMiddleware.getForwardAuth().getService();
         String authRequestHeaderRules = appMiddleware.getForwardAuth().getAuthRequestHeaders();
-        String authResponseHeaders = appMiddleware.getForwardAuth().getAuthResponseHeaders();
 
         this.service = ConfigLoader.getServiceMap().get(serviceName);
         this.path = appMiddleware.getForwardAuth().getPath();
         this.headerActions = HeaderActionFactory.createActions(authRequestHeaderRules);
-        this.authResponseHeaderPatterns = Arrays.asList(authResponseHeaders.split(","));
+        this.requestMethod = this.service.getMethods().getFirst();
     }
 
     @Override
@@ -100,7 +99,6 @@ public class ForwardAuthAuthenticator implements Authenticator {
 
     private Map<String, String> getForwardHeaders(HttpServletRequest request) {
         Map<String, String> headersToForward = new HashMap<>();
-
         // Execute all header actions to populate headersToForward
         for (HeaderAction action : headerActions) {
             action.execute(request, headersToForward);
@@ -112,7 +110,7 @@ public class ForwardAuthAuthenticator implements Authenticator {
     private HttpURLConnection performForwardAuthRequest(Map<String, String> headers) throws IOException {
         URL url = new URL(service.getUrl() + path);
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-        connection.setRequestMethod("POST");
+        connection.setRequestMethod(this.requestMethod);
         connection.setDoOutput(true);
 
         // Set headers

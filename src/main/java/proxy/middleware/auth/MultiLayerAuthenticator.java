@@ -58,18 +58,27 @@ public class MultiLayerAuthenticator implements Authenticator {
             return Authentication.NOT_CHECKED;
         }
 
-        // Sequentially try each authenticator until one succeeds
+        Authentication.User firstValidAuthentication = null;
+
+        // Check all authenticators sequentially
         for (Authenticator authenticator : authenticators) {
             Authentication authentication = authenticator.validateRequest(httpRequest, httpResponse, mandatory);
-            if (authentication instanceof Authentication.User) {
-                // Return on the first successful authentication
-                return authentication;
+
+            // If any authenticator fails, return UNAUTHENTICATED immediately
+            if (!(authentication instanceof Authentication.User)) {
+                return Authentication.UNAUTHENTICATED;
+            }
+
+            // Store the first valid authentication
+            if (firstValidAuthentication == null) {
+                firstValidAuthentication = (Authentication.User) authentication;
             }
         }
 
-        // If all authenticators fail, return UNAUTHENTICATED
-        return Authentication.UNAUTHENTICATED;
+        // Return the first successful authentication
+        return firstValidAuthentication;
     }
+
 
     @Override
     public boolean secureResponse(ServletRequest request, ServletResponse response, boolean mandatory, Authentication.User validatedUser) throws ServerAuthException {
