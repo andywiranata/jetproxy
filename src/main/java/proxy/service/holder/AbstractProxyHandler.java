@@ -1,5 +1,7 @@
 package proxy.service.holder;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.brotli.dec.BrotliInputStream;
@@ -8,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import proxy.context.AppConfig;
 import proxy.context.AppContext;
+import proxy.middleware.cache.ResponseCacheEntry;
 import proxy.middleware.circuitbreaker.CircuitBreakerUtil;
 import proxy.middleware.metric.MetricsListener;
 import proxy.middleware.rule.RuleContext;
@@ -18,12 +21,14 @@ import java.io.*;
 import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.InflaterInputStream;
 
 public abstract class AbstractProxyHandler extends ProxyServlet.Transparent {
 
+    protected final String MODIFIED_HEADER = "modifiedHeader";
     private static final Logger logger = LoggerFactory.getLogger(AbstractProxyHandler.class);
     protected AppConfig.Service configService;
     protected AppConfig.Proxy proxyRule;
@@ -35,42 +40,46 @@ public abstract class AbstractProxyHandler extends ProxyServlet.Transparent {
 
 
 
-
     // Shared logic for checking the cache
-    protected String getCachedResponse(HttpServletRequest request) {
+    protected ResponseCacheEntry getCachedResponse(HttpServletRequest request) {
         if (!request.getMethod().equalsIgnoreCase("GET")) {
             return null;
         }
+        AppContext ctx = AppContext.get();
         String path = RequestUtils.getFullPath(request);
         String method = request.getMethod();
-        return AppContext
-                .get()
-                .getCache()
-                .get(String.format("%s__%s",
-                        method, path));
+        String responseBody = ctx.getCache().get(String.format("%s__%s", method, path));
+
+        return ctx.gson.fromJson(responseBody, ResponseCacheEntry.class);
+
     }
 
     // Shared logic for caching the response
-    protected void cacheResponseContent(HttpServletRequest request, String bodyContent) {
+    protected void cacheResponseContent(HttpServletRequest request,
+                                        String responseBody) {
         if (!request.getMethod().equalsIgnoreCase("GET")) {
             return;
         }
+        AppContext ctx = AppContext.get();
         String path = RequestUtils.getFullPath(request);
         String method = request.getMethod();
-        AppContext
-                .get()
-                .getCache()
+        ResponseCacheEntry cacheEntry = new ResponseCacheEntry(
+                (Map<String, String>) request.getAttribute(MODIFIED_HEADER), responseBody);
+        ctx.getCache()
                 .put(String.format("%s__%s", method, path),
-                        bodyContent,
+                        ctx.gson.toJson(cacheEntry),
                         proxyRule.getTtl());
 
     }
 
     // Shared logic for sending cached responses
-    protected void sendCachedResponse(HttpServletResponse response, String cachedResponse) {
-        response.setContentType("application/json");
+    protected void sendCachedResponse(HttpServletResponse response, ResponseCacheEntry cachedResponse) {
         try {
-            response.getWriter().write(cachedResponse);
+            for (Map.Entry<String, String> header : cachedResponse.getHeaders().entrySet()) {
+                response.setHeader(header.getKey(), header.getValue());
+            }
+            response.getWriter().write(cachedResponse.getBody());
+            response.getWriter().flush();
         } catch (IOException e) {
             logger.error("Error writing cached response: {}", e.getMessage());
         }
@@ -138,6 +147,10 @@ public abstract class AbstractProxyHandler extends ProxyServlet.Transparent {
 
     protected boolean hasRuleContext() {
         return this.ruleContext != null;
+    }
+
+    protected boolean isCacheActive() {
+        return proxyRule.getTtl() > 0;
     }
 
 

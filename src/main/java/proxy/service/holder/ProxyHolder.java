@@ -12,6 +12,7 @@ import org.eclipse.jetty.util.Callback;
 import proxy.context.AppConfig;
 import proxy.context.AppContext;
 import proxy.logger.DebugAwareLogger;
+import proxy.middleware.cache.ResponseCacheEntry;
 import proxy.middleware.circuitbreaker.CircuitBreakerFactory;
 import proxy.middleware.rule.RuleFactory;
 import proxy.middleware.rule.header.HeaderAction;
@@ -87,7 +88,7 @@ public class ProxyHolder extends AbstractProxyHandler {
                 return;
             }
 
-            String cachedResponse = getCachedResponse(request);
+            ResponseCacheEntry cachedResponse = getCachedResponse(request);
             if (cachedResponse != null) {
                 logger.debug("Serving cached response for URI: {}. Method: {}, IP: {}",
                         request.getRequestURI(), request.getMethod(), request.getRemoteAddr());
@@ -147,7 +148,8 @@ public class ProxyHolder extends AbstractProxyHandler {
         for (Map.Entry<String, String> entry : modifiedHeaders.entrySet()) {
             proxyResponse.setHeader(entry.getKey(), entry.getValue());
         }
-
+        serverHeaders.putAll(modifiedHeaders);
+        clientRequest.setAttribute(MODIFIED_HEADER,serverHeaders);
     }
 
     @Override
@@ -164,8 +166,7 @@ public class ProxyHolder extends AbstractProxyHandler {
                                      byte[] buffer,
                                      int offset,
                                      int length, Callback callback) {
-        // TODO Only support http
-        if (this.proxyRule.getTtl() > 0) {
+        if (isCacheActive()) {
             String contentType = proxyResponse.getHeaders().get("Content-Type");
             String contentEncoding = proxyResponse.getHeaders().get("Content-Encoding");
             try (InputStream decodedStream = decodeContentStream(new ByteArrayInputStream(buffer, offset, length), contentEncoding)) {
@@ -173,11 +174,12 @@ public class ProxyHolder extends AbstractProxyHandler {
                     String bodyContent = readStreamAsString(decodedStream, contentType);
                     cacheResponseContent(request, bodyContent);
                 }
-            } catch (IOException e) {
+            } catch (Exception e) {
                 logger.error("Error decode response content {}", e.getMessage());
+            } finally {
+                printProxyResponseHeaders(proxyResponse);
             }
         }
-
         super.onResponseContent(request, response, proxyResponse, buffer, offset, length, callback);
     }
     private HttpServletRequestWrapper modifyRequestHeaders(HttpServletRequest request) {
@@ -225,6 +227,14 @@ public class ProxyHolder extends AbstractProxyHandler {
             logger.debug("Incoming request: Method={}, URI={}, IP={}, Headers=[{}], Query Parameters=[{}]",
                     request.getMethod(), request.getRequestURI(), request.getRemoteAddr(), headersLog, paramsLog);
         }
+    }
+    public void printProxyResponseHeaders(Response proxyResponse) {
+        // Iterate through all response headers
+        proxyResponse.getHeaders().forEach(header -> {
+            String headerName = header.getName();
+            String headerValue = header.getValue();
+            System.out.println(headerName + ": " + headerValue);
+        });
     }
 
 
