@@ -35,6 +35,7 @@ In this configuration, the users section defines the credentials and roles for a
 ### Basic Authentication Mechanism
 
 When a user attempts to access a protected route, they must provide credentials using the `Authorization` header in their request. The credentials are sent in the format:
+
 ```
 Authorization: Basic <Base64 encoded username and password>
 ```
