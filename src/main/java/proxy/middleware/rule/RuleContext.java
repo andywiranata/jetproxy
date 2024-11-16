@@ -5,8 +5,8 @@ import java.util.List;
 
 public class RuleContext {
 
-    private final List<Rule> rules;
-    private final List<String> operators;  // List of logical operators (&&, ||)
+    private List<Rule> rules;
+    private List<String> operators;  // List of logical operators (&&, ||)
 
     public RuleContext(List<Rule> rules, List<String> operators) {
         this.rules = rules;

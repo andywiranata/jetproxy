@@ -27,8 +27,14 @@ public class RemoveHeader implements HeaderAction {
 
     @Override
     public void execute(Map<String, String> serverHeaders, Map<String, String> modifiedHeaders) {
+        // Debug log
+
         // Remove matching headers from the map
-        modifiedHeaders.keySet().removeIf(headerName -> matchesWildcard(pattern, headerName));
+        serverHeaders.keySet().removeIf(headerName -> {
+            return matchesWildcard(pattern, headerName);
+        });
+
     }
+
 
 }

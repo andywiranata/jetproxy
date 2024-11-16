@@ -1,10 +1,13 @@
 package proxy.service.holder;
 
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
+import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletRequestWrapper;
 import jakarta.servlet.http.HttpServletResponse;
+import org.eclipse.jetty.client.api.Request;
 import org.eclipse.jetty.client.api.Response;
+import org.eclipse.jetty.http.HttpField;
 import org.eclipse.jetty.util.Callback;
 import proxy.context.AppConfig;
 import proxy.context.AppContext;
@@ -68,24 +71,7 @@ public class ProxyHolder extends AbstractProxyHandler {
     @Override
     protected void service(HttpServletRequest request, HttpServletResponse response) {
         try {
-            if (AppContext.get().isDebugMode()) {
-                // Collect headers into a single formatted string
-                String headersLog = Collections.list(request.getHeaderNames()).stream()
-                        .map(header -> header + ": " + request.getHeader(header))
-                        .collect(Collectors.joining(", "));
-
-                // Collect query parameters into a single formatted string
-                String paramsLog = request.getParameterMap().entrySet().stream()
-                        .map(entry -> entry.getKey() + "=" + String.join(",", entry.getValue()))
-                        .collect(Collectors.joining(", "));
-                // Combine all details into a single log entry
-                logger.debug("Incoming request: Method={}, URI={}, IP={}, Headers=[{}], Query Parameters=[{}]",
-                        request.getMethod(),
-                        request.getRequestURI(),
-                        request.getRemoteAddr(),
-                        headersLog,
-                        paramsLog);
-            }
+            logIncomingRequest(request);
 
             if (hasRuleContext() && !ruleContext.evaluate(request)) {
                 logger.debug("Request denied by rule evaluation. URI: {}, Method: {}, IP: {}",
@@ -148,8 +134,8 @@ public class ProxyHolder extends AbstractProxyHandler {
         // Extract existing headers from the server response
         Map<String, String> serverHeaders = serverResponse.getHeaders().stream()
                 .collect(Collectors.toMap(
-                        header -> header.getName(),
-                        header -> header.getValue()
+                        HttpField::getName,
+                        HttpField::getValue
                 ));
         // Apply response header actions
         Map<String, String> modifiedHeaders = new HashMap<>();
@@ -224,6 +210,21 @@ public class ProxyHolder extends AbstractProxyHandler {
                 return Collections.enumeration(Collections.singleton(modifiedHeaders.get(name)));
             }
         };
+    }
+
+    private void logIncomingRequest(HttpServletRequest request) {
+        if (AppContext.get().isDebugMode()) {
+            String headersLog = Collections.list(request.getHeaderNames()).stream()
+                    .map(header -> header + ": " + request.getHeader(header))
+                    .collect(Collectors.joining(", "));
+
+            String paramsLog = request.getParameterMap().entrySet().stream()
+                    .map(entry -> entry.getKey() + "=" + String.join(",", entry.getValue()))
+                    .collect(Collectors.joining(", "));
+
+            logger.debug("Incoming request: Method={}, URI={}, IP={}, Headers=[{}], Query Parameters=[{}]",
+                    request.getMethod(), request.getRequestURI(), request.getRemoteAddr(), headersLog, paramsLog);
+        }
     }
 
 

@@ -56,7 +56,7 @@ tasks.test {
 
 java {
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(22)) // Adjust based on your project's JDK
+        languageVersion.set(JavaLanguageVersion.of(21)) // Adjust based on your project's JDK
     }
 }
 
