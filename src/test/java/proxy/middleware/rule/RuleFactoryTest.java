@@ -21,7 +21,7 @@ class RuleFactoryTest {
     @Test
     void testCreateRulesFromString_withValidRuleString() {
         // Arrange
-        String ruleString = "Header('Content-Type', 'application/json') && Path('api/v1')";
+        String ruleString = "(Header('Content-Type', 'application/json') && HeaderPrefix('User-Agent', 'Mozilla')) || HeaderRegex('X-Custom-Header', '^[a-zA-Z0-9]{10}$')";
 
         // Act
         RuleContext ruleContext = RuleFactory.createRulesFromString(ruleString);
