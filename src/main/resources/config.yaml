@@ -44,7 +44,7 @@ proxies:
       header:
         requestHeaders: "Remove(x-header-*);Remove(Authorization);Append(X-Custom-Header,-jetty)"
         responseHeaders: "Add(X-Powered-By,jetty-server)"
-    ttl: -1
+    ttl: 5000
   - path: /products
     service: productApi
     middleware:

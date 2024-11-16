@@ -30,7 +30,6 @@ public class AppConfig {
         private String service;
         private Middleware middleware = null;
         private long ttl;
-
         public boolean hasMiddleware() {
             return middleware != null;
         }
