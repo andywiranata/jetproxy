@@ -7,6 +7,8 @@ import java.util.Map;
 
 public interface HeaderAction {
     void execute(HttpServletRequest request, Map<String, String> headers);
+    void execute(Map<String, String> serverHeaders, Map<String, String> modifiedHeaders); // New method
+
 
     // Add RuleContext for conditional operations
     default boolean shouldExecute(HttpServletRequest request, RuleContext ruleContext) {

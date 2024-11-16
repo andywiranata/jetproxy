@@ -41,6 +41,9 @@ public class AppConfig {
     @ToString
     public static class Middleware {
         @Nullable
+        private Headers header;
+
+        @Nullable
         private String basicAuth; // Updated basicAuth field to be nullable
 
         @Nullable
@@ -61,6 +64,9 @@ public class AppConfig {
         public boolean hasCircuitBreaker() {
             return circuitBreaker != null;
         }
+        public boolean hasHeaders() {
+            return header != null;
+        }
     }
 
     @Getter
@@ -70,7 +76,6 @@ public class AppConfig {
         private String path;
         private String service;
         private String authRequestHeaders;
-        private String authResponseHeaders;
     }
 
     @Getter
@@ -145,5 +150,23 @@ public class AppConfig {
         private String username;
         private String password;
         private String role;
+    }
+
+    @Getter
+    @Setter
+    @ToString
+    public static class Headers {
+        @Nullable
+        private String requestHeaders;
+        @Nullable
+        private String responseHeaders;
+
+        public boolean hasRequestHeaders() {
+            return requestHeaders != null;
+        }
+
+        public boolean hasResponseHeaders() {
+            return responseHeaders != null;
+        }
     }
 }

@@ -47,3 +47,7 @@ curl --location 'http://localhost:8080/products' \
 --header 'Authorization: Basic dXNlckI6dXNlckI='
 ```
 
+The rule in the configuration defines the conditions that must be met for a request to proceed:
+
+* It checks that the Content-Type header equals application/json AND the User-Agent header starts with Mozilla.
+OR it validates that the X-Custom-Header matches the regex pattern ^[a-zA-Z0-9]{10}$ (exactly 10 alphanumeric characters).

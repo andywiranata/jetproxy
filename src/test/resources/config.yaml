@@ -1,5 +1,5 @@
 appName: API-PROXY
-port: 8081
+port: 8080
 defaultTimeout: 10000
 dashboard: true
 rootPath: /
@@ -34,15 +34,25 @@ proxies:
   - path: /google
     service: googleApi
     ttl: -1
+  - path: /user
+    service: userApi
+    middleware:
+      forwardAuth:
+        path: /verify
+        service: authApi
+        authRequestHeaders: "Forward(X-Custom-*);Forward(Authorization)"
+      header:
+        requestHeaders: "Remove(x-header-*);Remove(Authorization);Append(X-Custom-Header,-jetty)"
+        responseHeaders: "Add(X-Powered-By,jetty-server)"
+    ttl: -1
   - path: /products
     service: productApi
     middleware:
       basicAuth: 'basicAuth:roleA'
       forwardAuth:
         path: /verify
-        service: forwardAuth
-        authRequestHeaders: "Accept,X-CustomHeader"
-        authResponseHeaders: "X-Auth-User,X-Secret,X-forwarded*"
+        service: authApi
+        authRequestHeaders: "Forward(X-Custom-*);Forward(Authorization)"
       rule: "(Header('Content-Type', 'application/json') && HeaderPrefix('User-Agent', 'Mozilla')) || HeaderRegex('X-Custom-Header', '^[a-zA-Z0-9]{10}$')"
       circuitBreaker:
         enabled: true
@@ -57,7 +67,15 @@ proxies:
   - path: /task
     service: tasksApi
     middleware:
+      header:
+        requestHeaders: "Forward(X-Custom-*);Forward(Authorization)"
+        responseHeaders: "Append(x-ganteng,andy)"
       basicAuth: 'basicAuth:roleB'
+      forwardAuth:
+        path: /verify
+        service: authApi
+        authRequestHeaders: "Forward(X-Custom-*);Forward(Authorization)"
+      rule: "(Header('Content-Type', 'application/json') && HeaderPrefix('User-Agent', 'Mozilla')) || HeaderRegex('X-Custom-Header', '^[a-zA-Z0-9]{10}$')"
     ttl: 10000
 
 services:
@@ -77,9 +95,12 @@ services:
   - name: httpbinApi
     url: http://httpbin.org
     methods: ['GET', 'POST', 'PUT']
-  - name: forwardAuth
-    url: http://localhost/3000
+  - name: authApi
+    url: http://localhost:30001
     methods: ['POST']
+  - name: userApi
+    url: http://localhost:30001/user
+    methods: ['GET']
 
 users:
   - username: admin

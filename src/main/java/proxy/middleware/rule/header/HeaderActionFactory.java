@@ -1,13 +1,11 @@
 package proxy.middleware.rule.header;
 
-
 import proxy.middleware.rule.RuleContext;
 import proxy.middleware.rule.RuleFactory;
 
 import java.util.ArrayList;
 import java.util.List;
 
-// https://chatgpt.com/c/672c6e21-7b54-800b-b1ab-4f625b29819e
 public class HeaderActionFactory {
     public static List<HeaderAction> createActions(String config) {
         List<HeaderAction> actions = new ArrayList<>();
@@ -38,6 +36,14 @@ public class HeaderActionFactory {
                 String newValue = parts[2];
                 RuleContext ruleContext = parts.length > 3 ? RuleFactory.createRulesFromString(parts[3]) : null;
                 actions.add(new ModifyHeader(pattern, value -> value.replace(replacement, newValue), ruleContext));
+            } else if (rule.startsWith("Add(")) {
+                String[] parts = rule.substring(4, rule.length() - 1).split(",", 2);
+                String headerName = parts[0];
+                String headerValue = parts[1];
+                actions.add(new AddHeader(headerName, headerValue, null));
+            } else if (rule.startsWith("Remove(")) {
+                String pattern = rule.substring(7, rule.length() - 1);
+                actions.add(new RemoveHeader(pattern, null));
             }
         }
 
