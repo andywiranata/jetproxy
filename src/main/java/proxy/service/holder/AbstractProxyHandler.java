@@ -141,6 +141,7 @@ public abstract class AbstractProxyHandler extends ProxyServlet.Transparent {
         response.setStatus(HttpServletResponse.SC_NOT_ACCEPTABLE);
     }
 
+
     protected boolean hasCircuitBreaker() {
         return this.circuitBreakerUtil != null;
     }
