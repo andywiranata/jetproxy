@@ -8,6 +8,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.client.api.Request;
 import org.eclipse.jetty.client.api.Response;
 import org.eclipse.jetty.http.HttpField;
+import org.eclipse.jetty.http.HttpHeader;
 import org.eclipse.jetty.util.Callback;
 import proxy.context.AppConfig;
 import proxy.context.AppContext;
@@ -119,6 +120,7 @@ public class ProxyHolder extends AbstractProxyHandler {
                     super.service(modifiedRequest, response);
                 }
             } catch (Exception e) {
+                logger.debug("Error Occured");
                 response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
             }
         } finally {
@@ -153,6 +155,11 @@ public class ProxyHolder extends AbstractProxyHandler {
     }
 
     @Override
+    protected void sendProxyRequest(HttpServletRequest clientRequest, HttpServletResponse proxyResponse, Request proxyRequest) {
+        super.sendProxyRequest(clientRequest, proxyResponse, proxyRequest);
+    }
+
+    @Override
     protected void onProxyResponseFailure(HttpServletRequest clientRequest, HttpServletResponse proxyResponse, Response serverResponse, Throwable failure) {
         String path = clientRequest.getRequestURI();
         logger.error("Failed proxy from -> {} -> to {}", path, this.configService.getUrl());
@@ -166,9 +173,10 @@ public class ProxyHolder extends AbstractProxyHandler {
                                      byte[] buffer,
                                      int offset,
                                      int length, Callback callback) {
+        super.onResponseContent(request, response, proxyResponse, buffer, offset, length, callback);
         if (isCacheActive()) {
-            String contentType = proxyResponse.getHeaders().get("Content-Type");
-            String contentEncoding = proxyResponse.getHeaders().get("Content-Encoding");
+            String contentType = proxyResponse.getHeaders().get(HttpHeader.CONTENT_TYPE);
+            String contentEncoding = proxyResponse.getHeaders().get(HttpHeader.CONTENT_ENCODING);
             try (InputStream decodedStream = decodeContentStream(new ByteArrayInputStream(buffer, offset, length), contentEncoding)) {
                 if (isJsonContent(contentType)) {
                     String bodyContent = readStreamAsString(decodedStream, contentType);
@@ -176,12 +184,11 @@ public class ProxyHolder extends AbstractProxyHandler {
                 }
             } catch (Exception e) {
                 logger.error("Error decode response content {}", e.getMessage());
-            } finally {
-                printProxyResponseHeaders(proxyResponse);
             }
         }
-        super.onResponseContent(request, response, proxyResponse, buffer, offset, length, callback);
+
     }
+
     private HttpServletRequestWrapper modifyRequestHeaders(HttpServletRequest request) {
         // Create a mutable map for headers
         Map<String, String> modifiedHeaders = Collections.list(request.getHeaderNames()).stream()
@@ -228,15 +235,4 @@ public class ProxyHolder extends AbstractProxyHandler {
                     request.getMethod(), request.getRequestURI(), request.getRemoteAddr(), headersLog, paramsLog);
         }
     }
-    public void printProxyResponseHeaders(Response proxyResponse) {
-        // Iterate through all response headers
-        proxyResponse.getHeaders().forEach(header -> {
-            String headerName = header.getName();
-            String headerValue = header.getValue();
-            System.out.println(headerName + ": " + headerValue);
-        });
-    }
-
-
-
 }

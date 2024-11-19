@@ -6,17 +6,20 @@ plugins {
     id("com.github.johnrengelman.shadow") version "7.1.2"
 }
 
-//group = "me.andywiranata.open"
 version = "1.0"
 
 java {
-//    withJavadocJar()
-//    withSourcesJar()
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(21)) // Adjust based on your project's JDK
+    }
 }
-
 
 repositories {
     mavenCentral()
+}
+
+configurations {
+    create("agent") // Explicitly create the 'agent' configuration
 }
 
 dependencies {
@@ -40,6 +43,17 @@ dependencies {
     implementation("redis.clients:jedis:5.2.0")
     implementation("com.timgroup:java-statsd-client:3.1.0")
     implementation("org.projectlombok:lombok:1.18.34")
+
+    // OpenTelemetry (stable version)
+    implementation("io.opentelemetry:opentelemetry-api:1.31.0")
+    implementation("io.opentelemetry:opentelemetry-sdk:1.31.0")
+    implementation("io.opentelemetry:opentelemetry-exporter-otlp:1.31.0")
+
+    // OpenTelemetry Java agent
+    configurations["agent"].dependencies.add(
+            project.dependencies.create("io.opentelemetry.javaagent:opentelemetry-javaagent:1.31.0")
+    )
+
     annotationProcessor("org.projectlombok:lombok:1.18.34")
     testAnnotationProcessor("org.projectlombok:lombok:1.18.34")
     testImplementation(platform("org.junit:junit-bom:5.9.1"))
@@ -47,17 +61,16 @@ dependencies {
     testImplementation("org.mockito:mockito-core:5.4.0") // Use the latest version
     testImplementation("org.mockito:mockito-inline:5.0.0")
     testImplementation("org.mockito.kotlin:mockito-kotlin:5.0.0") // Use the latest version
+}
 
+tasks.register<Copy>("copyAgent") {
+    from(configurations["agent"].singleFile)
+    into(layout.buildDirectory.dir("agent"))
+    rename("opentelemetry-javaagent-.*\\.jar", "opentelemetry-javaagent.jar")
 }
 
 tasks.test {
     useJUnitPlatform()
-}
-
-java {
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(21)) // Adjust based on your project's JDK
-    }
 }
 
 tasks.jar {
@@ -69,7 +82,15 @@ tasks.jar {
 tasks.named("delombok") {
     enabled = false
 }
+
 application {
     // Replace with your actual main class package name
     mainClass.set("proxy.MainProxy")
+}
+
+tasks.named<JavaExec>("run") {
+    dependsOn("copyAgent")
+    // Set the opentelemetry-javaagent as the javaagent
+    val agentPath = project.buildDir.toString() + "/agent/opentelemetry-javaagent.jar"
+    jvmArgs = listOf("-javaagent:$agentPath")
 }

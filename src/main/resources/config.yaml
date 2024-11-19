@@ -1,9 +1,9 @@
-appName: API-PROXY
-port: 8080
-defaultTimeout: 10000
-dashboard: true
-rootPath: /
-debugMode: true
+appName: ${JET_APP_NAME:API-PROXY}
+port: ${JET_PORT:8080}
+defaultTimeout: ${JET_DEFAULT_TIMEOUT:10000}
+dashboard: ${JET_DASHBOARD:true}
+rootPath: ${JET_DASHBOARD:/}
+debugMode: ${JET_DEBUG_MODE:true}
 
 storage:
   redis:
