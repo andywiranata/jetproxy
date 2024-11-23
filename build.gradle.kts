@@ -90,21 +90,30 @@ tasks.named<JavaExec>("run") {
     doFirst {
         println("Using OpenTelemetry agent located at: $agentPath")
     }
+    // Load environment variables from .env file
+// Load `.env` manually
+    val dotenvFile = file(".env")
+    if (dotenvFile.exists()) {
+        dotenvFile.forEachLine { line ->
+            // Skip empty lines and comments
+            if (line.isNotBlank() && !line.trim().startsWith("#")) {
+                val keyValue = line.split("=", limit = 2) // Split into two parts only
+                if (keyValue.size == 2) {
+                    val key = keyValue[0].trim()
+                    val value = keyValue[1].trim()
+                    println("$key $value")
+                    environment(key, value)
+                } else {
+                    println("Warning: Skipping malformed line in .env file: $line")
+                }
+            }
+        }
+    } else {
+        println("Warning: .env file not found!")
+    }
+
     jvmArgs("-javaagent:$agentPath")
     // Optionally set OpenTelemetry environment variables
-    environment("OTEL_SERVICE_NAME", "JetProxy");
-    environment("OTEL_EXPERIMENTAL_EXPORTER_OTLP_RETRY_ENABLED", "true");
-    environment("OTEL_EXPORTER_OTLP_METRICS_DEFAULT_HISTOGRAM_AGGREGATION", "BASE2_EXPONENTIAL_BUCKET_HISTOGRAM");
-    environment("OTEL_EXPERIMENTAL_RESOURCE_DISABLED_KEYS", "process.command_args");
-    environment("OTEL_EXPORTER_OTLP_ENDPOINT", "https://otlp.nr-data.net");
-    environment("OTEL_EXPORTER_OTLP_HEADERS", "api-key=YOUR_API_KEY L");
-    environment("OTEL_ATTRIBUTE_VALUE_LENGTH_LIMIT", "4095");
-    environment("OTEL_EXPORTER_OTLP_COMPRESSION", "gzip");
-    environment("OTEL_EXPORTER_OTLP_PROTOCOL", "http/protobuf");
-    environment("OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE", "delta");
-    environment("OTEL_LOG_LEVEL", "debug")
-
-
 
 
 }
