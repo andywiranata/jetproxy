@@ -1,7 +1,6 @@
 package proxy;
 
 import io.opentelemetry.api.GlobalOpenTelemetry;
-import io.opentelemetry.api.OpenTelemetry;
 import jakarta.servlet.DispatcherType;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.ServletContextHandler;
@@ -21,9 +20,9 @@ public class MainProxy {
     private static final Logger logger = LoggerFactory.getLogger(MainProxy.class);
 
     public void start() throws Exception {
-        
+
         String externalConfigPath = System.getenv("APP_CONFIG_PATH");
-        OpenTelemetry tracer =GlobalOpenTelemetry.get();
+        GlobalOpenTelemetry.get();
 
         AppContext appContext = new AppContext.Builder()
                 .withPathConfig(externalConfigPath)
