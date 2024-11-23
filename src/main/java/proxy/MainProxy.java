@@ -21,10 +21,7 @@ public class MainProxy {
     private static final Logger logger = LoggerFactory.getLogger(MainProxy.class);
 
     public void start() throws Exception {
-
-        logger.info("Envar OTEL_EXPORTER_OTLP_ENDPOINT {}", System.getenv("OTEL_EXPORTER_OTLP_ENDPOINT"));
-        logger.info("Envar OTEL_EXPORTER_OTLP_HEADERS {}", System.getenv("OTEL_EXPORTER_OTLP_HEADERS"));
-
+        
         String externalConfigPath = System.getenv("APP_CONFIG_PATH");
         OpenTelemetry tracer =GlobalOpenTelemetry.get();
 
