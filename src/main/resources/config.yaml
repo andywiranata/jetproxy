@@ -99,7 +99,7 @@ services:
     url: http://localhost:30001
     methods: ['POST']
   - name: userApi
-    url: http://localhost:30001/user
+    url: http://localhost:30001
     methods: ['GET']
 
 users:

@@ -120,7 +120,7 @@ public class ProxyHolder extends AbstractProxyHandler {
                     super.service(modifiedRequest, response);
                 }
             } catch (Exception e) {
-                logger.debug("Error Occured");
+                logger.debug("Error Occurred");
                 response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
             }
         } finally {
