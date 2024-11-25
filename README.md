@@ -16,10 +16,11 @@ By automatically discovering services and adjusting routes, this reverse proxy s
 - **Rules**: [Link](https://jetproxy.andywiranata.me/docs/middleware/rules)
 - **Headers**: [Link](https://jetproxy.andywiranata.me/docs/middleware/headers)
 - **CircuitBreaker**: [Link](https://jetproxy.andywiranata.me/docs/middleware/circuit-breaker) **TODO**
+- **Custim Error**: **TODO**
 - **Tracing OpenTelemetry**: **TODO**
 - **Enabled Debug Logging**: **TODO**
-- **Health Check: **TODO**
-- **Sticky Session**: **TODO**
+- **Health Check**: **TODO**
+- **Sticky Session**: **TODO InReview**
 - **Rate Limiter**: Protect your services by limiting the number of requests per client. **TODO**
 - **Docker up and running**, externalize config **TODO**
 
