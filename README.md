@@ -10,14 +10,14 @@ By automatically discovering services and adjusting routes, this reverse proxy s
 
 - **Dynamic Routing**: Automatically route traffic to microservices based on service discovery. [Link](https://jetproxy.andywiranata.me/docs/routing/overview)
 - **HTTP Caching**: Cache HTTP responses to reduce latency and improve performance. [Link](https://jetproxy.andywiranata.me/docs/middleware/cache)
-- **Statistics**: Collect and display metrics for monitoring traffic and performance. **TOOD - InReview to full utilize opentelemetry** 
+- **Statistics**: Collect and display metrics for monitoring traffic and performance. **TODO - InReview to full utilize opentelemetry** 
 - **Basic Auth**:  [Link](https://jetproxy.andywiranata.me/docs/middleware/basic-auth)
 - **Forward Auth**: [Link](https://jetproxy.andywiranata.me/docs/middleware/forward-auth)
 - **Rules**: [Link](https://jetproxy.andywiranata.me/docs/middleware/rules)
 - **Headers**: [Link](https://jetproxy.andywiranata.me/docs/middleware/headers)
-- **CircuitBreaker**: [Link](https://jetproxy.andywiranata.me/docs/middleware/circuit-breaker) **TODO**
+- **CircuitBreaker**: [Link](https://jetproxy.andywiranata.me/docs/middleware/circuit-breaker) **Dev Done, In testing - TODO**
 - **Custom Error**: **TODO**
-- **Tracing OpenTelemetry**: **TODO**
+- **Tracing OpenTelemetry**: **Dev Done, Doc - TODO**
 - **Enabled Debug Logging**: **TODO**
 - **Health Check**: **TODO**
 - **Sticky Session**: **TODO InReview**
