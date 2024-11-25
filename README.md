@@ -16,7 +16,7 @@ By automatically discovering services and adjusting routes, this reverse proxy s
 - **Rules**: [Link](https://jetproxy.andywiranata.me/docs/middleware/rules)
 - **Headers**: [Link](https://jetproxy.andywiranata.me/docs/middleware/headers)
 - **CircuitBreaker**: [Link](https://jetproxy.andywiranata.me/docs/middleware/circuit-breaker) **TODO**
-- **Custim Error**: **TODO**
+- **Custom Error**: **TODO**
 - **Tracing OpenTelemetry**: **TODO**
 - **Enabled Debug Logging**: **TODO**
 - **Health Check**: **TODO**
