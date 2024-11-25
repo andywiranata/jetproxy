@@ -8,13 +8,20 @@ By automatically discovering services and adjusting routes, this reverse proxy s
 
 ## Features (In Progress)
 
-- **Dynamic Routing**: Automatically route traffic to microservices based on service discovery.
-- **HTTP Caching**: Cache HTTP responses to reduce latency and improve performance.
-- **Statistics**: Collect and display metrics for monitoring traffic and performance.
-- **Basic Auth**
-- **Sticky Session**
-- **Rate Limiter**: Protect your services by limiting the number of requests per client.
-- **Docker up and running**, externalize config
+- **Dynamic Routing**: Automatically route traffic to microservices based on service discovery. [Link](https://jetproxy.andywiranata.me/docs/routing/overview)
+- **HTTP Caching**: Cache HTTP responses to reduce latency and improve performance. [Link](https://jetproxy.andywiranata.me/docs/middleware/cache)
+- **Statistics**: Collect and display metrics for monitoring traffic and performance. **TOOD - InReview to full utilize opentelemetry** 
+- **Basic Auth**:  [Link](https://jetproxy.andywiranata.me/docs/middleware/basic-auth)
+- **Forward Auth**: [Link](https://jetproxy.andywiranata.me/docs/middleware/forward-auth)
+- **Rules**: [Link](https://jetproxy.andywiranata.me/docs/middleware/rules)
+- **Headers**: [Link](https://jetproxy.andywiranata.me/docs/middleware/headers)
+- **CircuitBreaker**: [Link](https://jetproxy.andywiranata.me/docs/middleware/circuit-breaker) **TODO**
+- **Tracing OpenTelemetry**: **TODO**
+- **Enabled Debug Logging**: **TODO**
+- **Health Check: **TODO**
+- **Sticky Session**: **TODO**
+- **Rate Limiter**: Protect your services by limiting the number of requests per client. **TODO**
+- **Docker up and running**, externalize config **TODO**
 
 ## Tech Stack
 
