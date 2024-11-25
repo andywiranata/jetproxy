@@ -44,14 +44,7 @@ public class SetupProxyHolder {
             String targetServiceUrl = service.getUrl();
             List<Authenticator> authenticators = new ArrayList<>();
             String whitelistPath = proxyRule.getPath() + "/*";
-
-            if (targetServiceUrl == null) {
-                throw new IllegalArgumentException("Service URL not found for: " + proxyRule.getService());
-            }
-            ServletHolder proxyServlet = new ServletHolder(new ProxyHolder(service, proxyRule));
-            proxyServlet.setInitParameter(PROXY_TO, targetServiceUrl);
-            proxyServlet.setInitParameter(PREFIX, proxyRule.getPath());
-            proxyServlet.setInitParameter(TIMEOUT, String.valueOf(config.getDefaultTimeout()));
+            ServletHolder proxyServlet = getServletHolder(proxyRule, targetServiceUrl, service);
 
             context.addServlet(proxyServlet, proxyRule.getPath() + "/*");
 
@@ -71,7 +64,6 @@ public class SetupProxyHolder {
                                         null));
             }
             multiLayerAuthenticator.registerAuthenticators(whitelistPath, authenticators);
-            logger.info("Proxy added: {} -> {}", proxyRule.getPath(), targetServiceUrl);
         }
         basicAuthSecurityHandler.setAuthenticator(multiLayerAuthenticator);
         basicAuthSecurityHandler.setHandler(context);
@@ -81,6 +73,23 @@ public class SetupProxyHolder {
         // FilterHolder metricsFilterHolder = new FilterHolder(new MetricFilter());
         // context.addFilter(metricsFilterHolder, "/*", null);
         server.setHandler(handlers);
+    }
+
+    private ServletHolder getServletHolder(AppConfig.Proxy proxyRule, String targetServiceUrl, AppConfig.Service service) {
+        String proxyTo = targetServiceUrl + proxyRule.getPath();
+        String prefix = proxyRule.getPath();
+        String timeout = String.valueOf(config.getDefaultTimeout());
+
+        if (targetServiceUrl == null) {
+            throw new IllegalArgumentException("Service URL not found for: " + proxyRule.getService());
+        }
+        ServletHolder proxyServlet = new ServletHolder(new ProxyHolder(service, proxyRule));
+        proxyServlet.setInitParameter(PROXY_TO, proxyTo);
+        proxyServlet.setInitParameter(PREFIX, prefix);
+        proxyServlet.setInitParameter(TIMEOUT, timeout);
+
+        logger.info("Proxy added: {} -> {}", proxyRule.getPath(), proxyTo);
+        return proxyServlet;
     }
 
     public boolean shouldEnableForwardAuth(AppConfig.Proxy proxy) {
