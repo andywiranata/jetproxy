@@ -82,10 +82,12 @@ services:
   - name: tasksApi
     url: http://localhost:5173/template/1on1-meeting-agenda/tasks.json
     methods: ['GET', 'POST', 'PUT']
+    healthcheck: /ping
   - name: productApi
     url: https://dummyjson.com/products
     methods: ['GET']
     role: userA
+    healthcheck: /ping
   - name: googleApi
     url: http://www.google.com
     methods: ['GET', 'POST', 'PUT']

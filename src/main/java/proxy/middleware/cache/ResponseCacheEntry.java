@@ -1,7 +1,10 @@
 package proxy.middleware.cache;
 
+import lombok.Getter;
+
 import java.util.Map;
 
+@Getter
 public class ResponseCacheEntry {
     private Map<String, String> headers;
     private String body;
@@ -11,11 +14,4 @@ public class ResponseCacheEntry {
         this.body = body;
     }
 
-    public Map<String, String> getHeaders() {
-        return headers;
-    }
-
-    public String getBody() {
-        return body;
-    }
 }

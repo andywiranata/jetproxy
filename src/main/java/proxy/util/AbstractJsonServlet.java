@@ -13,6 +13,12 @@ public class AbstractJsonServlet <T> extends HttpServlet {
         resp.getWriter().println(convertToJson(data));
     }
 
+    protected void sendJsonResponse(HttpServletResponse resp, T data, int status) throws IOException {
+        resp.setContentType("application/json");
+        resp.setStatus(status);
+        resp.getWriter().println(convertToJson(data));
+    }
+
     private String convertToJson(T data) {
         // Use Gson to convert the object to JSON
         return new Gson().toJson(data);

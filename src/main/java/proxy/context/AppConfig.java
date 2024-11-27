@@ -99,6 +99,7 @@ public class AppConfig {
         private String url;
         private List<String> methods;
         private String role;
+        private String healthcheck;
     }
 
     @Getter
@@ -140,6 +141,10 @@ public class AppConfig {
             private long maxMemory = 50;
             private int size = 10000;
         }
+        public boolean hasRedisServer() {
+            return redis != null && redis.isEnabled();
+        }
+
     }
 
     @Getter

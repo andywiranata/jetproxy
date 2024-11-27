@@ -1,9 +1,9 @@
-appName: API-PROXY
-port: 8080
-defaultTimeout: 10000
-dashboard: true
-rootPath: /
-debugMode: true
+appName: ${JET_APP_NAME:API-PROXY}
+port: ${JET_PORT:8080}
+defaultTimeout: ${JET_DEFAULT_TIMEOUT:10000}
+dashboard: ${JET_DASHBOARD:true}
+rootPath: ${JET_DASHBOARD:/}
+debugMode: ${JET_DEBUG_MODE:true}
 
 storage:
   redis:
@@ -44,7 +44,7 @@ proxies:
       header:
         requestHeaders: "Remove(x-header-*);Remove(Authorization);Append(X-Custom-Header,-jetty)"
         responseHeaders: "Add(X-Powered-By,jetty-server)"
-    ttl: -1
+    ttl: 5000
   - path: /products
     service: productApi
     middleware:
@@ -82,10 +82,12 @@ services:
   - name: tasksApi
     url: http://localhost:5173/template/1on1-meeting-agenda/tasks.json
     methods: ['GET', 'POST', 'PUT']
+    healthcheck: /ping
   - name: productApi
     url: https://dummyjson.com/products
     methods: ['GET']
     role: userA
+    healthcheck: /ping
   - name: googleApi
     url: http://www.google.com
     methods: ['GET', 'POST', 'PUT']
@@ -99,7 +101,7 @@ services:
     url: http://localhost:30001
     methods: ['POST']
   - name: userApi
-    url: http://localhost:30001/user
+    url: http://localhost:30001
     methods: ['GET']
 
 users:
