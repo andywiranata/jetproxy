@@ -54,14 +54,11 @@ public class ForwardAuthAuthenticator implements Authenticator {
 
     @Override
     public void prepareRequest(ServletRequest servletRequest) {
-        logger.debug("prepareRequest");
     }
 
     @Override
     public Authentication validateRequest(ServletRequest servletRequest,
                                           ServletResponse servletResponse, boolean mandatory) {
-        logger.debug("validateRequest called mandatory: " + mandatory);
-
         HttpServletRequest request = (HttpServletRequest) servletRequest;
         HttpServletResponse response = (HttpServletResponse) servletResponse;
 
@@ -74,10 +71,8 @@ public class ForwardAuthAuthenticator implements Authenticator {
 
             // Validate the response
             if (connection.getResponseCode() == HttpURLConnection.HTTP_OK) {
-                logger.debug("Authentication successful");
                 return new UserAuthentication(getAuthMethod(), new MockUserIdentity());
             } else {
-                logger.warn("Authentication failed with status: " + connection.getResponseCode());
                 response.sendError(HttpURLConnection.HTTP_UNAUTHORIZED, "Unauthorized");
                 return Authentication.UNAUTHENTICATED;
             }
@@ -93,7 +88,6 @@ public class ForwardAuthAuthenticator implements Authenticator {
 
     @Override
     public boolean secureResponse(ServletRequest servletRequest, ServletResponse servletResponse, boolean b, Authentication.User user) throws ServerAuthException {
-        logger.debug("secureResponse");
         return true;
     }
 

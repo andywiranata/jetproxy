@@ -5,6 +5,7 @@ import org.eclipse.jetty.security.authentication.BasicAuthenticator;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.HandlerCollection;
+import org.eclipse.jetty.server.handler.RequestLogHandler;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.util.security.Constraint;
@@ -17,6 +18,7 @@ import proxy.middleware.auth.AuthProviderFactory;
 import proxy.middleware.auth.BasicAuthProvider;
 import proxy.middleware.auth.ForwardAuthAuthenticator;
 import proxy.middleware.auth.MultiLayerAuthenticator;
+import proxy.middleware.log.AccessLog;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -67,11 +69,15 @@ public class SetupProxyHolder {
         }
         basicAuthSecurityHandler.setAuthenticator(multiLayerAuthenticator);
         basicAuthSecurityHandler.setHandler(context);
+
+        // Log Handler
+        RequestLogHandler requestLogHandler = new RequestLogHandler();
+        requestLogHandler.setRequestLog(new AccessLog());
+
         HandlerCollection handlers = new HandlerCollection();
         handlers.setHandlers(new Handler[]{
-                basicAuthSecurityHandler, context});
-        // FilterHolder metricsFilterHolder = new FilterHolder(new MetricFilter());
-        // context.addFilter(metricsFilterHolder, "/*", null);
+                basicAuthSecurityHandler, context, requestLogHandler});
+
         server.setHandler(handlers);
     }
 

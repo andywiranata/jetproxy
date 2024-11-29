@@ -78,6 +78,7 @@ public abstract class AbstractProxyHandler extends ProxyServlet.Transparent {
             for (Map.Entry<String, String> header : cachedResponse.getHeaders().entrySet()) {
                 response.setHeader(header.getKey(), header.getValue());
             }
+            response.setHeader("X-JetProxy-Cache", "true");
             response.getWriter().write(cachedResponse.getBody());
             response.getWriter().flush();
         } catch (IOException e) {
