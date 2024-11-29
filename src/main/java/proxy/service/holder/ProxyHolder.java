@@ -1,7 +1,6 @@
 package proxy.service.holder;
 
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
-import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletRequestWrapper;
 import jakarta.servlet.http.HttpServletResponse;
@@ -73,26 +72,18 @@ public class ProxyHolder extends AbstractProxyHandler {
     @Override
     protected void service(HttpServletRequest request, HttpServletResponse response) {
         try {
-            logIncomingRequest(request);
-
             if (hasRuleContext() && !ruleContext.evaluate(request)) {
-                logger.debug("Request denied by rule evaluation. URI: {}, Method: {}, IP: {}",
-                        request.getRequestURI(), request.getMethod(), request.getRemoteAddr());
                 handleRuleNotAllowed(response);
                 return;
             }
 
             if (isMethodNotAllowed(request)) {
-                logger.debug("Request denied due to disallowed HTTP method. URI: {}, Method: {}, IP: {}",
-                        request.getRequestURI(), request.getMethod(), request.getRemoteAddr());
                 handleMethodNotAllowed(response);
                 return;
             }
 
             ResponseCacheEntry cachedResponse = getCachedResponse(request);
             if (cachedResponse != null) {
-                logger.debug("Serving cached response for URI: {}. Method: {}, IP: {}",
-                        request.getRequestURI(), request.getMethod(), request.getRemoteAddr());
                 sendCachedResponse(response, cachedResponse);
                 return;
             }
@@ -120,14 +111,11 @@ public class ProxyHolder extends AbstractProxyHandler {
                     super.service(modifiedRequest, response);
                 }
             } catch (Exception e) {
-                logger.debug("Error Occurred");
+                logger.debug("Error Occurred to process request {}", e.getMessage());
                 response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
             }
         } finally {
             this.metricsListener.captureMetricProxyResponse(request, response);
-            logger.debug("Proxy from -> {} -> to {}", request.getRequestURI()
-                    , this.configService.getUrl());
-
         }
     }
 
@@ -219,20 +207,5 @@ public class ProxyHolder extends AbstractProxyHandler {
                 return Collections.enumeration(Collections.singleton(modifiedHeaders.get(name)));
             }
         };
-    }
-
-    private void logIncomingRequest(HttpServletRequest request) {
-        if (AppContext.get().isDebugMode()) {
-            String headersLog = Collections.list(request.getHeaderNames()).stream()
-                    .map(header -> header + ": " + request.getHeader(header))
-                    .collect(Collectors.joining(", "));
-
-            String paramsLog = request.getParameterMap().entrySet().stream()
-                    .map(entry -> entry.getKey() + "=" + String.join(",", entry.getValue()))
-                    .collect(Collectors.joining(", "));
-
-            logger.debug("Incoming request: Method={}, URI={}, IP={}, Headers=[{}], Query Parameters=[{}]",
-                    request.getMethod(), request.getRequestURI(), request.getRemoteAddr(), headersLog, paramsLog);
-        }
     }
 }

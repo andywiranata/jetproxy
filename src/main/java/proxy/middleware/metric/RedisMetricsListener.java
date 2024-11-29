@@ -36,7 +36,7 @@ public class RedisMetricsListener implements MetricsListener {
             jedis.hincrBy(redisKey, "hitCount", 1);
             jedis.hincrBy(redisKey, "status:" + statusCode, 1);
 
-            log.info("Captured response for {} -> Status: {}, Redis Key: {}", fullPath, statusCode, redisKey);
+            // log.info("Captured response for {} -> Status: {}, Redis Key: {}", fullPath, statusCode, redisKey);
         }
     }
 
@@ -46,7 +46,7 @@ public class RedisMetricsListener implements MetricsListener {
         try (Jedis jedis = jedisPool.getResource()) {
             for (int i = 0; i < 24; i++) {
                 String hourlyKey = "metrics:" + path + ":" + DATE_HOUR_FORMATTER.format(now.minusHours(i));
-                log.info("Metrics for {}: {}", hourlyKey, jedis.hgetAll(hourlyKey));
+                // log.info("Metrics for {}: {}", hourlyKey, jedis.hgetAll(hourlyKey));
             }
         }
     }
