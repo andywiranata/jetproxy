@@ -18,8 +18,8 @@ By automatically discovering services and adjusting routes, this reverse proxy s
 - **CircuitBreaker**: [Link](https://jetproxy.andywiranata.me/docs/middleware/circuit-breaker) **Dev Done, In testing - TODO**
 - **Custom Error**: **TODO**
 - **Tracing OpenTelemetry**: **Dev Done, Doc - TODO**
-- **Enabled Debug Logging**: **TODO**
-- **Health Check**: **TODO**
+- **Enabled Debug Logging**: **Dev Done, Doc TODO**
+- **Health Check**: **Dev Done, Doc TODO**
 - **Sticky Session**: **TODO InReview**
 - **Rate Limiter**: Protect your services by limiting the number of requests per client. **TODO**
 - **Docker up and running**, externalize config **TODO**
