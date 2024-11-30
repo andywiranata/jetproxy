@@ -8,6 +8,8 @@ import org.eclipse.jetty.security.Authenticator;
 import org.eclipse.jetty.security.ServerAuthException;
 import org.eclipse.jetty.security.UserAuthentication;
 import org.eclipse.jetty.server.Authentication;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.Response;
 import org.eclipse.jetty.server.UserIdentity;
 import proxy.context.AppConfig;
 import proxy.context.ConfigLoader;
@@ -61,30 +63,41 @@ public class ForwardAuthAuthenticator implements Authenticator {
                                           ServletResponse servletResponse, boolean mandatory) {
         HttpServletRequest request = (HttpServletRequest) servletRequest;
         HttpServletResponse response = (HttpServletResponse) servletResponse;
+        long startTime = System.currentTimeMillis();
+        String authUrl = service.getUrl() + path;
+
+        HttpURLConnection connection = null;
+        int responseCode = HttpURLConnection.HTTP_INTERNAL_ERROR; // Default in case of an exception
 
         try {
             // Extract headers to forward
             Map<String, String> forwardHeaders = getForwardHeaders(request);
 
             // Perform the forward authentication request
-            HttpURLConnection connection = performForwardAuthRequest(forwardHeaders);
+            connection = performForwardAuthRequest(authUrl, forwardHeaders);
 
-            // Validate the response
-            if (connection.getResponseCode() == HttpURLConnection.HTTP_OK) {
+            // Get the response code from the connection
+            responseCode = connection.getResponseCode();
+
+            if (responseCode == HttpURLConnection.HTTP_OK) {
                 return new UserAuthentication(getAuthMethod(), new MockUserIdentity());
             } else {
                 response.sendError(HttpURLConnection.HTTP_UNAUTHORIZED, "Unauthorized");
                 return Authentication.UNAUTHENTICATED;
             }
         } catch (IOException e) {
-            logger.error("Error during authentication", e);
+            logger.error("Authentication failed: {}", e.getMessage());
             try {
                 response.sendError(HttpURLConnection.HTTP_INTERNAL_ERROR, "Internal Server Error");
             } catch (IOException ignored) {
+                logger.error("Failed to send error response: {}", ignored.getMessage());
             }
             return Authentication.UNAUTHENTICATED;
+        } finally {
+            logger.logAuth((Request) request, authUrl, responseCode, startTime);
         }
     }
+
 
     @Override
     public boolean secureResponse(ServletRequest servletRequest, ServletResponse servletResponse, boolean b, Authentication.User user) throws ServerAuthException {
@@ -101,8 +114,8 @@ public class ForwardAuthAuthenticator implements Authenticator {
         return headersToForward;
     }
 
-    private HttpURLConnection performForwardAuthRequest(Map<String, String> headers) throws IOException {
-        URL url = new URL(service.getUrl() + path);
+    private HttpURLConnection performForwardAuthRequest(String authUrl, Map<String, String> headers) throws IOException {
+        URL url = new URL(authUrl);
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setRequestMethod(this.requestMethod);
         connection.setDoOutput(true);
