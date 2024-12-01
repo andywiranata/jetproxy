@@ -6,7 +6,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import proxy.context.AppContext;
 
-import java.net.HttpURLConnection;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -56,7 +55,7 @@ public class DebugAwareLogger {
         logger.info(logMessage);
     }
 
-    public void logAuth(Request request, String targetUrl, int responseCode, long startTime) {
+    public void logAuth(Request request, String targetUrl, int responseCode, long startTime, String status) {
         if (!debugMode) return;
 
         // Extract target URL and response details
@@ -69,31 +68,36 @@ public class DebugAwareLogger {
                 responseCode,
                 responseTime,
                 "-", // Cache indicator is not applicable for auth logs
-                ""
+                status
         );
         logger.info(logMessage);
     }
 
     private String formatLogMessage(Request request, Response response, String targetUrl,
                                     int responseCode, long responseTime, String cacheIndicator, String status) {
+        // Extract details from the request
         String remoteAddr = request.getRemoteAddr();
+        String clientUserName = request.getRemoteUser() != null ? request.getRemoteUser() : "-";
         String timestamp = dateFormatter.format(new Date());
         String method = request.getMethod();
         String path = request.getRequestURI();
-        String queryParams = request.getQueryString() != null ? request.getQueryString() : "-";
-        String userAgent = request.getHeader("User-Agent") != null ? request.getHeader("User-Agent") : "-";
+        String queryParams = request.getQueryString() != null ? "?" + request.getQueryString() : "";
         String protocol = request.getProtocol();
-        String color = getStatusColor(responseCode);
-        String responseDetails = response != null ? String.valueOf(response.getHttpChannel().getBytesWritten()) : "-";
+        String userAgent = request.getHeader("User-Agent") != null ? request.getHeader("User-Agent") : "-";
+        String referrer = request.getHeader("Referer") != null ? request.getHeader("Referer") : "-";
 
+        // Extract details from the response
+        String responseDetails = response != null ? String.valueOf(response.getHttpChannel().getBytesWritten()) : "-";
+        String color = getStatusColor(responseCode);
+
+        // Format the log entry
         return String.format(
-                "%s [%s] \"%s %s %s\" [%s] %s%d%s %s \"%s\" \"%s\" [%dms] Cache: [%s] Status: [%s]",
-                remoteAddr, timestamp, method, path, protocol,
-                targetUrl != null ? targetUrl : "-",
-                color, responseCode, RESET, responseDetails,
-                queryParams, userAgent, responseTime, cacheIndicator, status
+                "%s - %s [%s] \"%s %s%s %s\" %s%d%s %s \"%s\" \"%s\" [%dms] Cache: [%s] Status: [%s]",
+                remoteAddr, clientUserName, timestamp, method, path, queryParams, protocol,
+                color, responseCode, RESET, responseDetails, referrer, userAgent, responseTime, cacheIndicator, status
         );
     }
+
 
     private String getStatusColor(int statusCode) {
         if (statusCode >= 200 && statusCode < 300) {
