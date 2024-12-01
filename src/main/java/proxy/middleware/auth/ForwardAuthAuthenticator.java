@@ -65,6 +65,7 @@ public class ForwardAuthAuthenticator implements Authenticator {
         HttpServletResponse response = (HttpServletResponse) servletResponse;
         long startTime = System.currentTimeMillis();
         String authUrl = service.getUrl() + path;
+        String responseStatus = "";
 
         HttpURLConnection connection = null;
         int responseCode = HttpURLConnection.HTTP_INTERNAL_ERROR; // Default in case of an exception
@@ -82,19 +83,21 @@ public class ForwardAuthAuthenticator implements Authenticator {
             if (responseCode == HttpURLConnection.HTTP_OK) {
                 return new UserAuthentication(getAuthMethod(), new MockUserIdentity());
             } else {
-                response.sendError(HttpURLConnection.HTTP_UNAUTHORIZED, "Unauthorized");
+                responseStatus = "Unauthorized";
+                response.sendError(HttpURLConnection.HTTP_UNAUTHORIZED, responseStatus);
                 return Authentication.UNAUTHENTICATED;
             }
         } catch (IOException e) {
-            logger.error("Authentication failed: {}", e.getMessage());
+            logger.error("{} Authentication failed: {}", authUrl, e.getMessage());
             try {
-                response.sendError(HttpURLConnection.HTTP_INTERNAL_ERROR, "Internal Server Error");
+                responseStatus = "Service Unavailable";
+                response.sendError(HttpURLConnection.HTTP_UNAVAILABLE, responseStatus);
             } catch (IOException ignored) {
                 logger.error("Failed to send error response: {}", ignored.getMessage());
             }
             return Authentication.UNAUTHENTICATED;
         } finally {
-            logger.logAuth((Request) request, authUrl, responseCode, startTime);
+            logger.logAuth((Request) request, authUrl, responseCode, startTime, responseStatus);
         }
     }
 
