@@ -28,6 +28,8 @@ dependencies {
     implementation("org.eclipse.jetty:jetty-server:11.0.15")
     implementation("org.eclipse.jetty:jetty-servlet:11.0.15")
     implementation("org.eclipse.jetty:jetty-security:11.0.15")
+    implementation("org.eclipse.jetty:jetty-servlets:11.0.15") // Required for CrossOriginFilter
+
     implementation("jakarta.servlet:jakarta.servlet-api:6.0.0")
     implementation("io.github.resilience4j:resilience4j-circuitbreaker:2.0.2")
     implementation("io.github.resilience4j:resilience4j-core:2.0.2")

@@ -4,6 +4,13 @@ defaultTimeout: ${JET_DEFAULT_TIMEOUT:10000}
 dashboard: ${JET_DASHBOARD:true}
 rootPath: ${JET_DASHBOARD:/}
 debugMode: ${JET_DEBUG_MODE:true}
+corsFilter:
+  accessControlAllowMethods:
+    - "*"
+  accessControlAllowHeaders:
+    - "*"
+  accessControlAllowOriginList:
+    - "*"
 
 storage:
   redis:

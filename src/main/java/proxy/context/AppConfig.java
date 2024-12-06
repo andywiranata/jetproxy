@@ -21,7 +21,42 @@ public class AppConfig {
     private List<Proxy> proxies;
     private List<Service> services;
     private List<User> users;
+    private CorsFilter corsFilter = new CorsFilter(); // Default values if missing
 
+    @Getter
+    @Setter
+    @ToString
+    public static class CorsFilter {
+        private List<String> accessControlAllowMethods = List.of(
+                "GET",
+                "POST",
+                "PUT",
+                "DELETE",
+                "HEAD",
+                "OPTIONS",
+                "PATCH",
+                "TRACE",
+                "CONNECT");
+        private List<String> accessControlAllowHeaders = List.of(
+                "*");
+        private List<String> accessControlAllowOriginList = List.of(
+                "*");
+
+        public List<String> getAccessControlAllowMethods() {
+            if (accessControlAllowMethods.contains("*")) {
+                return List.of( "GET",
+                        "POST",
+                        "PUT",
+                        "DELETE",
+                        "HEAD",
+                        "OPTIONS",
+                        "PATCH",
+                        "TRACE",
+                        "CONNECT");
+            }
+            return accessControlAllowMethods;
+        }
+    }
     @Getter
     @Setter
     @ToString
