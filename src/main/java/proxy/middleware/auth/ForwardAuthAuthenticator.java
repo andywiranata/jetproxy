@@ -45,9 +45,7 @@ public class ForwardAuthAuthenticator implements Authenticator {
     }
 
     @Override
-    public void setConfiguration(AuthConfiguration authConfiguration) {
-        logger.debug("setConfiguration");
-    }
+    public void setConfiguration(AuthConfiguration authConfiguration) {}
 
     @Override
     public String getAuthMethod() {

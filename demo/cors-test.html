@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>CORS Test</title>
+</head>
+<body>
+<h1>CORS Test</h1>
+<button id="test">Send CORS Request</button>
+<pre id="output"></pre>
+
+<script>
+    document.getElementById('test').addEventListener('click', () => {
+        fetch('http://localhost:8080/healthcheck', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            credentials: 'include', // To test credentials (cookies)
+        })
+            .then(response => response.text())
+            .then(data => {
+                document.getElementById('output').innerText = `Success: ${data}`;
+            })
+            .catch(err => {
+                document.getElementById('output').innerText = `Error: ${err}`;
+            });
+    });
+</script>
+</body>
+</html>
