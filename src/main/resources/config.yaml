@@ -44,14 +44,23 @@ proxies:
   - path: /user
     service: userApi
     middleware:
-      forwardAuth:
-        path: /verify
-        service: authApi
-        authRequestHeaders: "Forward(X-Custom-*);Forward(Authorization)"
+#      forwardAuth:
+#        path: /verify
+#        service: authApi
+#        authRequestHeaders: "Forward(X-Custom-*);Forward(Authorization)"
+      circuitBreaker:
+        enabled: true
+        failureThreshold: 30 # 50% failure rate threshold
+        slowCallThreshold: 50 # 50% slow call rate threshold
+        slowCallDuration: 500 # 0.5 seconds threshold for slow calls
+        openStateDuration: 5 # 5-second wait in open state
+        waitDurationInOpenState: 10000  # 10-second wait in open state
+        permittedNumberOfCallsInHalfOpenState: 2 # 3 calls in half-open state
+        minimumNumberOfCalls: 4 # Minimum of 4 calls before evaluating
       header:
         requestHeaders: "Remove(x-header-*);Remove(Authorization);Append(X-Custom-Header,-jetty)"
         responseHeaders: "Add(X-Powered-By,jetty-server)"
-    ttl: 5000
+    ttl: -1
   - path: /products
     service: productApi
     middleware:

@@ -1,7 +1,5 @@
 package proxy.service.holder;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.brotli.dec.BrotliInputStream;
@@ -11,7 +9,7 @@ import org.slf4j.LoggerFactory;
 import proxy.context.AppConfig;
 import proxy.context.AppContext;
 import proxy.middleware.cache.ResponseCacheEntry;
-import proxy.middleware.circuitbreaker.CircuitBreakerUtil;
+import proxy.middleware.circuitbreaker.ResilienceUtil;
 import proxy.middleware.metric.MetricsListener;
 import proxy.middleware.rule.RuleContext;
 import proxy.middleware.rule.header.HeaderAction;
@@ -22,19 +20,36 @@ import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.InflaterInputStream;
 
 public abstract class AbstractProxyHandler extends ProxyServlet.Transparent {
+    // Header Names
+    public static final String HEADER_RETRY_AFTER = "Retry-After";
+    public static final String HEADER_X_PROXY_ERROR = "X-Proxy-Error";
+    public static final String HEADER_X_PROXY_TYPE = "X-Proxy-Type";
+    public static final String HEADER_X_RATE_LIMIT_LIMIT = "X-RateLimit-Limit";
+    public static final String HEADER_X_RATE_LIMIT_REMAINING = "X-RateLimit-Remaining";
+    public static final String HEADER_X_RATE_LIMIT_RESET = "X-RateLimit-Reset";
 
-    protected final String MODIFIED_HEADER = "modifiedHeader";
+    // Error Types
+    public static final String TYPE_CIRCUIT_BREAKER = "circuit-breaker";
+    public static final String TYPE_BULKHEAD = "bulkhead";
+    public static final String TYPE_RATE_LIMITER = "rate-limiter";
+    public static final String TYPE_METHOD_NOT_ALLOWED = "method-not-allowed";
+    public static final String TYPE_RULE_NOT_ALLOWED = "rule-not-allowed";
+
+    // Error Messages
+    public static final String ERROR_METHOD_NOT_ALLOWED = "Method Not Allowed";
+    public static final String ERROR_RULE_NOT_ALLOWED = "Rule not allowed processing request";
+
+    public final String MODIFIED_HEADER = "modifiedHeader";
     private static final Logger logger = LoggerFactory.getLogger(AbstractProxyHandler.class);
     protected AppConfig.Service configService;
     protected AppConfig.Proxy proxyRule;
     protected RuleContext ruleContext;
     protected MetricsListener metricsListener;
-    protected CircuitBreakerUtil circuitBreakerUtil;
+    protected ResilienceUtil resilience;
     protected List<HeaderAction> headerRequestActions = Collections.emptyList();;
     protected List<HeaderAction> headerResponseActions;
 
@@ -125,28 +140,72 @@ public abstract class AbstractProxyHandler extends ProxyServlet.Transparent {
         return !allowedMethods.contains(requestMethod);
     }
 
-    // Shared error handling logic
-    protected void handleError(HttpServletResponse response, Exception e) {
-        logger.error("Error processing request: {}", e.getMessage());
-        response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+    protected boolean handleResilienceState(HttpServletRequest request, HttpServletResponse response) {
+        // CircuitBreaker logic
+        if (this.resilience.isCircuitBreakerOpen()) {
+            AppConfig.CircuitBreaker circuitBreakerConfig = proxyRule.getMiddleware().getCircuitBreaker();
+            int retryAfter = circuitBreakerConfig.getRetryAfterSeconds(); // Get Retry-After dynamically
+            sendServiceUnavailableResponse(response, retryAfter,
+                    "Circuit Breaker Open", TYPE_CIRCUIT_BREAKER);
+            return true;
+        }
+
+        // Bulkhead logic
+        if (!this.resilience.isBulkheadAvailable()) {
+            AppConfig.Bulkhead bulkheadConfig = proxyRule.getMiddleware().getBulkhead();
+            int retryAfter = bulkheadConfig.getRetryAfterSeconds(); // Get Retry-After dynamically
+            sendTooManyRequestsResponse(response, retryAfter,
+                    "Bulkhead Limit Reached", TYPE_BULKHEAD);
+            return true;
+        }
+
+        // RateLimiter logic
+        if (!this.resilience.isRateLimiterAvailable()) {
+            AppConfig.RateLimiter rateLimiterConfig = proxyRule.getMiddleware().getRateLimiter();
+            int resetAfter = rateLimiterConfig.getResetAfterSeconds(); // Get reset time dynamically
+            int limit = rateLimiterConfig.getLimitForPeriod();
+            int remaining = 0; // Assuming no remaining requests available
+            sendRateLimiterResponse(response, resetAfter, limit, remaining,
+                    "Rate Limiter Exceeded");
+            return true;
+        }
+        return false; // No resilience issues
     }
 
-    protected void handleMethodNotAllowed(HttpServletResponse response) {
-        logger.warn("Method not allowed processing request {}", this.configService.getName());
+    protected void sendServiceUnavailableResponse(HttpServletResponse response, int retryAfter, String errorMessage, String errorType) {
+        response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
+        response.setHeader(HEADER_RETRY_AFTER, String.valueOf(retryAfter));
+        response.setHeader(HEADER_X_PROXY_ERROR, errorMessage);
+        response.setHeader(HEADER_X_PROXY_TYPE, errorType);
+    }
+
+    protected void sendTooManyRequestsResponse(HttpServletResponse response, int retryAfter, String errorMessage, String errorType) {
+        response.setStatus(429);
+        response.setHeader(HEADER_RETRY_AFTER, String.valueOf(retryAfter));
+        response.setHeader(HEADER_X_PROXY_ERROR, errorMessage);
+        response.setHeader(HEADER_X_PROXY_TYPE, errorType);
+    }
+
+    protected void sendRateLimiterResponse(HttpServletResponse response, int resetAfter, int limit, int remaining, String errorMessage) {
+        response.setStatus(429);
+        response.setHeader(HEADER_X_RATE_LIMIT_LIMIT, String.valueOf(limit));
+        response.setHeader(HEADER_X_RATE_LIMIT_REMAINING, String.valueOf(remaining));
+        response.setHeader(HEADER_X_RATE_LIMIT_RESET, String.valueOf(resetAfter));
+        response.setHeader(HEADER_X_PROXY_ERROR, errorMessage);
+        response.setHeader(HEADER_X_PROXY_TYPE, TYPE_RATE_LIMITER);
+    }
+
+    protected void sendMethodNotAllowedResponse(HttpServletResponse response) {
         response.setStatus(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
+        response.setHeader(HEADER_X_PROXY_ERROR, ERROR_METHOD_NOT_ALLOWED);
+        response.setHeader(HEADER_X_PROXY_TYPE, TYPE_METHOD_NOT_ALLOWED);
     }
 
-    protected void handleRuleNotAllowed(HttpServletResponse response) {
-        logger.warn("Rules not allowed processing request {} {}", this.configService.getName(),
-                this.proxyRule.getMiddleware().getRule());
+    protected void sendRuleNotAllowedResponse(HttpServletResponse response) {
         response.setStatus(HttpServletResponse.SC_NOT_ACCEPTABLE);
+        response.setHeader(HEADER_X_PROXY_ERROR, ERROR_RULE_NOT_ALLOWED);
+        response.setHeader(HEADER_X_PROXY_TYPE, TYPE_RULE_NOT_ALLOWED);
     }
-
-
-    protected boolean hasCircuitBreaker() {
-        return this.circuitBreakerUtil != null;
-    }
-
     protected boolean hasRuleContext() {
         return this.ruleContext != null;
     }
