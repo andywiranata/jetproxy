@@ -1,6 +1,11 @@
 package proxy.service.holder;
 
+import io.github.resilience4j.bulkhead.Bulkhead;
+import io.github.resilience4j.bulkhead.BulkheadRegistry;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
+import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
+import io.github.resilience4j.ratelimiter.RateLimiter;
+import io.github.resilience4j.ratelimiter.RateLimiterRegistry;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletRequestWrapper;
 import jakarta.servlet.http.HttpServletResponse;
@@ -13,7 +18,7 @@ import proxy.context.AppConfig;
 import proxy.context.AppContext;
 import proxy.logger.DebugAwareLogger;
 import proxy.middleware.cache.ResponseCacheEntry;
-import proxy.middleware.circuitbreaker.CircuitBreakerFactory;
+import proxy.middleware.circuitbreaker.*;
 import proxy.middleware.rule.RuleFactory;
 import proxy.middleware.rule.header.HeaderAction;
 import proxy.middleware.rule.header.HeaderActionFactory;
@@ -22,6 +27,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class ProxyHolder extends AbstractProxyHandler {
@@ -31,19 +37,14 @@ public class ProxyHolder extends AbstractProxyHandler {
                        AppConfig.Proxy proxyRule) {
         this.configService = configService;
         this.proxyRule = proxyRule;
-        AppConfig.Middleware middleware = proxyRule.getMiddleware();
         // Initialize the ruleContext and circuitBreakerUtil
         this.ruleContext = Optional.ofNullable(proxyRule.getMiddleware())
                 .map(AppConfig.Middleware::getRule)
                 .map(RuleFactory::createRulesFromString)
                 .orElse(null);
 
-        this.circuitBreakerUtil = Optional.ofNullable(proxyRule.getMiddleware())
-                .filter(AppConfig.Middleware::hasCircuitBreaker)
-                .map(AppConfig.Middleware::getCircuitBreaker)
-                .filter(AppConfig.CircuitBreaker::isEnabled)
-                .map(cbConfig -> CircuitBreakerFactory.createCircuitBreaker("cb::" + proxyRule.getPath(), cbConfig))
-                .orElse(null);
+
+        this.resilience = ResilienceFactory.createResilienceUtil(proxyRule);
 
         this.metricsListener = AppContext.get().getMetricsListener();
 
@@ -73,12 +74,12 @@ public class ProxyHolder extends AbstractProxyHandler {
     protected void service(HttpServletRequest request, HttpServletResponse response) {
         try {
             if (hasRuleContext() && !ruleContext.evaluate(request)) {
-                handleRuleNotAllowed(response);
+                sendRuleNotAllowedResponse(response);
                 return;
             }
 
             if (isMethodNotAllowed(request)) {
-                handleMethodNotAllowed(response);
+                sendMethodNotAllowedResponse(response);
                 return;
             }
 
@@ -88,28 +89,21 @@ public class ProxyHolder extends AbstractProxyHandler {
                 return;
             }
 
-            if (hasCircuitBreaker() &&
-                     circuitBreakerUtil.getCircuitBreaker().getState() == CircuitBreaker.State.OPEN) {
-                response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
-                return;
+            // Check resilience state and handle response if necessary
+            if (this.handleResilienceState(request, response)) {
+                return; // Resilience state handled, no further processing
             }
 
             try {
-                HttpServletRequestWrapper modifiedRequest = modifyRequestHeaders(request);
-                if (hasCircuitBreaker()) {
-                    // Execute the service request within the circuit breaker
-                    circuitBreakerUtil.executeRunnableWithCircuitBreaker(() -> {
-                        try {
-                            super.service(modifiedRequest, response);
-                        } catch (Exception e) {
-                            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-                            throw new RuntimeException("Service failed", e);
-                        }
-                    });
-                } else {
-                    // If no circuit breaker, proceed without it
-                    super.service(modifiedRequest, response);
-                }
+                resilience.execute(() -> {
+                    try {
+                        super.service(modifyRequestHeaders(request), response);
+                    } catch (Exception e) {
+                        logger.debug("exception service");
+                        throw new RuntimeException("Service failed", e);
+                    }
+                });
+
             } catch (Exception e) {
                 logger.debug("Error Occurred to process request {}", e.getMessage());
                 response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
@@ -117,6 +111,12 @@ public class ProxyHolder extends AbstractProxyHandler {
         } finally {
             this.metricsListener.captureMetricProxyResponse(request, response);
         }
+    }
+
+    @Override
+    protected void sendProxyRequest(HttpServletRequest clientRequest, HttpServletResponse proxyResponse, Request proxyRequest) {
+        clientRequest.setAttribute("startTime", System.nanoTime());
+        super.sendProxyRequest(clientRequest, proxyResponse, proxyRequest);
     }
 
     @Override
@@ -143,14 +143,15 @@ public class ProxyHolder extends AbstractProxyHandler {
     }
 
     @Override
-    protected void sendProxyRequest(HttpServletRequest clientRequest, HttpServletResponse proxyResponse, Request proxyRequest) {
-        super.sendProxyRequest(clientRequest, proxyResponse, proxyRequest);
+    protected void onProxyResponseSuccess(HttpServletRequest clientRequest, HttpServletResponse proxyResponse, Response serverResponse) {
+        resilience.handleHttpResponse(clientRequest, serverResponse.getStatus(), null);
+        super.onProxyResponseSuccess(clientRequest, proxyResponse, serverResponse);
     }
 
     @Override
     protected void onProxyResponseFailure(HttpServletRequest clientRequest, HttpServletResponse proxyResponse, Response serverResponse, Throwable failure) {
-        String path = clientRequest.getRequestURI();
-        logger.error("Failed proxy from -> {} -> to {}", path, this.configService.getUrl());
+        int status = this.proxyResponseStatus(failure);
+        resilience.handleHttpResponse(clientRequest, status, failure);
         super.onProxyResponseFailure(clientRequest, proxyResponse, serverResponse, failure);
 
     }

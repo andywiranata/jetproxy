@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.util.Base64;
 import java.util.List;
 
 @Getter
@@ -68,6 +69,11 @@ public class AppConfig {
         public boolean hasMiddleware() {
             return middleware != null;
         }
+        public String getUuid() {
+            return Base64.getUrlEncoder()
+                    .withoutPadding()
+                    .encodeToString((service + path).getBytes());
+        }
     }
 
     @Getter
@@ -79,13 +85,13 @@ public class AppConfig {
 
         @Nullable
         private String basicAuth; // Updated basicAuth field to be nullable
-
         @Nullable
         private ForwardAuth forwardAuth;
-
         private String rule = "";
-
         private CircuitBreaker circuitBreaker;
+        private RateLimiter rateLimiter;
+        private Bulkhead bulkhead;
+        private Retry retry;
 
         public boolean hasBasicAuth() {
             return basicAuth != null;
@@ -96,7 +102,16 @@ public class AppConfig {
         }
 
         public boolean hasCircuitBreaker() {
-            return circuitBreaker != null;
+            return circuitBreaker != null && circuitBreaker.enabled;
+        }
+        public boolean hasRateLimiter() {
+            return rateLimiter != null && rateLimiter.enabled;
+        }
+        public boolean hasBulkHead() {
+            return bulkhead != null && rateLimiter.enabled;
+        }
+        public boolean hasRetry() {
+            return retry != null;
         }
         public boolean hasHeaders() {
             return header != null;
@@ -124,6 +139,41 @@ public class AppConfig {
         private int waitDurationInOpenState = 1000;
         private int permittedNumberOfCallsInHalfOpenState = 10;
         private int minimumNumberOfCalls = 5;
+        // Derived method for Retry-After
+        public int getRetryAfterSeconds() {
+            return (int) Math.ceil(waitDurationInOpenState / 1000.0); // Convert ms to seconds
+        }
+    }
+
+    @Getter
+    @Setter
+    public static class RateLimiter {
+        private boolean enabled = false;
+        private long refreshPeriod = 500; // Default: 500 ms
+        private int limitForPeriod = 10; // Default: 10 requests
+        private long timeoutDuration = 1000; // Default: 1 second
+        // Derived method for X-RateLimit-Reset
+        public int getResetAfterSeconds() {
+            return (int) Math.ceil(refreshPeriod / 1000.0); // Convert ms to seconds
+        }
+    }
+    @Getter
+    @Setter
+    public  static class Retry {
+        private boolean enabled = false;
+        private int maxAttempts = 5;
+        private int waitDuration = 1000;
+    }
+    @Getter
+    @Setter
+    public static class Bulkhead {
+        private boolean enabled = false;
+        private int maxConcurrentCalls = 10; // Default: 10 concurrent calls
+        private long maxWaitDuration = 500; // Default: 500 ms
+        // Derived method for Retry-After
+        public int getRetryAfterSeconds() {
+            return (int) Math.ceil(maxWaitDuration / 1000.0); // Convert ms to seconds
+        }
     }
 
     @Getter

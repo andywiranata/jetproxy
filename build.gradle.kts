@@ -29,13 +29,17 @@ dependencies {
     implementation("org.eclipse.jetty:jetty-servlet:11.0.15")
     implementation("org.eclipse.jetty:jetty-security:11.0.15")
     implementation("org.eclipse.jetty:jetty-servlets:11.0.15") // Required for CrossOriginFilter
-
-    implementation("jakarta.servlet:jakarta.servlet-api:6.0.0")
-    implementation("io.github.resilience4j:resilience4j-circuitbreaker:2.0.2")
-    implementation("io.github.resilience4j:resilience4j-core:2.0.2")
-
     // Jetty Proxy module for ProxyServlet
     implementation("org.eclipse.jetty:jetty-proxy:11.0.14")
+
+    implementation("jakarta.servlet:jakarta.servlet-api:6.0.0")
+    implementation("io.github.resilience4j:resilience4j-core:2.0.2")
+    implementation("io.github.resilience4j:resilience4j-circuitbreaker:2.0.2")
+    implementation("io.github.resilience4j:resilience4j-ratelimiter:2.0.2")
+    implementation("io.github.resilience4j:resilience4j-bulkhead:2.0.2")
+    implementation("io.github.resilience4j:resilience4j-retry:2.0.2")
+
+
     // SnakeYAML for parsing YAML files
     implementation("org.yaml:snakeyaml:2.0")
     implementation("org.apache.commons:commons-jexl3:3.2.1")
