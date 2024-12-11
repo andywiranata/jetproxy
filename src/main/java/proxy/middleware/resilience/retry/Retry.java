@@ -49,6 +49,9 @@ public class Retry implements ResilienceInterface {
 
     @Override
     public boolean allowRequest() {
+        if (attemptCounter.get() == 0) {
+            return true;
+        }
         return canRetry();
     }
 

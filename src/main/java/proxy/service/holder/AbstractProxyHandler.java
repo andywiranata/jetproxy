@@ -140,9 +140,9 @@ public abstract class AbstractProxyHandler extends ProxyServlet.Transparent {
         return !allowedMethods.contains(requestMethod);
     }
 
-    protected boolean handleResilienceState(HttpServletRequest request, HttpServletResponse response) {
+    protected boolean handleAndSendResilienceResponse(HttpServletRequest request, HttpServletResponse response) {
         // CircuitBreaker logic
-        if (this.resilience.isCircuitBreakerOpen()) {
+        if (this.resilience.isCircuitBreakerAllowRequest()) {
             AppConfig.CircuitBreaker circuitBreakerConfig = proxyRule.getMiddleware().getCircuitBreaker();
             int retryAfter = circuitBreakerConfig.getRetryAfterSeconds(); // Get Retry-After dynamically
             sendServiceUnavailableResponse(response, retryAfter,

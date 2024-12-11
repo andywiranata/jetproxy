@@ -74,7 +74,7 @@ public class ProxyHolder extends AbstractProxyHandler {
                 return;
             }
             // Check resilience state and handle response if necessary
-            if (this.handleResilienceState(request, response)) {
+            if (this.handleAndSendResilienceResponse(request, response)) {
                 return; // Resilience state handled, no further processing
             }
             this.resilience.execute(()-> {
@@ -131,7 +131,6 @@ public class ProxyHolder extends AbstractProxyHandler {
         int status = this.proxyResponseStatus(failure);
         resilience.handleHttpResponse(clientRequest, status, failure);
         super.onProxyResponseFailure(clientRequest, proxyResponse, serverResponse, failure);
-
     }
     @Override
     protected void onResponseContent(HttpServletRequest request,

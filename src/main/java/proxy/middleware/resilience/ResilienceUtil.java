@@ -80,29 +80,32 @@ public class ResilienceUtil {
         Long startTime = (Long) clientRequest.getAttribute("startTime");
         long duration = (startTime != null) ? System.nanoTime() - startTime : 0;
 
-        // Handle CircuitBreaker response logic
+        // CircuitBreaker logic
         if (circuitBreaker != null) {
-            if (exception != null) {
+            if (exception != null || responseStatus < 200 || responseStatus >= 300) {
                 circuitBreaker.onError(duration, TimeUnit.NANOSECONDS); // Mark as error
-            } else if (responseStatus >= 200 && responseStatus < 300) {
-                circuitBreaker.onSuccess(duration, TimeUnit.NANOSECONDS); // Mark as success
             } else {
-                circuitBreaker.onError(duration, TimeUnit.NANOSECONDS); // Mark as failure
+                circuitBreaker.onSuccess(duration, TimeUnit.NANOSECONDS); // Mark as success
             }
         }
 
-        // Log retry metrics (if applicable)
+        // Retry logic
         if (retry != null) {
-            logger.debug("Retry state: {}", retry.getState());
+            if (exception != null || responseStatus < 200 || responseStatus >= 300) {
+                retry.onError(duration, TimeUnit.NANOSECONDS); // Mark as error
+            } else {
+                retry.onSuccess(duration, TimeUnit.NANOSECONDS); // Mark as success
+            }
         }
     }
+
 
     /**
      * Checks if the CircuitBreaker is open.
      *
      * @return true if CircuitBreaker is open, false otherwise
      */
-    public boolean isCircuitBreakerOpen() {
+    public boolean isCircuitBreakerAllowRequest() {
         return circuitBreaker != null && !circuitBreaker.allowRequest();
     }
 
@@ -112,6 +115,6 @@ public class ResilienceUtil {
      * @return true if retries are enabled and allowed, false otherwise
      */
     public boolean isRetryEnabled() {
-        return retry != null && retry.allowRequest();
+        return retry != null && retry.canRetry();
     }
 }
