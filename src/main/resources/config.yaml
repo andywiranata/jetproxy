@@ -48,6 +48,10 @@ proxies:
 #        path: /verify
 #        service: authApi
 #        authRequestHeaders: "Forward(X-Custom-*);Forward(Authorization)"
+#      retry:
+#        enabled: true
+#        maxAttempts: 1
+#        waitDuration: 1000
       circuitBreaker:
         enabled: true
         failureThreshold: 30 # 50% failure rate threshold

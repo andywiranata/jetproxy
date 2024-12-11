@@ -1,11 +1,5 @@
 package proxy.service.holder;
 
-import io.github.resilience4j.bulkhead.Bulkhead;
-import io.github.resilience4j.bulkhead.BulkheadRegistry;
-import io.github.resilience4j.circuitbreaker.CircuitBreaker;
-import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
-import io.github.resilience4j.ratelimiter.RateLimiter;
-import io.github.resilience4j.ratelimiter.RateLimiterRegistry;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletRequestWrapper;
 import jakarta.servlet.http.HttpServletResponse;
@@ -18,16 +12,14 @@ import proxy.context.AppConfig;
 import proxy.context.AppContext;
 import proxy.logger.DebugAwareLogger;
 import proxy.middleware.cache.ResponseCacheEntry;
-import proxy.middleware.circuitbreaker.*;
+import proxy.middleware.resilience.*;
 import proxy.middleware.rule.RuleFactory;
 import proxy.middleware.rule.header.HeaderAction;
 import proxy.middleware.rule.header.HeaderActionFactory;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class ProxyHolder extends AbstractProxyHandler {
@@ -42,12 +34,8 @@ public class ProxyHolder extends AbstractProxyHandler {
                 .map(AppConfig.Middleware::getRule)
                 .map(RuleFactory::createRulesFromString)
                 .orElse(null);
-
-
         this.resilience = ResilienceFactory.createResilienceUtil(proxyRule);
-
         this.metricsListener = AppContext.get().getMetricsListener();
-
         this.headerRequestActions = Optional.ofNullable(proxyRule.getMiddleware())
                 .filter(AppConfig.Middleware::hasHeaders)
                 .map(AppConfig.Middleware::getHeader)
@@ -68,8 +56,6 @@ public class ProxyHolder extends AbstractProxyHandler {
                 configService.getName(), configService.toString());
 
     }
-
-
     @Override
     protected void service(HttpServletRequest request, HttpServletResponse response) {
         try {
@@ -82,32 +68,24 @@ public class ProxyHolder extends AbstractProxyHandler {
                 sendMethodNotAllowedResponse(response);
                 return;
             }
-
             ResponseCacheEntry cachedResponse = getCachedResponse(request);
             if (cachedResponse != null) {
                 sendCachedResponse(response, cachedResponse);
                 return;
             }
-
             // Check resilience state and handle response if necessary
             if (this.handleResilienceState(request, response)) {
                 return; // Resilience state handled, no further processing
             }
+            this.resilience.execute(()-> {
+                try {
+                    super.service(modifyRequestHeaders(request), response);
+                } catch (Exception e) {
+                    logger.debug("Error Occurred to process request {}", e.getMessage());
+                    response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
+                }
+            });
 
-            try {
-                resilience.execute(() -> {
-                    try {
-                        super.service(modifyRequestHeaders(request), response);
-                    } catch (Exception e) {
-                        logger.debug("exception service");
-                        throw new RuntimeException("Service failed", e);
-                    }
-                });
-
-            } catch (Exception e) {
-                logger.debug("Error Occurred to process request {}", e.getMessage());
-                response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
-            }
         } finally {
             this.metricsListener.captureMetricProxyResponse(request, response);
         }
@@ -177,7 +155,6 @@ public class ProxyHolder extends AbstractProxyHandler {
         }
 
     }
-
     private HttpServletRequestWrapper modifyRequestHeaders(HttpServletRequest request) {
         // Create a mutable map for headers
         Map<String, String> modifiedHeaders = Collections.list(request.getHeaderNames()).stream()

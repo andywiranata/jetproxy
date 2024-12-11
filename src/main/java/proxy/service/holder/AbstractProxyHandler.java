@@ -9,8 +9,8 @@ import org.slf4j.LoggerFactory;
 import proxy.context.AppConfig;
 import proxy.context.AppContext;
 import proxy.middleware.cache.ResponseCacheEntry;
-import proxy.middleware.circuitbreaker.ResilienceUtil;
 import proxy.middleware.metric.MetricsListener;
+import proxy.middleware.resilience.ResilienceUtil;
 import proxy.middleware.rule.RuleContext;
 import proxy.middleware.rule.header.HeaderAction;
 import proxy.util.RequestUtils;
@@ -151,7 +151,8 @@ public abstract class AbstractProxyHandler extends ProxyServlet.Transparent {
         }
 
         // Bulkhead logic
-        if (!this.resilience.isBulkheadAvailable()) {
+        /*
+        if (this.resilience.isBulkheadAvailable()) {
             AppConfig.Bulkhead bulkheadConfig = proxyRule.getMiddleware().getBulkhead();
             int retryAfter = bulkheadConfig.getRetryAfterSeconds(); // Get Retry-After dynamically
             sendTooManyRequestsResponse(response, retryAfter,
@@ -160,7 +161,7 @@ public abstract class AbstractProxyHandler extends ProxyServlet.Transparent {
         }
 
         // RateLimiter logic
-        if (!this.resilience.isRateLimiterAvailable()) {
+        if (this.resilience.isRateLimiterAvailable()) {
             AppConfig.RateLimiter rateLimiterConfig = proxyRule.getMiddleware().getRateLimiter();
             int resetAfter = rateLimiterConfig.getResetAfterSeconds(); // Get reset time dynamically
             int limit = rateLimiterConfig.getLimitForPeriod();
@@ -169,6 +170,8 @@ public abstract class AbstractProxyHandler extends ProxyServlet.Transparent {
                     "Rate Limiter Exceeded");
             return true;
         }
+        */
+
         return false; // No resilience issues
     }
 
