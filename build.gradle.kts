@@ -142,5 +142,5 @@ tasks.register("checkAgentPath") {
 }
 
 application {
-    mainClass.set("proxy.MainProxy") // Replace with your main class
+    mainClass.set("io.jetproxy.MainProxy") // Replace with your main class
 }
