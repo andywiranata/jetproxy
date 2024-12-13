@@ -28,4 +28,4 @@ By automatically discovering services and adjusting routes, this reverse proxy s
 ## Tech Stack
 
 - **Language**: Java
-- **Server**: Jetty.
+- **Server**: Jetty
