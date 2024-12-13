@@ -1,6 +1,7 @@
 plugins {
     id("application")
     id("java")
+    id("com.google.protobuf") version "0.9.4" // Plugin for gRPC code generation
     id("io.freefair.lombok") version "8.0.1"
     id("maven-publish")
     id("com.github.johnrengelman.shadow") version "7.1.2"
@@ -32,13 +33,16 @@ dependencies {
     // Jetty Proxy module for ProxyServlet
     implementation("org.eclipse.jetty:jetty-proxy:11.0.14")
 
-    implementation("jakarta.servlet:jakarta.servlet-api:6.0.0")
-    implementation("io.github.resilience4j:resilience4j-core:2.0.2")
-    implementation("io.github.resilience4j:resilience4j-circuitbreaker:2.0.2")
-    implementation("io.github.resilience4j:resilience4j-ratelimiter:2.0.2")
-    implementation("io.github.resilience4j:resilience4j-bulkhead:2.0.2")
-    implementation("io.github.resilience4j:resilience4j-retry:2.0.2")
+    // gRPC runtime dependencies
+    implementation("io.grpc:grpc-netty:1.58.0")
+    implementation("io.grpc:grpc-protobuf:1.58.0")
+    implementation("io.grpc:grpc-stub:1.58.0")
 
+    // For gRPC reflection support
+    implementation("io.grpc:grpc-services:1.58.0")
+
+    // Protocol Buffers
+    implementation("com.google.protobuf:protobuf-java:3.24.3")
 
     // SnakeYAML for parsing YAML files
     implementation("org.yaml:snakeyaml:2.0")
