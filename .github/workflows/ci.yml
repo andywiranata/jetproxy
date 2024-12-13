@@ -62,7 +62,7 @@ jobs:
 
       # Step 4: Upload JAR to GitHub Release
       - name: Upload Release Asset
-        uses: softprops/action-gh-release@v
+        uses: softprops/action-gh-release@v1
         with:
           files: build/libs/*.jar  # Adjust this path to match your JAR output
         env:
