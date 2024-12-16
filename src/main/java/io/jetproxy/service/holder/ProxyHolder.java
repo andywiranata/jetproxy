@@ -1,23 +1,25 @@
 package io.jetproxy.service.holder;
 
+import io.jetproxy.exception.JetProxyException;
+import io.jetproxy.exception.ResilienceCircuitBreakerException;
+import io.jetproxy.exception.ResilienceRateLimitException;
 import io.jetproxy.middleware.cache.ResponseCacheEntry;
 import io.jetproxy.middleware.resilience.ResilienceFactory;
+import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletRequestWrapper;
 import jakarta.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.client.api.Request;
 import org.eclipse.jetty.client.api.Response;
-import org.eclipse.jetty.http.HttpField;
 import org.eclipse.jetty.http.HttpHeader;
 import org.eclipse.jetty.util.Callback;
 import io.jetproxy.context.AppConfig;
 import io.jetproxy.context.AppContext;
 import io.jetproxy.logger.DebugAwareLogger;
 import io.jetproxy.middleware.rule.RuleFactory;
-import io.jetproxy.middleware.rule.header.HeaderAction;
 import io.jetproxy.middleware.rule.header.HeaderActionFactory;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -73,19 +75,26 @@ public class ProxyHolder extends AbstractProxyHandler {
                 sendCachedResponse(response, cachedResponse);
                 return;
             }
-            // Check resilience state and handle response if necessary
-            if (this.handleAndSendResilienceResponse(request, response)) {
-                return; // Resilience state handled, no further processing
-            }
+
             this.resilience.execute(()-> {
                 try {
-                    super.service(modifyRequestHeaders(request), response);
-                } catch (Exception e) {
-                    logger.debug("Error Occurred to process request {}", e.getMessage());
-                    response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
+                    super.service(this.modifyRequestHeaders(request), response);
+                } catch (ServletException | IOException e) {
+                    throw new RuntimeException(e);
                 }
             });
 
+        } catch (Exception e) {
+            logger.debug("Error Occurred to process request {}", e.getMessage());
+            if (e instanceof ResilienceRateLimitException) {
+                sendRateLimiterResponse(response, e.getMessage());
+            } else if (e instanceof ResilienceCircuitBreakerException) {
+                AppConfig.CircuitBreaker circuitBreakerConfig = proxyRule.getMiddleware().getCircuitBreaker();
+                sendServiceUnavailableResponse(response, circuitBreakerConfig.getRetryAfterSeconds(),
+                        e.getMessage(), TYPE_CIRCUIT_BREAKER);
+            } else {
+                response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
+            }
         } finally {
             this.metricsListener.captureMetricProxyResponse(request, response);
         }
@@ -101,17 +110,9 @@ public class ProxyHolder extends AbstractProxyHandler {
     protected void onServerResponseHeaders(HttpServletRequest clientRequest, HttpServletResponse proxyResponse, Response serverResponse) {
         super.onServerResponseHeaders(clientRequest, proxyResponse, serverResponse);
         // Extract existing headers from the server response
-        Map<String, String> serverHeaders = serverResponse.getHeaders().stream()
-                .collect(Collectors.toMap(
-                        HttpField::getName,
-                        HttpField::getValue
-                ));
+        Map<String, String> serverHeaders = extractHeadersFromServerResponse(serverResponse);
         // Apply response header actions
-        Map<String, String> modifiedHeaders = new HashMap<>();
-        for (HeaderAction action : headerResponseActions) {
-            action.execute(serverHeaders, modifiedHeaders);
-        }
-
+        Map<String, String> modifiedHeaders = applyResponseHeaderActions(serverHeaders);
         // Set modified headers to the proxy response
         for (Map.Entry<String, String> entry : modifiedHeaders.entrySet()) {
             proxyResponse.setHeader(entry.getKey(), entry.getValue());
@@ -153,36 +154,5 @@ public class ProxyHolder extends AbstractProxyHandler {
             }
         }
 
-    }
-    private HttpServletRequestWrapper modifyRequestHeaders(HttpServletRequest request) {
-        // Create a mutable map for headers
-        Map<String, String> modifiedHeaders = Collections.list(request.getHeaderNames()).stream()
-                .collect(Collectors.toMap(
-                        header -> header,
-                        request::getHeader
-                ));
-
-        // Apply request header actions
-        for (HeaderAction action : headerRequestActions) {
-            action.execute(request, modifiedHeaders);
-        }
-
-        // Wrap the request with the modified headers
-        return new HttpServletRequestWrapper(request) {
-            @Override
-            public Enumeration<String> getHeaderNames() {
-                return Collections.enumeration(modifiedHeaders.keySet());
-            }
-
-            @Override
-            public String getHeader(String name) {
-                return modifiedHeaders.get(name);
-            }
-
-            @Override
-            public Enumeration<String> getHeaders(String name) {
-                return Collections.enumeration(Collections.singleton(modifiedHeaders.get(name)));
-            }
-        };
     }
 }

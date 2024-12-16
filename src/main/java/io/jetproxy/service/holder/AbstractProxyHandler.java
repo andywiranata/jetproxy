@@ -4,8 +4,11 @@ import io.jetproxy.context.AppConfig;
 import io.jetproxy.middleware.cache.ResponseCacheEntry;
 import io.jetproxy.middleware.rule.RuleContext;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequestWrapper;
 import jakarta.servlet.http.HttpServletResponse;
 import org.brotli.dec.BrotliInputStream;
+import org.eclipse.jetty.client.api.Response;
+import org.eclipse.jetty.http.HttpField;
 import org.eclipse.jetty.proxy.ProxyServlet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,9 +20,8 @@ import io.jetproxy.util.RequestUtils;
 
 import java.io.*;
 import java.nio.charset.Charset;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.InflaterInputStream;
 
@@ -31,14 +33,12 @@ public abstract class AbstractProxyHandler extends ProxyServlet.Transparent {
     public static final String HEADER_X_RATE_LIMIT_LIMIT = "X-RateLimit-Limit";
     public static final String HEADER_X_RATE_LIMIT_REMAINING = "X-RateLimit-Remaining";
     public static final String HEADER_X_RATE_LIMIT_RESET = "X-RateLimit-Reset";
-
     // Error Types
     public static final String TYPE_CIRCUIT_BREAKER = "circuit-breaker";
     public static final String TYPE_BULKHEAD = "bulkhead";
     public static final String TYPE_RATE_LIMITER = "rate-limiter";
     public static final String TYPE_METHOD_NOT_ALLOWED = "method-not-allowed";
     public static final String TYPE_RULE_NOT_ALLOWED = "rule-not-allowed";
-
     // Error Messages
     public static final String ERROR_METHOD_NOT_ALLOWED = "Method Not Allowed";
     public static final String ERROR_RULE_NOT_ALLOWED = "Rule not allowed processing request";
@@ -66,7 +66,6 @@ public abstract class AbstractProxyHandler extends ProxyServlet.Transparent {
         String responseBody = ctx.getCache().get(String.format("%s__%s", method, path));
 
         return ctx.gson.fromJson(responseBody, ResponseCacheEntry.class);
-
     }
 
     // Shared logic for caching the response
@@ -133,77 +132,33 @@ public abstract class AbstractProxyHandler extends ProxyServlet.Transparent {
         }
         return "UTF-8"; // Default to UTF-8 if no charset is specified
     }
-
     public boolean isMethodNotAllowed(HttpServletRequest request) {
         List<String> allowedMethods = this.configService.getMethods();
         String requestMethod = request.getMethod();
         return !allowedMethods.contains(requestMethod);
     }
-
-    protected boolean handleAndSendResilienceResponse(HttpServletRequest request, HttpServletResponse response) {
-        // CircuitBreaker logic
-        if (this.resilience.isCircuitBreakerAllowRequest()) {
-            AppConfig.CircuitBreaker circuitBreakerConfig = proxyRule.getMiddleware().getCircuitBreaker();
-            int retryAfter = circuitBreakerConfig.getRetryAfterSeconds(); // Get Retry-After dynamically
-            sendServiceUnavailableResponse(response, retryAfter,
-                    "Circuit Breaker Open", TYPE_CIRCUIT_BREAKER);
-            return true;
-        }
-
-        // Bulkhead logic
-        /*
-        if (this.resilience.isBulkheadAvailable()) {
-            AppConfig.Bulkhead bulkheadConfig = proxyRule.getMiddleware().getBulkhead();
-            int retryAfter = bulkheadConfig.getRetryAfterSeconds(); // Get Retry-After dynamically
-            sendTooManyRequestsResponse(response, retryAfter,
-                    "Bulkhead Limit Reached", TYPE_BULKHEAD);
-            return true;
-        }
-
-        // RateLimiter logic
-        if (this.resilience.isRateLimiterAvailable()) {
-            AppConfig.RateLimiter rateLimiterConfig = proxyRule.getMiddleware().getRateLimiter();
-            int resetAfter = rateLimiterConfig.getResetAfterSeconds(); // Get reset time dynamically
-            int limit = rateLimiterConfig.getLimitForPeriod();
-            int remaining = 0; // Assuming no remaining requests available
-            sendRateLimiterResponse(response, resetAfter, limit, remaining,
-                    "Rate Limiter Exceeded");
-            return true;
-        }
-        */
-
-        return false; // No resilience issues
-    }
-
     protected void sendServiceUnavailableResponse(HttpServletResponse response, int retryAfter, String errorMessage, String errorType) {
         response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
         response.setHeader(HEADER_RETRY_AFTER, String.valueOf(retryAfter));
         response.setHeader(HEADER_X_PROXY_ERROR, errorMessage);
         response.setHeader(HEADER_X_PROXY_TYPE, errorType);
     }
-
     protected void sendTooManyRequestsResponse(HttpServletResponse response, int retryAfter, String errorMessage, String errorType) {
         response.setStatus(429);
         response.setHeader(HEADER_RETRY_AFTER, String.valueOf(retryAfter));
         response.setHeader(HEADER_X_PROXY_ERROR, errorMessage);
         response.setHeader(HEADER_X_PROXY_TYPE, errorType);
     }
-
-    protected void sendRateLimiterResponse(HttpServletResponse response, int resetAfter, int limit, int remaining, String errorMessage) {
+    protected void sendRateLimiterResponse(HttpServletResponse response, String errorMessage) {
         response.setStatus(429);
-        response.setHeader(HEADER_X_RATE_LIMIT_LIMIT, String.valueOf(limit));
-        response.setHeader(HEADER_X_RATE_LIMIT_REMAINING, String.valueOf(remaining));
-        response.setHeader(HEADER_X_RATE_LIMIT_RESET, String.valueOf(resetAfter));
         response.setHeader(HEADER_X_PROXY_ERROR, errorMessage);
         response.setHeader(HEADER_X_PROXY_TYPE, TYPE_RATE_LIMITER);
     }
-
     protected void sendMethodNotAllowedResponse(HttpServletResponse response) {
         response.setStatus(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
         response.setHeader(HEADER_X_PROXY_ERROR, ERROR_METHOD_NOT_ALLOWED);
         response.setHeader(HEADER_X_PROXY_TYPE, TYPE_METHOD_NOT_ALLOWED);
     }
-
     protected void sendRuleNotAllowedResponse(HttpServletResponse response) {
         response.setStatus(HttpServletResponse.SC_NOT_ACCEPTABLE);
         response.setHeader(HEADER_X_PROXY_ERROR, ERROR_RULE_NOT_ALLOWED);
@@ -218,5 +173,57 @@ public abstract class AbstractProxyHandler extends ProxyServlet.Transparent {
     }
 
 
+    protected Map<String, String> extractHeadersFromRequest(HttpServletRequest request) {
+        return Collections.list(request.getHeaderNames())
+                .stream()
+                .collect(Collectors.toMap(
+                        header -> header,
+                        request::getHeader
+                ));
+    }
+    protected void applyHeaderActions(HttpServletRequest request, Map<String, String> headers) {
+        for (HeaderAction action : headerRequestActions) {
+            action.execute(request, headers);
+        }
+    }
+    protected HttpServletRequestWrapper modifyRequestHeaders(HttpServletRequest request) {
+        // Create a mutable map for headers
+        Map<String, String> modifiedHeaders = extractHeadersFromRequest(request);
 
+        // Apply request header actions
+        applyHeaderActions(request, modifiedHeaders);
+        // Wrap the request with the modified headers
+        return new HttpServletRequestWrapper(request) {
+            @Override
+            public Enumeration<String> getHeaderNames() {
+                return Collections.enumeration(modifiedHeaders.keySet());
+            }
+
+            @Override
+            public String getHeader(String name) {
+                return modifiedHeaders.get(name);
+            }
+
+            @Override
+            public Enumeration<String> getHeaders(String name) {
+                return Collections.enumeration(Collections.singleton(modifiedHeaders.get(name)));
+            }
+        };
+    }
+
+    protected Map<String, String> extractHeadersFromServerResponse(Response serverResponse) {
+        return serverResponse.getHeaders().stream()
+                .collect(Collectors.toMap(
+                        HttpField::getName,
+                        HttpField::getValue
+                ));
+    }
+
+    protected Map<String, String> applyResponseHeaderActions(Map<String, String> serverHeaders) {
+        Map<String, String> modifiedHeaders = new HashMap<>();
+        for (HeaderAction action : headerResponseActions) {
+            action.execute(serverHeaders, modifiedHeaders);
+        }
+        return modifiedHeaders;
+    }
 }

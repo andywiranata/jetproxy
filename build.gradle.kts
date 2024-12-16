@@ -100,21 +100,14 @@ tasks.named<JavaExec>("run") {
     doFirst {
         println("Using OpenTelemetry agent located at: $agentPath")
     }
-    // Load environment variables from .env file
-// Load `.env` manually
+    // Load `.env` manually
     val dotenvFile = file(".env")
     if (dotenvFile.exists()) {
         dotenvFile.forEachLine { line ->
-            // Skip empty lines and comments
             if (line.isNotBlank() && !line.trim().startsWith("#")) {
-                val keyValue = line.split("=", limit = 2) // Split into two parts only
+                val keyValue = line.split("=", limit = 2)
                 if (keyValue.size == 2) {
-                    val key = keyValue[0].trim()
-                    val value = keyValue[1].trim()
-                    println("$key $value")
-                    environment(key, value)
-                } else {
-                    println("Warning: Skipping malformed line in .env file: $line")
+                    environment(keyValue[0].trim(), keyValue[1].trim())
                 }
             }
         }
@@ -123,9 +116,6 @@ tasks.named<JavaExec>("run") {
     }
 
     jvmArgs("-javaagent:$agentPath")
-    // Optionally set OpenTelemetry environment variables
-
-
 }
 
 tasks.register("checkAgentPath") {
@@ -136,8 +126,26 @@ tasks.register("checkAgentPath") {
         if (agentPath.exists()) {
             println("Agent JAR is present at: ${agentPath.absolutePath}")
         } else {
-            println("Agent JAR not found. Please run the 'copyAgent' task first.")
+            throw GradleException("Agent JAR not found. Run the 'copyAgent' task first.")
         }
+    }
+}
+
+tasks.register("buildNativeImage") {
+    dependsOn("checkAgentPath")
+    group = "build"
+    description = "Builds a GraalVM native image of the application"
+    doLast {
+        val jarFile = tasks.jar.get().archiveFile.get().asFile
+        val outputFileName = "proxy-native"
+        exec {
+            commandLine(
+                    "native-image",
+                    "-jar", jarFile.absolutePath,
+                    outputFileName
+            )
+        }
+        println("Native image built successfully: $outputFileName")
     }
 }
 

@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.time.Duration;
 import java.util.Base64;
 import java.util.List;
 
@@ -143,14 +144,12 @@ public class AppConfig {
     @Getter
     @Setter
     public static class RateLimiter {
-        private boolean enabled = false;
-        private long refreshPeriod = 500; // Default: 500 ms
-        private int limitForPeriod = 10; // Default: 10 requests
-        private long timeoutDuration = 1000; // Default: 1 second
-        // Derived method for X-RateLimit-Reset
-        public int getResetAfterSeconds() {
-            return (int) Math.ceil(refreshPeriod / 1000.0); // Convert ms to seconds
-        }
+        private boolean enabled = false;              // Feature disabled by default
+        private long limitRefreshPeriod = 1000;       // Default 1 second
+        private int limitForPeriod = 10;              // Default 10 requests per period
+        private Duration timeoutDuration = Duration.ZERO; // No waiting by default
+        private int maxBurstCapacity = 20;           // Default burst capacity of 20
+
     }
     @Getter
     @Setter

@@ -6,6 +6,8 @@ import io.jetproxy.middleware.resilience.retry.Retry;
 import io.jetproxy.middleware.resilience.retry.RetryConfig;
 import io.jetproxy.middleware.resilience.circuitbreaker.CircuitBreaker;
 import io.jetproxy.middleware.resilience.circuitbreaker.CircuitBreakerConfig;
+import io.jetproxy.middleware.resilience.ratelimiter.RateLimiter;
+import io.jetproxy.middleware.resilience.ratelimiter.RateLimiterConfig;
 
 import java.time.Duration;
 
@@ -46,12 +48,27 @@ public class ResilienceFactory {
         RetryConfig config = RetryConfig.custom()
                 .maxAttempts(retryConfig.getMaxAttempts())
                 .waitDuration(Duration.ofMillis(retryConfig.getWaitDuration()))
-
                 .build();
 
         return new Retry(name, config);
     }
 
+    /**
+     * Creates a RateLimiter instance.
+     *
+     * @param name        the name of the RateLimiter
+     * @param rlConfig    the RateLimiter configuration from AppConfig
+     * @return the RateLimiter instance
+     */
+    public static RateLimiter createRateLimiter(String name, AppConfig.RateLimiter rlConfig) {
+        RateLimiterConfig config = RateLimiterConfig.custom()
+                .limitRefreshPeriod(Duration.ofMillis(rlConfig.getLimitRefreshPeriod()))
+                .limitForPeriod(rlConfig.getLimitForPeriod())
+                .maxBurstCapacity(rlConfig.getMaxBurstCapacity())
+                .build();
+
+        return new RateLimiter(config);
+    }
 
     /**
      * Creates a composite resilience configuration with all components.
@@ -74,6 +91,10 @@ public class ResilienceFactory {
                 ? createRetry("resilience::retry::" + proxy.getUuid(), middleware.getRetry())
                 : null;
 
-        return new ResilienceUtil(circuitBreaker, retry);
+        RateLimiter rateLimiter = middleware.hasRateLimiter()
+                ? createRateLimiter("resilience::ratelimiter::" + proxy.getUuid(), middleware.getRateLimiter())
+                : null;
+
+        return new ResilienceUtil(circuitBreaker, retry, rateLimiter);
     }
 }

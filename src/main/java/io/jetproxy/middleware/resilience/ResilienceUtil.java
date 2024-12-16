@@ -1,16 +1,19 @@
 package io.jetproxy.middleware.resilience;
 
+import io.jetproxy.exception.ResilienceCircuitBreakerException;
+import io.jetproxy.exception.ResilienceRateLimitException;
 import io.jetproxy.exception.ResilienceRetryException;
 import io.jetproxy.logger.DebugAwareLogger;
 import io.jetproxy.middleware.resilience.retry.Retry;
-import jakarta.servlet.http.HttpServletRequest;
 import io.jetproxy.middleware.resilience.circuitbreaker.CircuitBreaker;
+import io.jetproxy.middleware.resilience.ratelimiter.RateLimiter;
+import jakarta.servlet.http.HttpServletRequest;
 
 import java.util.concurrent.TimeUnit;
 
 /**
  * A utility class to manage and execute operations with resilience mechanisms
- * like Retry, CircuitBreaker, and others.
+ * like Retry, CircuitBreaker, and RateLimiter.
  */
 public class ResilienceUtil {
 
@@ -18,16 +21,19 @@ public class ResilienceUtil {
 
     private final CircuitBreaker circuitBreaker;
     private final Retry retry;
+    private final RateLimiter rateLimiter;
 
     /**
      * Constructs a ResilienceUtil with the given resilience components.
      *
      * @param circuitBreaker the CircuitBreaker instance
      * @param retry          the Retry instance
+     * @param rateLimiter    the RateLimiter instance
      */
-    public ResilienceUtil(CircuitBreaker circuitBreaker, Retry retry) {
+    public ResilienceUtil(CircuitBreaker circuitBreaker, Retry retry, RateLimiter rateLimiter) {
         this.circuitBreaker = circuitBreaker;
         this.retry = retry;
+        this.rateLimiter = rateLimiter;
     }
 
     /**
@@ -38,16 +44,22 @@ public class ResilienceUtil {
     public void execute(Runnable runnable) {
         Runnable resilientRunnable = runnable;
 
+        // Apply RateLimiter logic
+        if (rateLimiter != null && !rateLimiter.tryConsume()) {
+            throw new ResilienceRateLimitException("Rate limit exceeded");
+        }
+
         // Apply Retry logic
-        if (retry != null && retry.allowRequest()) {
+        if (retry != null) {
+            Runnable originalRunnable = resilientRunnable;
             resilientRunnable = () -> {
                 while (retry.allowRequest()) {
                     try {
-                        runnable.run();
+                        originalRunnable.run();
                         break;
                     } catch (Exception ex) {
                         if (!retry.allowRequest()) {
-                            throw new ResilienceRetryException(ex.getMessage()); // Exceed retry attempts
+                            throw new ResilienceRetryException("Retry attempts exceeded", ex);
                         }
                     }
                 }
@@ -55,19 +67,34 @@ public class ResilienceUtil {
         }
 
         // Apply CircuitBreaker logic
-        if (circuitBreaker != null && circuitBreaker.allowRequest()) {
-            resilientRunnable = () -> {
-                try {
-                    runnable.run();
-                } catch (Exception ex) {
-                    throw ex;
-                }
-            };
+        if (circuitBreaker != null) {
+            if (circuitBreaker.allowRequest()) {
+                Runnable finalRunnable = resilientRunnable;
+                resilientRunnable = () -> {
+                    try {
+                        finalRunnable.run();
+                    } catch (Exception ex) {
+                        circuitBreaker.onError(0, TimeUnit.MILLISECONDS); // Assume 0 duration if unknown
+                        throw new ResilienceCircuitBreakerException("Circuit Breaker Exception", ex);
+                    }
+                };
+            } else {
+                throw new ResilienceCircuitBreakerException("Circuit Breaker Open");
+            }
         }
 
         // Execute the final resilient runnable
-        resilientRunnable.run();
+        try {
+            resilientRunnable.run();
+        } catch (RuntimeException ex) {
+            // Wrap exceptions to ensure proper propagation
+            throw ex;
+        } catch (Exception ex) {
+            // Re-wrap non-runtime exceptions
+            throw new RuntimeException(ex);
+        }
     }
+
 
     /**
      * Handles the response logic for resilience mechanisms.
@@ -97,24 +124,22 @@ public class ResilienceUtil {
                 retry.onSuccess(duration, TimeUnit.NANOSECONDS); // Mark as success
             }
         }
-    }
 
+        if (rateLimiter != null) {
+
+        }
+
+        // RateLimiter: No specific response handling needed since it applies before execution
+    }
 
     /**
      * Checks if the CircuitBreaker is open.
      *
      * @return true if CircuitBreaker is open, false otherwise
      */
-    public boolean isCircuitBreakerAllowRequest() {
+    public boolean isCircuitBreakerNotAllowRequest() {
         return circuitBreaker != null && !circuitBreaker.allowRequest();
     }
 
-    /**
-     * Checks if retries are allowed.
-     *
-     * @return true if retries are enabled and allowed, false otherwise
-     */
-    public boolean isRetryEnabled() {
-        return retry != null && retry.canRetry();
-    }
+
 }

@@ -44,8 +44,13 @@ proxies:
   - path: /user
     service: userApi
     middleware:
-      circuitBreaker:
+      rateLimiter:
         enabled: true
+        limitRefreshPeriod: 200000
+        limitForPeriod: 5
+        maxBurstCapacity: 6
+      circuitBreaker:
+        enabled: false
         failureThreshold: 30 # 50% failure rate threshold
         slowCallThreshold: 50 # 50% slow call rate threshold
         slowCallDuration: 500 # 0.5 seconds threshold for slow calls
