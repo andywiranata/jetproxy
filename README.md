@@ -15,8 +15,8 @@ By automatically discovering services and adjusting routes, this reverse proxy s
 - **Forward Auth**: [Link](https://jetproxy.andywiranata.me/docs/middleware/forward-auth)
 - **Rules**: [Link](https://jetproxy.andywiranata.me/docs/middleware/rules)
 - **Headers**: [Link](https://jetproxy.andywiranata.me/docs/middleware/headers)
-- **CircuitBreaker**: [Link](https://jetproxy.andywiranata.me/docs/middleware/circuit-breaker) **Dev Done, In testing - TODO**
-- **CorsFilter** **Dev Done**
+- **CircuitBreaker**: [Link](https://jetproxy.andywiranata.me/docs/middleware/circuit-breaker)
+- **CorsFilter** [Link](https://jetproxy.andywiranata.me/docs/middleware/cors)
 - **Custom Error**: **TODO**
 - **Tracing OpenTelemetry**: [link](https://jetproxy.andywiranata.me/docs/observability/metrics) **Dev Done**
 - **Enabled Debug Logging**: [link](https://jetproxy.andywiranata.me/docs/observability/logs) **Dev Done**
