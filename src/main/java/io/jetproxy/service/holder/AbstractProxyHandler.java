@@ -181,6 +181,15 @@ public abstract class AbstractProxyHandler extends ProxyServlet.Transparent {
                         request::getHeader
                 ));
     }
+    protected Map<String, String> extractAttributesFromRequest(HttpServletRequest request) {
+        return Collections.list(request.getAttributeNames())
+                .stream()
+                .collect(Collectors.toMap(
+                        attributeName -> attributeName,
+                        attributeName -> String.valueOf(request.getAttribute(attributeName)) // Convert to String
+                ));
+    }
+
     protected void applyHeaderActions(HttpServletRequest request, Map<String, String> headers) {
         for (HeaderAction action : headerRequestActions) {
             action.execute(request, headers);
@@ -189,7 +198,8 @@ public abstract class AbstractProxyHandler extends ProxyServlet.Transparent {
     protected HttpServletRequestWrapper modifyRequestHeaders(HttpServletRequest request) {
         // Create a mutable map for headers
         Map<String, String> modifiedHeaders = extractHeadersFromRequest(request);
-
+        Map<String, String> modifiedAttributes = extractAttributesFromRequest(request);
+        modifiedHeaders.putAll(modifiedAttributes);
         // Apply request header actions
         applyHeaderActions(request, modifiedHeaders);
         // Wrap the request with the modified headers
@@ -218,6 +228,23 @@ public abstract class AbstractProxyHandler extends ProxyServlet.Transparent {
                         HttpField::getValue
                 ));
     }
+
+    protected Map<String, String> extractHeadersAndAttributes(Response serverResponse, Map<String, String> attributes) {
+        // Extract headers from serverResponse
+        Map<String, String> headers = serverResponse.getHeaders().stream()
+                .collect(Collectors.toMap(
+                        HttpField::getName,
+                        HttpField::getValue,
+                        (existingValue, newValue) -> existingValue + "," + newValue // Handle duplicates
+                ));
+
+        // Merge headers and attributes, with attributes taking precedence
+        Map<String, String> combined = new HashMap<>(headers);
+        combined.putAll(attributes);
+
+        return combined;
+    }
+
 
     protected Map<String, String> applyResponseHeaderActions(Map<String, String> serverHeaders) {
         Map<String, String> modifiedHeaders = new HashMap<>();

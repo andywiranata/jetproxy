@@ -10,6 +10,10 @@ public class HeaderActionFactory {
     public static List<HeaderAction> createActions(String config) {
         List<HeaderAction> actions = new ArrayList<>();
 
+        if (config == null) {
+            return actions;
+        }
+
         String[] rules = config.split(";");
         for (String rule : rules) {
             if (rule.startsWith("Forward(")) {

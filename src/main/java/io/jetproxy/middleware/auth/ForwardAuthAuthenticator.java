@@ -22,12 +22,13 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.security.Principal;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class ForwardAuthAuthenticator implements Authenticator {
     private static final DebugAwareLogger logger = DebugAwareLogger.getLogger(ForwardAuthAuthenticator.class);
-
     private final String path;
-    private final List<HeaderAction> headerActions; // Actions to handle headers
+    private final List<HeaderAction> requestHeaderActions;
+    private final List<HeaderAction> responseHeaderActions; // Actions to handle headers
     private final AppConfig.Service service;
     private final String requestMethod;
 
@@ -35,11 +36,13 @@ public class ForwardAuthAuthenticator implements Authenticator {
         assert appMiddleware.getForwardAuth() != null;
 
         String serviceName = appMiddleware.getForwardAuth().getService();
-        String authRequestHeaderRules = appMiddleware.getForwardAuth().getAuthRequestHeaders();
+        String authRequestHeaderRules = appMiddleware.getForwardAuth().getRequestHeaders();
+        String authResponseHeaderRules = appMiddleware.getForwardAuth().getResponseHeaders();
 
         this.service = ConfigLoader.getServiceMap().get(serviceName);
         this.path = appMiddleware.getForwardAuth().getPath();
-        this.headerActions = HeaderActionFactory.createActions(authRequestHeaderRules);
+        this.requestHeaderActions = HeaderActionFactory.createActions(authRequestHeaderRules);
+        this.responseHeaderActions = HeaderActionFactory.createActions(authResponseHeaderRules);
         this.requestMethod = this.service.getMethods().getFirst();
     }
 
@@ -58,25 +61,28 @@ public class ForwardAuthAuthenticator implements Authenticator {
     @Override
     public Authentication validateRequest(ServletRequest servletRequest,
                                           ServletResponse servletResponse, boolean mandatory) {
-        HttpServletRequest request = (HttpServletRequest) servletRequest;
+        Request request = Request.getBaseRequest(servletRequest);
         HttpServletResponse response = (HttpServletResponse) servletResponse;
+
         long startTime = System.currentTimeMillis();
         String authUrl = service.getUrl() + path;
         String responseStatus = "";
+        Map<String, String> forwardHeaders;
+        Map<String, String> forwardResponseHeaders;
 
-        HttpURLConnection connection = null;
+        HttpURLConnection connection;
         int responseCode = HttpURLConnection.HTTP_INTERNAL_ERROR; // Default in case of an exception
 
         try {
-            // Extract headers to forward
-            Map<String, String> forwardHeaders = getForwardHeaders(request);
 
-            // Perform the forward authentication request
+            forwardHeaders = getRequestForwardHeaders(request);
             connection = performForwardAuthRequest(authUrl, forwardHeaders);
-
-            // Get the response code from the connection
+            forwardResponseHeaders = getResponseForwardHeaders(connection);
             responseCode = connection.getResponseCode();
 
+            for (Map.Entry<String, String> entry : forwardResponseHeaders.entrySet()) {
+                request.setAttribute(entry.getKey(), entry.getValue());
+            }
             if (responseCode == HttpURLConnection.HTTP_OK) {
                 return new UserAuthentication(getAuthMethod(), new MockUserIdentity());
             } else {
@@ -104,15 +110,31 @@ public class ForwardAuthAuthenticator implements Authenticator {
         return true;
     }
 
-    private Map<String, String> getForwardHeaders(HttpServletRequest request) {
+    private Map<String, String> getRequestForwardHeaders(HttpServletRequest request) {
         Map<String, String> headersToForward = new HashMap<>();
         // Execute all header actions to populate headersToForward
-        for (HeaderAction action : headerActions) {
+        for (HeaderAction action : requestHeaderActions) {
             action.execute(request, headersToForward);
         }
 
         return headersToForward;
     }
+    private Map<String, String> getResponseForwardHeaders(HttpURLConnection responseAuthConnection) {
+        Map<String, String> headersRequest = responseAuthConnection.getHeaderFields()
+                .entrySet()
+                .stream()
+                .filter(entry -> entry.getKey() != null) // Exclude null header names
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        entry -> String.join(",", entry.getValue()) // Join multiple values with a comma
+                ));
+
+        Map<String, String> headersToForward = new HashMap<>();
+        responseHeaderActions.forEach(action -> action.execute(headersRequest, headersToForward));
+
+        return headersToForward;
+    }
+
 
     private HttpURLConnection performForwardAuthRequest(String authUrl, Map<String, String> headers) throws IOException {
         URL url = new URL(authUrl);

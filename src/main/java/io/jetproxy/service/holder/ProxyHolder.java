@@ -75,7 +75,6 @@ public class ProxyHolder extends AbstractProxyHandler {
                 sendCachedResponse(response, cachedResponse);
                 return;
             }
-
             this.resilience.execute(()-> {
                 try {
                     super.service(this.modifyRequestHeaders(request), response);

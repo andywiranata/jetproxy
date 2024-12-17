@@ -120,7 +120,9 @@ public class AppConfig {
     public static class ForwardAuth {
         private String path;
         private String service;
-        private String authRequestHeaders;
+        private String requestHeaders;
+        private String responseHeaders;
+
     }
 
     @Getter

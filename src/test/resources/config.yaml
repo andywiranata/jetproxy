@@ -40,7 +40,7 @@ proxies:
       forwardAuth:
         path: /verify
         service: authApi
-        authRequestHeaders: "Forward(X-Custom-*);Forward(Authorization)"
+        requestHeaders: "Forward(X-Custom-*);Forward(Authorization)"
       header:
         requestHeaders: "Remove(x-header-*);Remove(Authorization);Append(X-Custom-Header,-jetty)"
         responseHeaders: "Add(X-Powered-By,jetty-server)"
@@ -52,7 +52,7 @@ proxies:
       forwardAuth:
         path: /verify
         service: authApi
-        authRequestHeaders: "Forward(X-Custom-*);Forward(Authorization)"
+        requestHeaders: "Forward(X-Custom-*);Forward(Authorization)"
       rule: "(Header('Content-Type', 'application/json') && HeaderPrefix('User-Agent', 'Mozilla')) || HeaderRegex('X-Custom-Header', '^[a-zA-Z0-9]{10}$')"
       circuitBreaker:
         enabled: true
@@ -74,7 +74,7 @@ proxies:
       forwardAuth:
         path: /verify
         service: authApi
-        authRequestHeaders: "Forward(X-Custom-*);Forward(Authorization)"
+        requestHeaders: "Forward(X-Custom-*);Forward(Authorization)"
       rule: "(Header('Content-Type', 'application/json') && HeaderPrefix('User-Agent', 'Mozilla')) || HeaderRegex('X-Custom-Header', '^[a-zA-Z0-9]{10}$')"
     ttl: 10000
 
