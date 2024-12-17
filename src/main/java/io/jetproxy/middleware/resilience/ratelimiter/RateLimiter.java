@@ -35,7 +35,6 @@ public class RateLimiter {
         long currentTokens;
         do {
             currentTokens = availableTokens.get();
-//            System.out.println("Current Token:: "+ currentTokens);
             if (currentTokens <= 0) {
                 return false; // No tokens available
             }
