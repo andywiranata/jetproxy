@@ -22,7 +22,7 @@ By automatically discovering services and adjusting routes, this reverse proxy s
 - **Enabled Debug Logging**: [link](https://jetproxy.andywiranata.me/docs/observability/logs) **Dev Done**
 - **Health Check**: **Dev Done, Doc TODO**
 - **Sticky Session**: **TODO InReview**
-- **Rate Limiter**: Protect your services by limiting the number of requests per client. **TODO**
+- **Rate Limiter**: [Link](https://jetproxy.andywiranata.me/docs/middleware/rate-limiter)
 - **Docker up and running**, externalize config **TODO**
 
 ## Tech Stack
