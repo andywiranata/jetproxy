@@ -44,6 +44,11 @@ proxies:
   - path: /user
     service: userApi
     middleware:
+      forwardAuth:
+        path: /verify
+        service: authApi
+        requestHeaders: "Forward(X-Custom-*);Forward(Authorization)"
+        responseHeaders: "Remove(X-Powered-By)"
       rateLimiter:
         enabled: true
         limitRefreshPeriod: 200000
@@ -69,7 +74,7 @@ proxies:
       forwardAuth:
         path: /verify
         service: authApi
-        authRequestHeaders: "Forward(X-Custom-*);Forward(Authorization)"
+        requestHeaders: "Forward(X-Custom-*);Forward(Authorization)"
       rule: "(Header('Content-Type', 'application/json') && HeaderPrefix('User-Agent', 'Mozilla')) || HeaderRegex('X-Custom-Header', '^[a-zA-Z0-9]{10}$')"
       circuitBreaker:
         enabled: true
@@ -91,7 +96,7 @@ proxies:
       forwardAuth:
         path: /verify
         service: authApi
-        authRequestHeaders: "Forward(X-Custom-*);Forward(Authorization)"
+        requestHeaders: "Forward(X-Custom-*);Forward(Authorization)"
       rule: "(Header('Content-Type', 'application/json') && HeaderPrefix('User-Agent', 'Mozilla')) || HeaderRegex('X-Custom-Header', '^[a-zA-Z0-9]{10}$')"
     ttl: 10000
 

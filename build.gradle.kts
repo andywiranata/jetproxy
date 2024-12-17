@@ -26,10 +26,10 @@ val otelInstrumentationVersion: String by extra("2.9.0-alpha")
 
 dependencies {
     // Jetty dependencies
-    implementation("org.eclipse.jetty:jetty-server:11.0.15")
-    implementation("org.eclipse.jetty:jetty-servlet:11.0.15")
-    implementation("org.eclipse.jetty:jetty-security:11.0.15")
-    implementation("org.eclipse.jetty:jetty-servlets:11.0.15") // Required for CrossOriginFilter
+    implementation("org.eclipse.jetty:jetty-server:11.0.18")
+    implementation("org.eclipse.jetty:jetty-servlet:11.0.18")
+    implementation("org.eclipse.jetty:jetty-security:11.0.18")
+    implementation("org.eclipse.jetty:jetty-servlets:11.0.18")
     // Jetty Proxy module for ProxyServlet
     implementation("org.eclipse.jetty:jetty-proxy:11.0.14")
 
