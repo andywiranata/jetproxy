@@ -12,13 +12,12 @@ public class AppShutdownListener implements ServletContextListener {
 
     @Override
     public void contextInitialized(ServletContextEvent sce) {
-//        ServletContextListener.super.contextInitialized(sce);
         logger.info("AppShutdownListener context initialized.");
     }
 
     @Override
     public void contextDestroyed(ServletContextEvent sce) {
         RedisPoolManager.closePool();
-        logger.info("Redis connection pool closed successfully.");
+        logger.info("Shutting down gracefully...");
     }
 }

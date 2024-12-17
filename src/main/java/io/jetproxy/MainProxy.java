@@ -1,5 +1,6 @@
 package io.jetproxy;
 
+import io.jetproxy.middleware.cache.RedisPoolManager;
 import io.jetproxy.service.holder.SetupCorsHolder;
 import io.opentelemetry.api.GlobalOpenTelemetry;
 import jakarta.servlet.DispatcherType;
@@ -63,6 +64,7 @@ public class MainProxy {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             try {
                 System.out.println("Shutting down gracefully...");
+                RedisPoolManager.closePool();
                 server.stop();
             } catch (Exception e) {
                 logger.error("Error during shutdown", e);
