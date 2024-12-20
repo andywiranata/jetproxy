@@ -1,6 +1,5 @@
 package io.jetproxy.service.holder;
 
-import io.jetproxy.exception.JetProxyException;
 import io.jetproxy.exception.ResilienceCircuitBreakerException;
 import io.jetproxy.exception.ResilienceRateLimitException;
 import io.jetproxy.middleware.cache.ResponseCacheEntry;
@@ -22,13 +21,12 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
-import java.util.stream.Collectors;
 
-public class ProxyHolder extends AbstractProxyHandler {
-    private static final DebugAwareLogger logger = DebugAwareLogger.getLogger(ProxyHolder.class);
+public class ProxyRequestHandler extends BaseProxyHandler {
+    private static final DebugAwareLogger logger = DebugAwareLogger.getLogger(ProxyRequestHandler.class);
 
-    public ProxyHolder(AppConfig.Service configService,
-                       AppConfig.Proxy proxyRule) {
+    public ProxyRequestHandler(AppConfig.Service configService,
+                               AppConfig.Proxy proxyRule) {
         this.configService = configService;
         this.proxyRule = proxyRule;
         // Initialize the ruleContext and circuitBreakerUtil

@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.InflaterInputStream;
 
-public abstract class AbstractProxyHandler extends ProxyServlet.Transparent {
+public abstract class BaseProxyHandler extends ProxyServlet.Transparent {
     // Header Names
     public static final String HEADER_RETRY_AFTER = "Retry-After";
     public static final String HEADER_X_PROXY_ERROR = "X-Proxy-Error";
@@ -44,7 +44,7 @@ public abstract class AbstractProxyHandler extends ProxyServlet.Transparent {
     public static final String ERROR_RULE_NOT_ALLOWED = "Rule not allowed processing request";
 
     public final String MODIFIED_HEADER = "modifiedHeader";
-    private static final Logger logger = LoggerFactory.getLogger(AbstractProxyHandler.class);
+    private static final Logger logger = LoggerFactory.getLogger(BaseProxyHandler.class);
     protected AppConfig.Service configService;
     protected AppConfig.Proxy proxyRule;
     protected RuleContext ruleContext;

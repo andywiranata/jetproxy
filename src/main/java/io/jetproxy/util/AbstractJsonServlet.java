@@ -19,8 +19,9 @@ public class AbstractJsonServlet <T> extends HttpServlet {
         resp.getWriter().println(convertToJson(data));
     }
 
-    private String convertToJson(T data) {
+    protected String convertToJson(T data) {
         // Use Gson to convert the object to JSON
-        return new Gson().toJson(data);
+        return GsonFactory.createGson().toJson(data);
     }
+
 }
