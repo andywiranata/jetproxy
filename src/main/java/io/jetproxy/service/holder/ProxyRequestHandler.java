@@ -4,6 +4,7 @@ import io.jetproxy.exception.ResilienceCircuitBreakerException;
 import io.jetproxy.exception.ResilienceRateLimitException;
 import io.jetproxy.middleware.cache.ResponseCacheEntry;
 import io.jetproxy.middleware.resilience.ResilienceFactory;
+import io.jetproxy.service.holder.handler.MiddlewareChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -24,16 +25,21 @@ import java.util.*;
 
 public class ProxyRequestHandler extends BaseProxyHandler {
     private static final DebugAwareLogger logger = DebugAwareLogger.getLogger(ProxyRequestHandler.class);
+    private final MiddlewareChain middlewareChain;
 
     public ProxyRequestHandler(AppConfig.Service configService,
-                               AppConfig.Proxy proxyRule) {
+                               AppConfig.Proxy proxyRule,
+                               MiddlewareChain middlewareChain) {
         this.configService = configService;
         this.proxyRule = proxyRule;
+        this.middlewareChain = middlewareChain;
         // Initialize the ruleContext and circuitBreakerUtil
-        this.ruleContext = Optional.ofNullable(proxyRule.getMiddleware())
+        /* this.ruleContext = Optional.ofNullable(proxyRule.getMiddleware())
                 .map(AppConfig.Middleware::getRule)
                 .map(RuleFactory::createRulesFromString)
                 .orElse(null);
+
+         */
         this.resilience = ResilienceFactory.createResilienceUtil(proxyRule);
         this.metricsListener = AppContext.get().getMetricsListener();
         this.headerRequestActions = Optional.ofNullable(proxyRule.getMiddleware())
@@ -59,19 +65,11 @@ public class ProxyRequestHandler extends BaseProxyHandler {
     @Override
     protected void service(HttpServletRequest request, HttpServletResponse response) {
         try {
-            if (hasRuleContext() && !ruleContext.evaluate(request)) {
-                sendRuleNotAllowedResponse(response);
-                return;
-            }
-
-            if (isMethodNotAllowed(request)) {
-                sendMethodNotAllowedResponse(response);
-                return;
-            }
-            ResponseCacheEntry cachedResponse = getCachedResponse(request);
-            if (cachedResponse != null) {
-                sendCachedResponse(response, cachedResponse);
-                return;
+            if (middlewareChain != null) {
+                middlewareChain.process(request, response);
+                if (response.isCommitted()) {
+                    return;
+                }
             }
             this.resilience.execute(()-> {
                 try {

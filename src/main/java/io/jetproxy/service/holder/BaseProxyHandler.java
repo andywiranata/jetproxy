@@ -30,6 +30,7 @@ public abstract class BaseProxyHandler extends ProxyServlet.Transparent {
     public static final String HEADER_RETRY_AFTER = "Retry-After";
     public static final String HEADER_X_PROXY_ERROR = "X-Proxy-Error";
     public static final String HEADER_X_PROXY_TYPE = "X-Proxy-Type";
+    public static final String HEADER_X_JETPROXY_CACHE = "X-JetProxy-Cache";
     public static final String HEADER_X_RATE_LIMIT_LIMIT = "X-RateLimit-Limit";
     public static final String HEADER_X_RATE_LIMIT_REMAINING = "X-RateLimit-Remaining";
     public static final String HEADER_X_RATE_LIMIT_RESET = "X-RateLimit-Reset";
@@ -86,20 +87,6 @@ public abstract class BaseProxyHandler extends ProxyServlet.Transparent {
 
     }
 
-    // Shared logic for sending cached responses
-    protected void sendCachedResponse(HttpServletResponse response, ResponseCacheEntry cachedResponse) {
-        try {
-            for (Map.Entry<String, String> header : cachedResponse.getHeaders().entrySet()) {
-                response.setHeader(header.getKey(), header.getValue());
-            }
-            response.setHeader("X-JetProxy-Cache", "true");
-            response.getWriter().write(cachedResponse.getBody());
-            response.getWriter().flush();
-        } catch (IOException e) {
-            logger.error("Error writing cached response: {}", e.getMessage());
-        }
-    }
-
     // Shared logic for decoding content streams
     protected InputStream decodeContentStream(InputStream inputStream, String contentEncoding)
             throws IOException {
@@ -154,25 +141,9 @@ public abstract class BaseProxyHandler extends ProxyServlet.Transparent {
         response.setHeader(HEADER_X_PROXY_ERROR, errorMessage);
         response.setHeader(HEADER_X_PROXY_TYPE, TYPE_RATE_LIMITER);
     }
-    protected void sendMethodNotAllowedResponse(HttpServletResponse response) {
-        response.setStatus(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
-        response.setHeader(HEADER_X_PROXY_ERROR, ERROR_METHOD_NOT_ALLOWED);
-        response.setHeader(HEADER_X_PROXY_TYPE, TYPE_METHOD_NOT_ALLOWED);
-    }
-    protected void sendRuleNotAllowedResponse(HttpServletResponse response) {
-        response.setStatus(HttpServletResponse.SC_NOT_ACCEPTABLE);
-        response.setHeader(HEADER_X_PROXY_ERROR, ERROR_RULE_NOT_ALLOWED);
-        response.setHeader(HEADER_X_PROXY_TYPE, TYPE_RULE_NOT_ALLOWED);
-    }
-    protected boolean hasRuleContext() {
-        return this.ruleContext != null;
-    }
-
     protected boolean isCacheActive() {
         return proxyRule.getTtl() > 0;
     }
-
-
     protected Map<String, String> extractHeadersFromRequest(HttpServletRequest request) {
         return Collections.list(request.getHeaderNames())
                 .stream()

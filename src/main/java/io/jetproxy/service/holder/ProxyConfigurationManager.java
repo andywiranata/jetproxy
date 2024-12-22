@@ -6,6 +6,11 @@ import io.jetproxy.middleware.auth.MultiLayerAuthenticator;
 import io.jetproxy.middleware.auth.AuthProviderFactory;
 import io.jetproxy.middleware.auth.BasicAuthProvider;
 import io.jetproxy.middleware.log.AccessLog;
+import io.jetproxy.middleware.rule.Rule;
+import io.jetproxy.service.holder.handler.HttpCacheHandler;
+import io.jetproxy.service.holder.handler.MiddlewareChain;
+import io.jetproxy.service.holder.handler.MiddlewareHandler;
+import io.jetproxy.service.holder.handler.RuleValidatorHandler;
 import org.eclipse.jetty.security.*;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
@@ -88,7 +93,6 @@ public class ProxyConfigurationManager {
                 );
             }
         }
-
         // Add handlers for security and logging
         RequestLogHandler requestLogHandler = new RequestLogHandler();
         requestLogHandler.setRequestLog(new AccessLog());
@@ -193,7 +197,12 @@ public class ProxyConfigurationManager {
         String prefix = proxyRule.getPath();
         String timeout = String.valueOf(config.getDefaultTimeout());
 
-        ServletHolder proxyServlet = new ServletHolder(new ProxyRequestHandler(service, proxyRule));
+        MiddlewareChain middlewareChain = new MiddlewareChain(List.of(
+                new RuleValidatorHandler(service, proxyRule),
+                new HttpCacheHandler()
+        ));
+        ServletHolder proxyServlet = new ServletHolder(new ProxyRequestHandler(
+                service, proxyRule, middlewareChain));
         proxyServlet.setInitParameter(PROXY_TO, proxyTo);
         proxyServlet.setInitParameter(PREFIX, prefix);
         proxyServlet.setInitParameter(TIMEOUT, timeout);
