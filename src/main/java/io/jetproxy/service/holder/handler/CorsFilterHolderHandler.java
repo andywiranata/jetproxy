@@ -1,4 +1,4 @@
-package io.jetproxy.service.holder;
+package io.jetproxy.service.holder.handler;
 
 import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlets.CrossOriginFilter;
@@ -6,7 +6,7 @@ import io.jetproxy.context.AppConfig;
 
 import java.util.List;
 
-public class SetupCorsHolder {
+public class CorsFilterHolderHandler {
     private final AppConfig appConfig;
 
     /**
@@ -14,7 +14,7 @@ public class SetupCorsHolder {
      *
      * @param appConfig The application configuration containing CORS settings.
      */
-    public SetupCorsHolder(AppConfig appConfig) {
+    public CorsFilterHolderHandler(AppConfig appConfig) {
         this.appConfig = appConfig;
     }
 

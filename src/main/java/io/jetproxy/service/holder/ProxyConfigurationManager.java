@@ -115,24 +115,49 @@ public class ProxyConfigurationManager {
     public synchronized void addOrUpdateProxy(AppConfig.Proxy newProxy) {
         String pathSpec = newProxy.getPath() + "/*";
 
+        // Validate input
+        if (newProxy == null || newProxy.getPath() == null || newProxy.getService() == null) {
+            throw new IllegalArgumentException("Invalid proxy configuration provided.");
+        }
+
         // Remove the existing proxy if it exists
         if (dynamicProxies.containsKey(pathSpec)) {
+            logger.info("Updating existing proxy for path: {}", newProxy.getPath());
             removeProxy(newProxy.getPath());
         }
 
-        // Add the new proxy
+        // Fetch service configuration
         AppConfig.Service service = ConfigLoader.getServiceMap().get(newProxy.getService());
         if (service == null) {
             throw new IllegalArgumentException("Service not found for: " + newProxy.getService());
         }
 
+        // Add the new proxy
         ServletHolder proxyServlet = createServletHolder(newProxy, service.getUrl(), service);
-        context.addServlet(proxyServlet, pathSpec);
-        dynamicProxies.put(pathSpec, proxyServlet);
-//        ConfigLoader.updateProxy(newProxy);
+        try {
+            context.addServlet(proxyServlet, pathSpec);
+            dynamicProxies.put(pathSpec, proxyServlet);
 
-        logger.info("Proxy dynamically added/updated: {} -> {}", newProxy.getPath(), service.getUrl());
+            // Update in config loader
+            ConfigLoader.addOrUpdateProxies(List.of(newProxy));
+
+            logger.info("Proxy dynamically added/updated: {} -> {}", newProxy.getPath(), service.getUrl());
+        } catch (Exception e) {
+            logger.error("Failed to add or update proxy: {}", newProxy.getPath(), e);
+
+            // Rollback on failure
+            dynamicProxies.remove(pathSpec);
+            try {
+                context.getServletHandler().setServletMappings(removeMappingFromArray(
+                        context.getServletHandler().getServletMappings(), pathSpec));
+            } catch (Exception cleanupException) {
+                logger.error("Failed to clean up after adding proxy: {}", pathSpec, cleanupException);
+            }
+            throw new RuntimeException("Failed to add or update proxy for path: " + newProxy.getPath(), e);
+        }
     }
+
+
 
     /**
      * Removes a proxy dynamically based on its path.
@@ -142,22 +167,50 @@ public class ProxyConfigurationManager {
     public synchronized void removeProxy(String path) {
         String pathSpec = path + "/*";
 
+        logger.info("Attempting to remove proxy for path: {}", path);
+
         ServletHolder holder = dynamicProxies.remove(pathSpec);
         if (holder != null) {
+            logger.info("Found proxy holder for pathSpec: {}", pathSpec);
             try {
-                // Remove the servlet holder and its mapping from the handler
                 ServletHandler handler = context.getServletHandler();
-                handler.setServlets(removeServletFromArray(handler.getServlets(), holder));
-                handler.setServletMappings(removeMappingFromArray(handler.getServletMappings(), pathSpec));
+                if (handler == null) {
+                    logger.error("ServletHandler is null. Unable to proceed with removal for path: {}", path);
+                    dynamicProxies.put(pathSpec, holder); // Restore on failure
+                    return;
+                }
 
-                logger.info("Proxy removed dynamically: {}", path);
+                // Log existing servlets and mappings before modification
+                logger.info("Existing servlets: {}", Arrays.toString(handler.getServlets()));
+                logger.info("Existing mappings: {}", Arrays.toString(handler.getServletMappings()));
+
+                // Remove the servlet holder
+                ServletHolder[] updatedHolders = Arrays.stream(handler.getServlets())
+                        .filter(h -> !h.equals(holder))
+                        .toArray(ServletHolder[]::new);
+                handler.setServlets(updatedHolders);
+                logger.info("Updated servlets after removal: {}", Arrays.toString(updatedHolders));
+
+                // Remove the servlet mapping
+                ServletMapping[] updatedMappings = Arrays.stream(handler.getServletMappings())
+                        .filter(mapping -> !Arrays.asList(mapping.getPathSpecs()).contains(pathSpec))
+                        .toArray(ServletMapping[]::new);
+                handler.setServletMappings(updatedMappings);
+                logger.debug("Updated mappings after removal: {}", Arrays.toString(updatedMappings));
+
+                logger.info("Proxy removed dynamically for path: {}", path);
             } catch (Exception e) {
-                logger.error("Failed to remove proxy dynamically: {}", path, e);
+                logger.error("Failed to remove proxy dynamically for path: {}", path, e);
+
+                // Revert the removal in case of failure
+                dynamicProxies.put(pathSpec, holder);
+                logger.debug("Restored proxy holder for pathSpec: {} due to failure.", pathSpec);
             }
         } else {
             logger.warn("No proxy found to remove for path: {}", path);
         }
     }
+
 
     /**
      * Checks if forward authentication is enabled for a proxy.

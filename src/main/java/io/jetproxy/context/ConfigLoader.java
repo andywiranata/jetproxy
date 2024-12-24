@@ -252,4 +252,41 @@ public class ConfigLoader {
         createServiceMap(services); // Update service map
         logger.info("Service removed successfully: {}", serviceName);
     }
+    public static synchronized void addOrUpdateProxies(List<AppConfig.Proxy> updatedProxies) {
+        logger.info("Adding or updating proxies: {}", updatedProxies);
+
+        // Validate the incoming proxies
+        validateProxies(updatedProxies);
+
+        // Get the current list of proxies
+        List<AppConfig.Proxy> existingProxies = config.getProxies();
+        Map<String, AppConfig.Proxy> proxyMap = existingProxies.stream()
+                .collect(Collectors.toMap(AppConfig.Proxy::getPath, proxy -> proxy));
+
+        // Update or add new proxies
+        for (AppConfig.Proxy updatedProxy : updatedProxies) {
+            if (proxyMap.containsKey(updatedProxy.getPath())) {
+                logger.info("Updating existing proxy: {}", updatedProxy.getPath());
+                AppConfig.Proxy existingProxy = proxyMap.get(updatedProxy.getPath());
+
+                // Update fields selectively
+                if (updatedProxy.getService() != null) {
+                    existingProxy.setService(updatedProxy.getService());
+                }
+                if (updatedProxy.getTtl() > 0) {
+                    existingProxy.setTtl(updatedProxy.getTtl());
+                }
+                if (updatedProxy.getMiddleware() != null) {
+                    existingProxy.setMiddleware(updatedProxy.getMiddleware());
+                }
+            } else {
+                logger.info("Adding new proxy: {}", updatedProxy.getPath());
+                existingProxies.add(updatedProxy);
+            }
+        }
+        // Ensure the updated proxy list is valid
+        validateProxies(existingProxies);
+        // Log the updated proxies for confirmation
+        logger.info("Updated proxies: {}", existingProxies);
+    }
 }

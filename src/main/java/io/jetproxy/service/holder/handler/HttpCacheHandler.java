@@ -3,14 +3,13 @@ package io.jetproxy.service.holder.handler;
 import io.jetproxy.context.AppContext;
 import io.jetproxy.middleware.cache.ResponseCacheEntry;
 import io.jetproxy.util.RequestUtils;
-import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
 import java.util.Map;
 
-import static io.jetproxy.service.holder.BaseProxyHandler.HEADER_X_JETPROXY_CACHE;
+import static io.jetproxy.service.holder.BaseProxyRequestHandler.HEADER_X_JETPROXY_CACHE;
 
 public class HttpCacheHandler  implements MiddlewareHandler {
 

@@ -87,15 +87,17 @@ public class AppConfigServlet extends AbstractJsonServlet<Object> {
     private void handleUpdateProxies(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         try {
             AppConfig.Proxy newProxy = parseRequest(req, AppConfig.Proxy.class);
-
             // Add or update the proxy using SetupProxyHolder
             proxyConfigurationManager.addOrUpdateProxy(newProxy);
-
             sendJsonResponse(resp, "Proxy added or updated: " + newProxy.getPath(), HttpServletResponse.SC_OK);
         } catch (JsonSyntaxException e) {
             sendJsonResponse(resp, "Invalid proxy format: " + e.getMessage(), HttpServletResponse.SC_BAD_REQUEST);
         } catch (IllegalArgumentException e) {
             sendJsonResponse(resp, "Validation error: " + e.getMessage(), HttpServletResponse.SC_BAD_REQUEST);
+        } catch (Exception e) {
+            e.printStackTrace();
+            sendJsonResponse(resp, "Unknown error: " + e.getMessage(), HttpServletResponse.SC_BAD_REQUEST);
+
         }
     }
 

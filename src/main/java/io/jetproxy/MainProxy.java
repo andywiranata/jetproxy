@@ -2,7 +2,7 @@ package io.jetproxy;
 
 import io.jetproxy.middleware.cache.RedisPoolManager;
 import io.jetproxy.service.AppConfigServlet;
-import io.jetproxy.service.holder.SetupCorsHolder;
+import io.jetproxy.service.holder.handler.CorsFilterHolderHandler;
 import io.opentelemetry.api.GlobalOpenTelemetry;
 import jakarta.servlet.DispatcherType;
 import org.eclipse.jetty.server.Server;
@@ -49,7 +49,7 @@ public class MainProxy {
         context.addEventListener(new AppShutdownListener());
 
         // Initialize and configure the CORS filter
-        SetupCorsHolder corsFilterSetup = new SetupCorsHolder(appConfig);
+        CorsFilterHolderHandler corsFilterSetup = new CorsFilterHolderHandler(appConfig);
         FilterHolder cors = corsFilterSetup.createCorsFilter();
         context.addFilter(cors, "/*", EnumSet.of(DispatcherType.REQUEST));
 
@@ -64,17 +64,6 @@ public class MainProxy {
         // Register AppConfigServlet with SetupProxyHolder
         ServletHolder configServletHolder = new ServletHolder(new AppConfigServlet(proxyService));
         context.addServlet(configServletHolder, "/config/*");
-
-        // Gracefully shutdown the server
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            try {
-                System.out.println("Shutting down gracefully...");
-                RedisPoolManager.closePool();
-                server.stop();
-            } catch (Exception e) {
-                logger.error("Error during shutdown", e);
-            }
-        }));
 
         // Start the server
         server.start();

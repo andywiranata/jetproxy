@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.InflaterInputStream;
 
-public abstract class BaseProxyHandler extends ProxyServlet.Transparent {
+public abstract class BaseProxyRequestHandler extends ProxyServlet.Transparent {
     // Header Names
     public static final String HEADER_RETRY_AFTER = "Retry-After";
     public static final String HEADER_X_PROXY_ERROR = "X-Proxy-Error";
@@ -45,7 +45,7 @@ public abstract class BaseProxyHandler extends ProxyServlet.Transparent {
     public static final String ERROR_RULE_NOT_ALLOWED = "Rule not allowed processing request";
 
     public final String MODIFIED_HEADER = "modifiedHeader";
-    private static final Logger logger = LoggerFactory.getLogger(BaseProxyHandler.class);
+    private static final Logger logger = LoggerFactory.getLogger(BaseProxyRequestHandler.class);
     protected AppConfig.Service configService;
     protected AppConfig.Proxy proxyRule;
     protected RuleContext ruleContext;
@@ -54,20 +54,6 @@ public abstract class BaseProxyHandler extends ProxyServlet.Transparent {
     protected List<HeaderAction> headerRequestActions = Collections.emptyList();;
     protected List<HeaderAction> headerResponseActions;
 
-
-
-    // Shared logic for checking the cache
-    protected ResponseCacheEntry getCachedResponse(HttpServletRequest request) {
-        if (!request.getMethod().equalsIgnoreCase("GET")) {
-            return null;
-        }
-        AppContext ctx = AppContext.get();
-        String path = RequestUtils.getFullPath(request);
-        String method = request.getMethod();
-        String responseBody = ctx.getCache().get(String.format("%s__%s", method, path));
-
-        return ctx.gson.fromJson(responseBody, ResponseCacheEntry.class);
-    }
 
     // Shared logic for caching the response
     protected void cacheResponseContent(HttpServletRequest request,
