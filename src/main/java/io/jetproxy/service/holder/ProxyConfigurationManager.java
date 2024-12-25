@@ -2,6 +2,7 @@ package io.jetproxy.service.holder;
 
 import io.jetproxy.context.AppConfig;
 import io.jetproxy.context.ConfigLoader;
+import io.jetproxy.middleware.auth.ForwardAuthAuthenticator;
 import io.jetproxy.middleware.auth.MultiLayerAuthenticator;
 import io.jetproxy.middleware.auth.AuthProviderFactory;
 import io.jetproxy.middleware.auth.BasicAuthProvider;
@@ -12,6 +13,7 @@ import io.jetproxy.service.holder.handler.MiddlewareChain;
 import io.jetproxy.service.holder.handler.MiddlewareHandler;
 import io.jetproxy.service.holder.handler.RuleValidatorHandler;
 import org.eclipse.jetty.security.*;
+import org.eclipse.jetty.security.authentication.BasicAuthenticator;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.HandlerCollection;
@@ -24,6 +26,7 @@ import org.eclipse.jetty.util.security.Constraint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.Arrays;
@@ -76,11 +79,14 @@ public class ProxyConfigurationManager {
             // Add the proxy servlet
             String targetServiceUrl = service.getUrl();
             String whitelistPath = proxyRule.getPath() + "/*";
+            List<Authenticator> authenticators = new ArrayList<>();
             ServletHolder proxyServlet = createServletHolder(proxyRule, targetServiceUrl, service);
             context.addServlet(proxyServlet, whitelistPath);
 
             // Set up authentication if needed
             if (basicAuthProvider.shouldEnableAuth(proxyRule)) {
+                logger.info("Auth basicAuth {}", proxyRule.getPath());
+                authenticators.add(new BasicAuthenticator());
                 basicAuthSecurityHandler.addConstraintMapping(
                         basicAuthProvider.createConstraintMapping(whitelistPath, basicAuthProvider.getAuthRoles(proxyRule))
                 );
@@ -88,11 +94,18 @@ public class ProxyConfigurationManager {
 
             // Set up forward authentication if needed
             if (shouldEnableForwardAuth(proxyRule)) {
+                logger.info("Auth forwardAuth {}", proxyRule.getPath());
+                authenticators.add(new ForwardAuthAuthenticator(proxyRule.getMiddleware()));
                 basicAuthSecurityHandler.addConstraintMapping(
                         createForwardAuthConstraintMapping(whitelistPath, null)
                 );
             }
+            multiLayerAuthenticator.registerAuthenticators(whitelistPath, authenticators);
         }
+
+        basicAuthSecurityHandler.setAuthenticator(multiLayerAuthenticator);
+        basicAuthSecurityHandler.setHandler(context);
+
         // Add handlers for security and logging
         RequestLogHandler requestLogHandler = new RequestLogHandler();
         requestLogHandler.setRequestLog(new AccessLog());
