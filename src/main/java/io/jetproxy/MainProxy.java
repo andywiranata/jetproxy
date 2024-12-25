@@ -1,23 +1,24 @@
 package io.jetproxy;
 
 import io.jetproxy.middleware.cache.RedisPoolManager;
-import io.jetproxy.service.holder.SetupCorsHolder;
+import io.jetproxy.service.AppConfigServlet;
+import io.jetproxy.service.holder.handler.CorsFilterHolderHandler;
 import io.opentelemetry.api.GlobalOpenTelemetry;
 import jakarta.servlet.DispatcherType;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlet.ServletContextHandler;
+import org.eclipse.jetty.servlet.ServletHolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import io.jetproxy.context.AppConfig;
 import io.jetproxy.context.AppContext;
 import io.jetproxy.service.AppShutdownListener;
 import io.jetproxy.service.HealthCheckServlet;
-import io.jetproxy.service.holder.SetupProxyHolder;
+import io.jetproxy.service.holder.ProxyConfigurationManager;
 import io.jetproxy.service.StatisticServlet;
 
 import java.util.EnumSet;
-import java.util.List;
 import java.util.concurrent.Executors;
 
 public class MainProxy {
@@ -48,28 +49,21 @@ public class MainProxy {
         context.addEventListener(new AppShutdownListener());
 
         // Initialize and configure the CORS filter
-        SetupCorsHolder corsFilterSetup = new SetupCorsHolder(appConfig);
+        CorsFilterHolderHandler corsFilterSetup = new CorsFilterHolderHandler(appConfig);
         FilterHolder cors = corsFilterSetup.createCorsFilter();
         context.addFilter(cors, "/*", EnumSet.of(DispatcherType.REQUEST));
 
         // Set up proxies
-        SetupProxyHolder proxyService = new SetupProxyHolder(appConfig);
+        ProxyConfigurationManager proxyService = new ProxyConfigurationManager(appConfig, context);
         proxyService.setupProxies(server, context);
 
         // Add servlets for health check and statistics
         context.addServlet(HealthCheckServlet.class, "/healthcheck");
         context.addServlet(StatisticServlet.class, "/stats");
 
-        // Gracefully shutdown the server
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            try {
-                System.out.println("Shutting down gracefully...");
-                RedisPoolManager.closePool();
-                server.stop();
-            } catch (Exception e) {
-                logger.error("Error during shutdown", e);
-            }
-        }));
+        // Register AppConfigServlet with SetupProxyHolder
+        ServletHolder configServletHolder = new ServletHolder(new AppConfigServlet(proxyService));
+        context.addServlet(configServletHolder, "/config/*");
 
         // Start the server
         server.start();

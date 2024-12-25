@@ -56,6 +56,7 @@ public class ForwardAuthAuthenticator implements Authenticator {
 
     @Override
     public void prepareRequest(ServletRequest servletRequest) {
+        logger.debug("prepare request");
     }
 
     @Override

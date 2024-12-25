@@ -1,10 +1,9 @@
 package io.jetproxy.service.holder;
 
-import io.jetproxy.exception.JetProxyException;
 import io.jetproxy.exception.ResilienceCircuitBreakerException;
 import io.jetproxy.exception.ResilienceRateLimitException;
-import io.jetproxy.middleware.cache.ResponseCacheEntry;
 import io.jetproxy.middleware.resilience.ResilienceFactory;
+import io.jetproxy.service.holder.handler.MiddlewareChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -15,27 +14,23 @@ import org.eclipse.jetty.util.Callback;
 import io.jetproxy.context.AppConfig;
 import io.jetproxy.context.AppContext;
 import io.jetproxy.logger.DebugAwareLogger;
-import io.jetproxy.middleware.rule.RuleFactory;
 import io.jetproxy.middleware.rule.header.HeaderActionFactory;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
-import java.util.stream.Collectors;
 
-public class ProxyHolder extends AbstractProxyHandler {
-    private static final DebugAwareLogger logger = DebugAwareLogger.getLogger(ProxyHolder.class);
+public class ProxyRequestHandler extends BaseProxyRequestHandler {
+    private static final DebugAwareLogger logger = DebugAwareLogger.getLogger(ProxyRequestHandler.class);
+    private final MiddlewareChain middlewareChain;
 
-    public ProxyHolder(AppConfig.Service configService,
-                       AppConfig.Proxy proxyRule) {
+    public ProxyRequestHandler(AppConfig.Service configService,
+                               AppConfig.Proxy proxyRule,
+                               MiddlewareChain middlewareChain) {
         this.configService = configService;
         this.proxyRule = proxyRule;
-        // Initialize the ruleContext and circuitBreakerUtil
-        this.ruleContext = Optional.ofNullable(proxyRule.getMiddleware())
-                .map(AppConfig.Middleware::getRule)
-                .map(RuleFactory::createRulesFromString)
-                .orElse(null);
+        this.middlewareChain = middlewareChain;
         this.resilience = ResilienceFactory.createResilienceUtil(proxyRule);
         this.metricsListener = AppContext.get().getMetricsListener();
         this.headerRequestActions = Optional.ofNullable(proxyRule.getMiddleware())
@@ -61,19 +56,11 @@ public class ProxyHolder extends AbstractProxyHandler {
     @Override
     protected void service(HttpServletRequest request, HttpServletResponse response) {
         try {
-            if (hasRuleContext() && !ruleContext.evaluate(request)) {
-                sendRuleNotAllowedResponse(response);
-                return;
-            }
-
-            if (isMethodNotAllowed(request)) {
-                sendMethodNotAllowedResponse(response);
-                return;
-            }
-            ResponseCacheEntry cachedResponse = getCachedResponse(request);
-            if (cachedResponse != null) {
-                sendCachedResponse(response, cachedResponse);
-                return;
+            if (middlewareChain != null) {
+                middlewareChain.process(request, response);
+                if (response.isCommitted()) {
+                    return;
+                }
             }
             this.resilience.execute(()-> {
                 try {

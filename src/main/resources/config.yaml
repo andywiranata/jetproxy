@@ -44,13 +44,14 @@ proxies:
   - path: /user
     service: userApi
     middleware:
+      basicAuth: 'basicAuth:roleA'
       forwardAuth:
         path: /verify
         service: authApi
         requestHeaders: "Forward(X-Custom-*);Forward(Authorization)"
         responseHeaders: "Remove(X-Powered-By)"
       rateLimiter:
-        enabled: true
+        enabled: false
         limitRefreshPeriod: 200000
         limitForPeriod: 5
         maxBurstCapacity: 6
@@ -66,7 +67,7 @@ proxies:
       header:
         requestHeaders: "Remove(x-header-*);Remove(Authorization);Append(X-Custom-Header,-jetty)"
         responseHeaders: "Add(X-Powered-By,jetty-server)"
-    ttl: -1
+    ttl: 5000
   - path: /products
     service: productApi
     middleware:
