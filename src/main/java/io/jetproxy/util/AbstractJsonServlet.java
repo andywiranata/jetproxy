@@ -2,8 +2,10 @@ package io.jetproxy.util;
 
 import com.google.gson.Gson;
 import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 
 public class AbstractJsonServlet <T> extends HttpServlet {
@@ -22,6 +24,17 @@ public class AbstractJsonServlet <T> extends HttpServlet {
     protected String convertToJson(T data) {
         // Use Gson to convert the object to JSON
         return GsonFactory.createGson().toJson(data);
+    }
+    protected <T> T parseRequest(HttpServletRequest req, Class<T> clazz) throws IOException {
+        StringBuilder requestBody = new StringBuilder();
+        try (BufferedReader reader = req.getReader()) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                requestBody.append(line);
+            }
+        }
+        return GsonFactory.createGson().fromJson(requestBody.toString(), clazz);
+
     }
 
 }

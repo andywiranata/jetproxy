@@ -289,4 +289,89 @@ public class ConfigLoader {
         // Log the updated proxies for confirmation
         logger.info("Updated proxies: {}", existingProxies);
     }
+
+    private void validateMiddleware(AppConfig.Proxy proxy) {
+        AppConfig.Middleware middleware = proxy.getMiddleware();
+
+        if (middleware == null) {
+            logger.debug("No middleware configured for proxy: {}", proxy.getPath());
+            return;
+        }
+
+        // Validate BasicAuth middleware
+        if (middleware.getBasicAuth() != null && middleware.getBasicAuth().isEmpty()) {
+            throw new IllegalArgumentException("BasicAuth middleware is enabled but has no roles specified.");
+        }
+
+        // Validate ForwardAuth middleware
+        AppConfig.ForwardAuth forwardAuth = middleware.getForwardAuth();
+        if (forwardAuth != null) {
+            if (forwardAuth.getPath() == null || forwardAuth.getPath().isEmpty()) {
+                throw new IllegalArgumentException("ForwardAuth middleware is enabled but path is missing.");
+            }
+            if (forwardAuth.getService() == null || forwardAuth.getService().isEmpty()) {
+                throw new IllegalArgumentException("ForwardAuth middleware is enabled but service is missing.");
+            }
+            if (forwardAuth.getRequestHeaders() == null || forwardAuth.getRequestHeaders().isEmpty()) {
+                throw new IllegalArgumentException("ForwardAuth middleware is enabled but requestHeaders are missing.");
+            }
+            if (forwardAuth.getResponseHeaders() == null || forwardAuth.getResponseHeaders().isEmpty()) {
+                throw new IllegalArgumentException("ForwardAuth middleware is enabled but responseHeaders are missing.");
+            }
+        }
+
+        // Validate RateLimiter middleware
+        AppConfig.RateLimiter rateLimiter = middleware.getRateLimiter();
+        if (rateLimiter != null && rateLimiter.isEnabled()) {
+            if (rateLimiter.getLimitRefreshPeriod() <= 0) {
+                throw new IllegalArgumentException("RateLimiter is enabled but limitRefreshPeriod is invalid.");
+            }
+            if (rateLimiter.getLimitForPeriod() <= 0) {
+                throw new IllegalArgumentException("RateLimiter is enabled but limitForPeriod is invalid.");
+            }
+            if (rateLimiter.getMaxBurstCapacity() <= 0) {
+                throw new IllegalArgumentException("RateLimiter is enabled but maxBurstCapacity is invalid.");
+            }
+        }
+
+        // Validate CircuitBreaker middleware
+        AppConfig.CircuitBreaker circuitBreaker = middleware.getCircuitBreaker();
+        if (circuitBreaker != null && circuitBreaker.isEnabled()) {
+            if (circuitBreaker.getFailureThreshold() <= 0 || circuitBreaker.getFailureThreshold() > 100) {
+                throw new IllegalArgumentException("CircuitBreaker is enabled but failureThreshold is invalid.");
+            }
+            if (circuitBreaker.getSlowCallThreshold() <= 0 || circuitBreaker.getSlowCallThreshold() > 100) {
+                throw new IllegalArgumentException("CircuitBreaker is enabled but slowCallThreshold is invalid.");
+            }
+            if (circuitBreaker.getSlowCallDuration() <= 0) {
+                throw new IllegalArgumentException("CircuitBreaker is enabled but slowCallDuration is invalid.");
+            }
+            if (circuitBreaker.getOpenStateDuration() <= 0) {
+                throw new IllegalArgumentException("CircuitBreaker is enabled but openStateDuration is invalid.");
+            }
+            if (circuitBreaker.getWaitDurationInOpenState() <= 0) {
+                throw new IllegalArgumentException("CircuitBreaker is enabled but waitDurationInOpenState is invalid.");
+            }
+            if (circuitBreaker.getPermittedNumberOfCallsInHalfOpenState() <= 0) {
+                throw new IllegalArgumentException("CircuitBreaker is enabled but permittedNumberOfCallsInHalfOpenState is invalid.");
+            }
+            if (circuitBreaker.getMinimumNumberOfCalls() <= 0) {
+                throw new IllegalArgumentException("CircuitBreaker is enabled but minimumNumberOfCalls is invalid.");
+            }
+        }
+
+        // Validate Header middleware
+        AppConfig.Headers header = middleware.getHeader();
+        if (header != null) {
+            if (header.getRequestHeaders() == null || header.getRequestHeaders().isEmpty()) {
+                throw new IllegalArgumentException("Header middleware is enabled but requestHeaders are missing.");
+            }
+            if (header.getResponseHeaders() == null || header.getResponseHeaders().isEmpty()) {
+                throw new IllegalArgumentException("Header middleware is enabled but responseHeaders are missing.");
+            }
+        }
+
+        logger.debug("Middleware validation passed for proxy: {}", proxy.getPath());
+    }
+
 }

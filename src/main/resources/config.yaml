@@ -44,6 +44,7 @@ proxies:
   - path: /user
     service: userApi
     middleware:
+      basicAuth: 'basicAuth:roleA'
       forwardAuth:
         path: /verify
         service: authApi

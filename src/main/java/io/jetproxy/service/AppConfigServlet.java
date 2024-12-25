@@ -15,10 +15,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 
 public class AppConfigServlet extends AbstractJsonServlet<Object> {
-
-    private final Gson gson = new Gson();
     private final ProxyConfigurationManager proxyConfigurationManager;
-
     public AppConfigServlet(ProxyConfigurationManager proxyConfigurationManager) {
         this.proxyConfigurationManager = proxyConfigurationManager;
     }
@@ -95,7 +92,6 @@ public class AppConfigServlet extends AbstractJsonServlet<Object> {
         } catch (IllegalArgumentException e) {
             sendJsonResponse(resp, "Validation error: " + e.getMessage(), HttpServletResponse.SC_BAD_REQUEST);
         } catch (Exception e) {
-            e.printStackTrace();
             sendJsonResponse(resp, "Unknown error: " + e.getMessage(), HttpServletResponse.SC_BAD_REQUEST);
 
         }
@@ -116,15 +112,5 @@ public class AppConfigServlet extends AbstractJsonServlet<Object> {
         }
     }
 
-    private <T> T parseRequest(HttpServletRequest req, Class<T> clazz) throws IOException {
-        StringBuilder requestBody = new StringBuilder();
-        try (BufferedReader reader = req.getReader()) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                requestBody.append(line);
-            }
-        }
-        return GsonFactory.createGson().fromJson(requestBody.toString(), clazz);
 
-    }
 }
