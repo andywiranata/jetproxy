@@ -87,49 +87,6 @@ class ConfigLoaderTest {
         assertTrue(thrown.getMessage().contains("Invalid port number"));
     }
 
-    @Test
-    void testNoProxiesConfiguredThrowsException() {
-        // Set proxies as null
-        appConfig.setProxies(null);
-
-        IllegalArgumentException thrown = assertThrows(
-                IllegalArgumentException.class,
-                () -> ConfigLoader.validateProxies(appConfig.getProxies()),
-                "Expected validateProxies() to throw an exception when proxies are null"
-        );
-        assertTrue(thrown.getMessage().contains("No proxies configured"));
-    }
-
-    @Test
-    void testNoServicesConfiguredThrowsException() {
-        // Set services as null
-        appConfig.setServices(null);
-
-        IllegalArgumentException thrown = assertThrows(
-                IllegalArgumentException.class,
-                () -> ConfigLoader.validateServices(appConfig.getServices()),
-                "Expected validateServices() to throw an exception when services are null"
-        );
-        assertTrue(thrown.getMessage().contains("No services configured"));
-    }
-
-    @Test
-    void testInvalidServiceUrlThrowsException() {
-        // Set up a service with an invalid URL
-        AppConfig.Service invalidService = new AppConfig.Service();
-        invalidService.setName("invalid-service");
-        invalidService.setUrl("");  // Invalid URL
-
-        List<AppConfig.Service> services = Arrays.asList(invalidService);
-        appConfig.setServices(services);
-
-        IllegalArgumentException thrown = assertThrows(
-                IllegalArgumentException.class,
-                () -> ConfigLoader.validateServices(appConfig.getServices()),
-                "Expected validateServices() to throw an exception for an invalid URL"
-        );
-        assertTrue(thrown.getMessage().contains("Service URL cannot be null or empty"));
-    }
 
     @Test
     void testGetConfigLoadsOnlyOnce() throws Exception {

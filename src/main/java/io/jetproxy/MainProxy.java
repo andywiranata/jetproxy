@@ -1,7 +1,7 @@
 package io.jetproxy;
 
-import io.jetproxy.middleware.cache.RedisPoolManager;
-import io.jetproxy.service.AppConfigServlet;
+import io.jetproxy.service.appConfig.servlet.AppConfigServlet;
+import io.jetproxy.service.appConfig.service.AppConfigService;
 import io.jetproxy.service.holder.handler.CorsFilterHolderHandler;
 import io.opentelemetry.api.GlobalOpenTelemetry;
 import jakarta.servlet.DispatcherType;
@@ -62,7 +62,9 @@ public class MainProxy {
         context.addServlet(StatisticServlet.class, "/stats");
 
         // Register AppConfigServlet with SetupProxyHolder
-        ServletHolder configServletHolder = new ServletHolder(new AppConfigServlet(proxyService));
+        ServletHolder configServletHolder = new ServletHolder(
+                new AppConfigServlet(
+                        new AppConfigService(proxyService)));
         context.addServlet(configServletHolder, "/config/*");
 
         // Start the server

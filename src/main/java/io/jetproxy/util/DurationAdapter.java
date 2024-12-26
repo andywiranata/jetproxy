@@ -14,13 +14,13 @@ public class DurationAdapter extends TypeAdapter<Duration> {
         if (value == null) {
             out.nullValue();
         } else {
-            out.value(value.toString()); // Serialize as ISO-8601 string (e.g., "PT20S" for 20 seconds)
+            out.value(value.toString()); // Serialize as ISO-8601 string (e.g., PT20.345S)
         }
     }
 
     @Override
     public Duration read(JsonReader in) throws IOException {
         String durationString = in.nextString();
-        return Duration.parse(durationString); // Parse ISO-8601 string to Duration
+        return Duration.parse(durationString); // Deserialize from ISO-8601 string
     }
 }

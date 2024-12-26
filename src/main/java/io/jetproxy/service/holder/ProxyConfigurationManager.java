@@ -3,6 +3,7 @@ package io.jetproxy.service.holder;
 import io.jetproxy.context.AppConfig;
 import io.jetproxy.context.AppContext;
 import io.jetproxy.context.ConfigLoader;
+import io.jetproxy.context.ConfigValidator;
 import io.jetproxy.middleware.auth.ForwardAuthAuthenticator;
 import io.jetproxy.middleware.auth.MultiLayerAuthenticator;
 import io.jetproxy.middleware.auth.AuthProviderFactory;
@@ -127,8 +128,8 @@ public class ProxyConfigurationManager {
      */
     public synchronized void addOrUpdateProxy(AppConfig.Proxy newProxy) {
 
-        ConfigLoader.validateProxies(List.of(newProxy));
-        ConfigLoader.validateMiddleware(newProxy);
+        ConfigValidator.validateProxies(List.of(newProxy), config.getServices());
+        ConfigValidator.validateMiddleware(newProxy);
 
         String pathSpec = newProxy.getPath() + "/*";
         List<Authenticator> authenticators = new ArrayList<>();
