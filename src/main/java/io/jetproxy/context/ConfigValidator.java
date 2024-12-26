@@ -2,6 +2,7 @@ package io.jetproxy.context;
 
 import io.jetproxy.exception.JetProxyValidationException;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -24,24 +25,67 @@ public class ConfigValidator {
     }
 
     /**
-     * Validates the list of services.
+     * Validates the list of services for correctness and uniqueness.
+     *
+     * @param services The list of services to validate.
      */
     public static void validateServices(List<AppConfig.Service> services) {
         if (services == null || services.isEmpty()) {
             throw new JetProxyValidationException("No services configured");
         }
 
+        // Ensure service names are unique
+        Set<String> uniqueServiceNames = new HashSet<>();
+
         for (AppConfig.Service service : services) {
+            // Validate service name
             if (service.getName() == null || service.getName().isEmpty()) {
                 throw new JetProxyValidationException("Service name cannot be null or empty");
             }
+            if (!uniqueServiceNames.add(service.getName())) {
+                throw new JetProxyValidationException("Duplicate service name found: " + service.getName());
+            }
+
+            // Validate service URL
             if (service.getUrl() == null || service.getUrl().isEmpty()) {
                 throw new JetProxyValidationException("Service URL cannot be null or empty for service: " + service.getName());
             }
             if (!service.getUrl().startsWith("http://") && !service.getUrl().startsWith("https://")) {
                 throw new JetProxyValidationException("Service URL must start with 'http://' or 'https://': " + service.getUrl());
             }
+
+            // Validate HTTP methods if provided
+            if (service.getMethods() != null) {
+                if (service.getMethods().isEmpty()) {
+                    throw new JetProxyValidationException("HTTP methods cannot be empty for service: " + service.getName());
+                }
+
+                // Ensure all methods are valid HTTP methods
+                for (String method : service.getMethods()) {
+                    if (!isValidHttpMethod(method)) {
+                        throw new JetProxyValidationException("Invalid HTTP method '" + method + "' for service: " + service.getName());
+                    }
+                }
+            }
+
+            // Validate healthcheck path if provided
+            if (service.getHealthcheck() != null && !service.getHealthcheck().startsWith("/")) {
+                throw new JetProxyValidationException("Healthcheck path must start with '/': " + service.getHealthcheck());
+            }
         }
+    }
+
+    /**
+     * Checks if a given method is a valid HTTP method.
+     *
+     * @param method The HTTP method to validate.
+     * @return True if valid, false otherwise.
+     */
+    private static boolean isValidHttpMethod(String method) {
+        return switch (method.toUpperCase()) {
+            case "GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS", "TRACE", "CONNECT" -> true;
+            default -> false;
+        };
     }
     /**
      * Validates the list of proxies and ensures they reference valid services.
