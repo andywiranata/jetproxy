@@ -62,7 +62,7 @@ public class MultiLayerAuthenticator implements Authenticator {
 
         // Check all authenticators sequentially
         for (Authenticator authenticator : authenticators) {
-            Authentication authentication = authenticator.validateRequest(httpRequest, httpResponse, mandatory);
+                Authentication authentication = authenticator.validateRequest(httpRequest, httpResponse, mandatory);
 
             // If any authenticator fails, return UNAUTHENTICATED immediately
             if (!(authentication instanceof Authentication.User)) {

@@ -189,69 +189,7 @@ public class ConfigLoader {
     public static void setServiceMap(Map<String, AppConfig.Service> serviceMap) {
         ConfigLoader.serviceMap = serviceMap;
     }
-    /**
-     * Updates a proxy in the configuration.
-     *
-     * @param updatedProxy The proxy to update or add.
-     */
-    public static synchronized void updateProxy(AppConfig.Proxy updatedProxy) {
-        logger.info("Updating proxy: {}", updatedProxy.getPath());
-        List<AppConfig.Proxy> proxies = config.getProxies();
-        proxies.removeIf(proxy -> proxy.getPath().equals(updatedProxy.getPath())); // Remove existing
-        proxies.add(updatedProxy); // Add or update
-        validateProxies(proxies); // Validate updated proxies
-        logger.info("Proxy updated successfully: {}", updatedProxy.getPath());
-    }
 
-    /**
-     * Removes a proxy from the configuration.
-     *
-     * @param path The path of the proxy to remove.
-     */
-    public static synchronized void removeProxy(String path) {
-        logger.info("Removing proxy: {}", path);
-        List<AppConfig.Proxy> proxies = config.getProxies();
-        boolean removed = proxies.removeIf(proxy -> proxy.getPath().equals(path));
-        if (!removed) {
-            logger.warn("Proxy not found for path: {}", path);
-            return;
-        }
-        validateProxies(proxies); // Validate remaining proxies
-        logger.info("Proxy removed successfully: {}", path);
-    }
-
-    /**
-     * Updates a service in the configuration.
-     *
-     * @param updatedService The service to update or add.
-     */
-    public static synchronized void updateService(AppConfig.Service updatedService) {
-        logger.info("Updating service: {}", updatedService.getName());
-        List<AppConfig.Service> services = config.getServices();
-        services.removeIf(service -> service.getName().equals(updatedService.getName())); // Remove existing
-        services.add(updatedService); // Add or update
-        validateServices(services); // Validate updated services
-        createServiceMap(services); // Update service map
-        logger.info("Service updated successfully: {}", updatedService.getName());
-    }
-
-    /**
-     * Removes a service from the configuration.
-     *
-     * @param serviceName The name of the service to remove.
-     */
-    public static synchronized void removeService(String serviceName) {
-        logger.info("Removing service: {}", serviceName);
-        List<AppConfig.Service> services = config.getServices();
-        boolean removed = services.removeIf(service -> service.getName().equals(serviceName));
-        if (!removed) {
-            logger.warn("Service not found: {}", serviceName);
-            return;
-        }
-        validateServices(services); // Validate remaining services
-        createServiceMap(services); // Update service map
-        logger.info("Service removed successfully: {}", serviceName);
-    }
     public static synchronized void addOrUpdateProxies(List<AppConfig.Proxy> updatedProxies) {
         logger.info("Adding or updating proxies: {}", updatedProxies);
 
@@ -290,7 +228,7 @@ public class ConfigLoader {
         logger.info("Updated proxies: {}", existingProxies);
     }
 
-    private void validateMiddleware(AppConfig.Proxy proxy) {
+    public static void validateMiddleware(AppConfig.Proxy proxy) {
         AppConfig.Middleware middleware = proxy.getMiddleware();
 
         if (middleware == null) {

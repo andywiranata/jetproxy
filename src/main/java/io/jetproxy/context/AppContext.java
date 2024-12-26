@@ -20,6 +20,8 @@ public class AppContext {
     private final boolean debugMode;
     public final Gson gson;
 
+    private static boolean gracefullyShutdownAllowed = true;
+
     private AppContext(Builder builder) {
 
         // Initialize instance with config, cache, and metrics listener
@@ -45,6 +47,16 @@ public class AppContext {
 
     public Map<String, AppConfig.Service> getServiceMap() {
         return ConfigLoader.getServiceMap();
+    }
+    public void preventGracefullyShutdown() {
+        gracefullyShutdownAllowed = false;
+    }
+
+    public void allowGracefullyShutdown() {
+        gracefullyShutdownAllowed = true;
+    }
+    public boolean isGracefullyShutdownAllowed() {
+        return gracefullyShutdownAllowed;
     }
 
     // Builder class

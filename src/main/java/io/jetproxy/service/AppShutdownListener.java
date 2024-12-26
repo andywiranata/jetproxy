@@ -1,5 +1,6 @@
 package io.jetproxy.service;
 
+import io.jetproxy.context.AppContext;
 import io.jetproxy.middleware.cache.RedisPoolManager;
 import jakarta.servlet.ServletContextEvent;
 import jakarta.servlet.ServletContextListener;
@@ -17,7 +18,10 @@ public class AppShutdownListener implements ServletContextListener {
 
     @Override
     public void contextDestroyed(ServletContextEvent sce) {
-        RedisPoolManager.closePool();
-        logger.info("Shutting down gracefully...");
+        if (AppContext.get().isGracefullyShutdownAllowed()) {
+            RedisPoolManager.closePool();
+            logger.info("Shutting down gracefully...");
+        }
+
     }
 }

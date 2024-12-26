@@ -1,16 +1,15 @@
 package io.jetproxy.service.holder;
 
 import io.jetproxy.context.AppConfig;
+import io.jetproxy.context.AppContext;
 import io.jetproxy.context.ConfigLoader;
 import io.jetproxy.middleware.auth.ForwardAuthAuthenticator;
 import io.jetproxy.middleware.auth.MultiLayerAuthenticator;
 import io.jetproxy.middleware.auth.AuthProviderFactory;
 import io.jetproxy.middleware.auth.BasicAuthProvider;
 import io.jetproxy.middleware.log.AccessLog;
-import io.jetproxy.middleware.rule.Rule;
 import io.jetproxy.service.holder.handler.HttpCacheHandler;
 import io.jetproxy.service.holder.handler.MiddlewareChain;
-import io.jetproxy.service.holder.handler.MiddlewareHandler;
 import io.jetproxy.service.holder.handler.RuleValidatorHandler;
 import org.eclipse.jetty.security.*;
 import org.eclipse.jetty.security.authentication.BasicAuthenticator;
@@ -38,8 +37,10 @@ public class ProxyConfigurationManager {
     private static final Logger logger = LoggerFactory.getLogger(ProxyConfigurationManager.class);
     private final AppConfig config;
     private final ServletContextHandler context;
-
-    // Thread-safe map to hold dynamically added proxies
+    private final MultiLayerAuthenticator multiLayerAuthenticator;
+    private HandlerCollection handlers;
+    ConstraintSecurityHandler proxyAndsecurityHandler;
+    BasicAuthProvider basicAuthProvider;
     private final ConcurrentHashMap<String, ServletHolder> dynamicProxies = new ConcurrentHashMap<>();
 
     /**
@@ -51,6 +52,10 @@ public class ProxyConfigurationManager {
     public ProxyConfigurationManager(AppConfig config, ServletContextHandler context) {
         this.config = config;
         this.context = context;
+        this.multiLayerAuthenticator = new MultiLayerAuthenticator();
+        this.handlers = new HandlerCollection();
+        this.basicAuthProvider = (BasicAuthProvider) AuthProviderFactory.getAuthProvider("basicAuth");;
+        this.proxyAndsecurityHandler = basicAuthProvider.createSecurityHandler(config);
     }
 
     /**
@@ -61,11 +66,6 @@ public class ProxyConfigurationManager {
      */
     public void setupProxies(Server server, ServletContextHandler context) {
         List<AppConfig.Proxy> proxies = config.getProxies();
-        MultiLayerAuthenticator multiLayerAuthenticator = new MultiLayerAuthenticator();
-
-        // Basic Auth setup
-        BasicAuthProvider basicAuthProvider = (BasicAuthProvider) AuthProviderFactory.getAuthProvider("basicAuth");
-        ConstraintSecurityHandler basicAuthSecurityHandler = basicAuthProvider.createSecurityHandler(this.config);
 
         for (AppConfig.Proxy proxyRule : proxies) {
             AppConfig.Service service = ConfigLoader.getServiceMap().get(proxyRule.getService());
@@ -87,8 +87,10 @@ public class ProxyConfigurationManager {
             if (basicAuthProvider.shouldEnableAuth(proxyRule)) {
                 logger.info("Auth basicAuth {}", proxyRule.getPath());
                 authenticators.add(new BasicAuthenticator());
-                basicAuthSecurityHandler.addConstraintMapping(
-                        basicAuthProvider.createConstraintMapping(whitelistPath, basicAuthProvider.getAuthRoles(proxyRule))
+                this.proxyAndsecurityHandler.addConstraintMapping(
+                        basicAuthProvider
+                                .createConstraintMapping(whitelistPath,
+                                        basicAuthProvider.getAuthRoles(proxyRule))
                 );
             }
 
@@ -96,24 +98,22 @@ public class ProxyConfigurationManager {
             if (shouldEnableForwardAuth(proxyRule)) {
                 logger.info("Auth forwardAuth {}", proxyRule.getPath());
                 authenticators.add(new ForwardAuthAuthenticator(proxyRule.getMiddleware()));
-                basicAuthSecurityHandler.addConstraintMapping(
+                this.proxyAndsecurityHandler.addConstraintMapping(
                         createForwardAuthConstraintMapping(whitelistPath, null)
                 );
             }
             multiLayerAuthenticator.registerAuthenticators(whitelistPath, authenticators);
         }
 
-        basicAuthSecurityHandler.setAuthenticator(multiLayerAuthenticator);
-        basicAuthSecurityHandler.setHandler(context);
+        this.proxyAndsecurityHandler.setAuthenticator(multiLayerAuthenticator);
+        this.proxyAndsecurityHandler.setHandler(context);
 
         // Add handlers for security and logging
         RequestLogHandler requestLogHandler = new RequestLogHandler();
         requestLogHandler.setRequestLog(new AccessLog());
 
-        HandlerCollection handlers = new HandlerCollection();
         handlers.setHandlers(new Handler[]{
-                basicAuthSecurityHandler,
-                context,
+                this.proxyAndsecurityHandler,
                 requestLogHandler
         });
 
@@ -126,12 +126,13 @@ public class ProxyConfigurationManager {
      * @param newProxy The new proxy configuration to add or update.
      */
     public synchronized void addOrUpdateProxy(AppConfig.Proxy newProxy) {
-        String pathSpec = newProxy.getPath() + "/*";
 
-        // Validate input
-        if (newProxy == null || newProxy.getPath() == null || newProxy.getService() == null) {
-            throw new IllegalArgumentException("Invalid proxy configuration provided.");
-        }
+        ConfigLoader.validateProxies(List.of(newProxy));
+        ConfigLoader.validateMiddleware(newProxy);
+
+        String pathSpec = newProxy.getPath() + "/*";
+        List<Authenticator> authenticators = new ArrayList<>();
+        boolean isRequiredRestart = false;
 
         // Remove the existing proxy if it exists
         if (dynamicProxies.containsKey(pathSpec)) {
@@ -150,6 +151,41 @@ public class ProxyConfigurationManager {
         try {
             context.addServlet(proxyServlet, pathSpec);
             dynamicProxies.put(pathSpec, proxyServlet);
+            // Set up authentication if needed
+            if (basicAuthProvider.shouldEnableAuth(newProxy)) {
+                logger.info("Auth basicAuth {}", newProxy.getPath());
+                authenticators.add(new BasicAuthenticator());
+                this.proxyAndsecurityHandler.addConstraintMapping(
+                        basicAuthProvider
+                                .createConstraintMapping(pathSpec,
+                                        basicAuthProvider.getAuthRoles(newProxy))
+                );
+                isRequiredRestart = true;
+            }
+            if (shouldEnableForwardAuth(newProxy)) {
+                logger.info("Auth forwardAuth {}", newProxy.getPath());
+                authenticators.add(new ForwardAuthAuthenticator(newProxy.getMiddleware()));
+                this.proxyAndsecurityHandler.addConstraintMapping(
+                        createForwardAuthConstraintMapping(pathSpec, null)
+                );
+                isRequiredRestart = true;
+            }
+
+            if (isRequiredRestart) {
+
+                if (this.proxyAndsecurityHandler.isStarted()) {
+                    this.proxyAndsecurityHandler.stop();
+                    AppContext.get().preventGracefullyShutdown();
+                }
+
+                multiLayerAuthenticator.registerAuthenticators(pathSpec, authenticators);
+                this.proxyAndsecurityHandler.setAuthenticator(multiLayerAuthenticator);
+
+                if (!this.proxyAndsecurityHandler.isRunning()) {
+                    this.proxyAndsecurityHandler.start();
+                    AppContext.get().allowGracefullyShutdown();
+                }
+            }
 
             // Update in config loader
             ConfigLoader.addOrUpdateProxies(List.of(newProxy));
@@ -157,7 +193,6 @@ public class ProxyConfigurationManager {
             logger.info("Proxy dynamically added/updated: {} -> {}", newProxy.getPath(), service.getUrl());
         } catch (Exception e) {
             logger.error("Failed to add or update proxy: {}", newProxy.getPath(), e);
-
             // Rollback on failure
             dynamicProxies.remove(pathSpec);
             try {
@@ -179,9 +214,7 @@ public class ProxyConfigurationManager {
      */
     public synchronized void removeProxy(String path) {
         String pathSpec = path + "/*";
-
         logger.info("Attempting to remove proxy for path: {}", path);
-
         ServletHolder holder = dynamicProxies.remove(pathSpec);
         if (holder != null) {
             logger.info("Found proxy holder for pathSpec: {}", pathSpec);

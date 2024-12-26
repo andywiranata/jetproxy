@@ -1,5 +1,6 @@
 package io.jetproxy.middleware.cache;
 
+import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import io.jetproxy.context.AppConfig;
@@ -8,7 +9,6 @@ import redis.clients.jedis.JedisPoolConfig;
 
 public class RedisPoolManager {
     private static final Logger logger = LoggerFactory.getLogger(RedisPoolManager.class);
-
     private static JedisPool jedisPool = null;
 
     private RedisPoolManager() {}
@@ -48,4 +48,6 @@ public class RedisPoolManager {
             jedisPool.close();
         }
     }
+
+
 }
