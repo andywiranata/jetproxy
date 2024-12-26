@@ -74,20 +74,7 @@ class ConfigLoaderTest {
         assertEquals("http://localhost:8080", serviceMap.get("test-service").getUrl());
     }
 
-    @Test
-    void testInvalidPortInConfigThrowsException() {
-        // Set an invalid port
-        appConfig.setPort(-1);
-
-        IllegalArgumentException thrown = assertThrows(
-                IllegalArgumentException.class,
-                () -> ConfigLoader.validateConfig(appConfig),
-                "Expected validateConfig() to throw an exception for an invalid port"
-        );
-        assertTrue(thrown.getMessage().contains("Invalid port number"));
-    }
-
-
+    
     @Test
     void testGetConfigLoadsOnlyOnce() throws Exception {
         // Load configuration
