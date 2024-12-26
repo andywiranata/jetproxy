@@ -3,6 +3,7 @@ package io.jetproxy.context;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import org.json.JSONPropertyName;
 
 import java.time.Duration;
 import java.util.Base64;
@@ -61,11 +62,14 @@ public class AppConfig {
     @Getter
     @Setter
     @ToString
+
     public static class Proxy {
         private String path;
         private String service;
         private Middleware middleware = null;
         private long ttl;
+        private String uuid;
+
         public boolean hasMiddleware() {
             return middleware != null;
         }
@@ -181,6 +185,11 @@ public class AppConfig {
         private List<String> methods;
         private String role;
         private String healthcheck;
+        public String getUuid() {
+            return Base64.getUrlEncoder()
+                    .withoutPadding()
+                    .encodeToString((name + url).getBytes());
+        }
     }
 
     @Getter
@@ -235,6 +244,11 @@ public class AppConfig {
         private String username;
         private String password;
         private String role;
+        public String getUuid() {
+            return Base64.getUrlEncoder()
+                    .withoutPadding()
+                    .encodeToString(("User" + username + password).getBytes());
+        }
     }
 
     @Getter

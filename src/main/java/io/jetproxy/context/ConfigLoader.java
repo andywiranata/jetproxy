@@ -161,4 +161,51 @@ public class ConfigLoader {
         // Log the updated proxies for confirmation
         logger.info("Updated proxies: {}", existingProxies);
     }
+
+    public static void addOrUpdateServices(List<AppConfig.Service> updatedServices) {
+        logger.info("Adding or updating services: {}", updatedServices);
+
+        // Validate the incoming services
+        ConfigValidator.validateServices(updatedServices);
+
+        // Get the current list of services
+        List<AppConfig.Service> existingServices = config.getServices();
+        Map<String, AppConfig.Service> serviceMap = existingServices.stream()
+                .collect(Collectors.toMap(AppConfig.Service::getName, service -> service));
+
+        // Update or add new services
+        for (AppConfig.Service updatedService : updatedServices) {
+            if (serviceMap.containsKey(updatedService.getName())) {
+                logger.info("Updating existing service: {}", updatedService.getName());
+                AppConfig.Service existingService = serviceMap.get(updatedService.getName());
+
+                // Update fields selectively
+                if (updatedService.getUrl() != null && !updatedService.getUrl().isEmpty()) {
+                    existingService.setUrl(updatedService.getUrl());
+                }
+                if (updatedService.getMethods() != null && !updatedService.getMethods().isEmpty()) {
+                    existingService.setMethods(updatedService.getMethods());
+                }
+                if (updatedService.getRole() != null) {
+                    existingService.setRole(updatedService.getRole());
+                }
+                if (updatedService.getHealthcheck() != null) {
+                    existingService.setHealthcheck(updatedService.getHealthcheck());
+                }
+            } else {
+                logger.info("Adding new service: {}", updatedService.getName());
+                existingServices.add(updatedService);
+            }
+        }
+
+        // Ensure the updated service list is valid
+        ConfigValidator.validateServices(existingServices);
+
+        // Update the service map
+        createServiceMap(existingServices);
+
+        // Log the updated services for confirmation
+        logger.info("Updated services: {}", getServiceMap());
+    }
+
 }
