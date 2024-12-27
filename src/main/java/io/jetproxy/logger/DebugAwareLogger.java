@@ -112,6 +112,10 @@ public class DebugAwareLogger {
         return RESET;
     }
 
+    public void info(String message, Object... args) {
+        logger.info(message, args);
+    }
+
     public void warn(String message, Object... args) {
         logger.warn(message, args);
     }

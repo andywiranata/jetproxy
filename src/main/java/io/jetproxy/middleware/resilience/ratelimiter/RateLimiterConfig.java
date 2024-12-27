@@ -1,5 +1,6 @@
 package io.jetproxy.middleware.resilience.ratelimiter;
 
+import io.jetproxy.exception.JetProxyValidationException;
 import lombok.Getter;
 import java.time.Duration;
 
@@ -25,7 +26,7 @@ public class RateLimiterConfig {
 
         public Builder limitRefreshPeriod(Duration period) {
             if (period.isZero() || period.isNegative()) {
-                throw new IllegalArgumentException("limitRefreshPeriod must be greater than 0");
+                throw new JetProxyValidationException("limitRefreshPeriod must be greater than 0");
             }
             this.limitRefreshPeriod = period;
             return this;
@@ -33,7 +34,7 @@ public class RateLimiterConfig {
 
         public Builder limitForPeriod(int limit) {
             if (limit < 0) {
-                throw new IllegalArgumentException("limitForPeriod must be non-negative");
+                throw new JetProxyValidationException("limitForPeriod must be non-negative");
             }
             this.limitForPeriod = limit;
             return this;
@@ -41,7 +42,7 @@ public class RateLimiterConfig {
 
         public Builder maxBurstCapacity(int maxBurstCapacity) {
             if (maxBurstCapacity < 0) {
-                throw new IllegalArgumentException("maxBurstCapacity must be non-negative");
+                throw new JetProxyValidationException("maxBurstCapacity must be non-negative");
             }
             this.maxBurstCapacity = maxBurstCapacity;
             return this;
@@ -49,7 +50,7 @@ public class RateLimiterConfig {
 
         public RateLimiterConfig build() {
             if (maxBurstCapacity < limitForPeriod) {
-                throw new IllegalArgumentException("maxBurstCapacity must be >= limitForPeriod");
+                throw new JetProxyValidationException("maxBurstCapacity must be >= limitForPeriod");
             }
             return new RateLimiterConfig(this);
         }

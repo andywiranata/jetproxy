@@ -82,7 +82,8 @@ public class ProxyRequestHandler extends BaseProxyRequestHandler {
                 response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
             }
         } finally {
-            this.metricsListener.captureMetricProxyResponse(request, response);
+            // TODO: DISABLED TEMPORARY
+            // this.metricsListener.captureMetricProxyResponse(request, response);
         }
     }
 
