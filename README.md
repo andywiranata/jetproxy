@@ -24,6 +24,7 @@ By automatically discovering services and adjusting routes, this reverse proxy s
 - **Sticky Session**: **TODO InReview**
 - **Rate Limiter**: [Link](https://jetproxy.andywiranata.me/docs/middleware/rate-limiter)
 - **Docker up and running**, externalize config **TODO**
+- **Runtime Update Proxy and Service**: ** In Progress**
 
 ## Tech Stack
 
