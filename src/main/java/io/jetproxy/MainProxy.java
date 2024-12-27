@@ -1,10 +1,13 @@
 package io.jetproxy;
 
+import io.jetproxy.middleware.auth.BasicAuthProvider;
 import io.jetproxy.service.appConfig.servlet.AppConfigServlet;
 import io.jetproxy.service.appConfig.service.AppConfigService;
 import io.jetproxy.service.holder.handler.CorsFilterHolderHandler;
 import io.opentelemetry.api.GlobalOpenTelemetry;
 import jakarta.servlet.DispatcherType;
+import org.eclipse.jetty.security.ConstraintSecurityHandler;
+import org.eclipse.jetty.security.authentication.BasicAuthenticator;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlet.ServletContextHandler;
@@ -40,9 +43,7 @@ public class MainProxy {
         // Initialize the server with the configured port
         Server server = new Server(appConfig.getPort());
         server.addBean(Executors.newVirtualThreadPerTaskExecutor());
-
-        // Set up proxies
-        appContext.setupProxyHandler(server);
+        appContext.initializeServer(server);
         // Add servlets for health check and statistics
         context.addServlet(HealthCheckServlet.class, "/healthcheck");
         context.addServlet(StatisticServlet.class, "/stats");
@@ -50,7 +51,7 @@ public class MainProxy {
         ServletHolder configServletHolder = new ServletHolder(
                 new AppConfigServlet(
                         new AppConfigService()));
-        context.addServlet(configServletHolder, "/config/*");
+        context.addServlet(configServletHolder, "/admin/config/*");
 
         // Start the server
         server.start();

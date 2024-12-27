@@ -64,7 +64,7 @@ public class AppContext {
         return instance;
     }
 
-    public void setupProxyHandler(Server server) {
+    public void initializeServer(Server server) {
         // Initialize and configure the CORS filter
         CorsFilterHolderHandler corsFilterSetup = new CorsFilterHolderHandler(this.config);
         FilterHolder cors = corsFilterSetup.createCorsFilter();
@@ -72,7 +72,7 @@ public class AppContext {
         this.contextHandler.setContextPath(this.config.getRootPath());
         this.contextHandler.addEventListener(new AppShutdownListener());
         this.contextHandler.addFilter(cors, "/*", EnumSet.of(DispatcherType.REQUEST));
-        this.proxyConfigurationManager.setupProxies(server, this.contextHandler);
+        this.proxyConfigurationManager.setupProxiesAndAdminApi(server, this.contextHandler);
 
         startRedisSubscription();
 
