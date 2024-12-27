@@ -1,9 +1,6 @@
 package io.jetproxy.service.holder;
 
-import io.jetproxy.context.AppConfig;
-import io.jetproxy.context.AppContext;
-import io.jetproxy.context.ConfigLoader;
-import io.jetproxy.context.ConfigValidator;
+import io.jetproxy.context.*;
 import io.jetproxy.middleware.auth.ForwardAuthAuthenticator;
 import io.jetproxy.middleware.auth.MultiLayerAuthenticator;
 import io.jetproxy.middleware.auth.AuthProviderFactory;
@@ -190,7 +187,6 @@ public class ProxyConfigurationManager {
 
             // Update in config loader
             ConfigLoader.addOrUpdateProxies(List.of(newProxy));
-
             logger.info("Proxy dynamically added/updated: {} -> {}", newProxy.getPath(), service.getUrl());
         } catch (Exception e) {
             logger.error("Failed to add or update proxy: {}", newProxy.getPath(), e);

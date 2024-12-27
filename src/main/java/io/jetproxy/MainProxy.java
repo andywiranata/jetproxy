@@ -36,35 +36,20 @@ public class MainProxy {
                 .build();
 
         AppConfig appConfig = appContext.getConfig();
-
+        ServletContextHandler context = appContext.getContextHandler();
         // Initialize the server with the configured port
         Server server = new Server(appConfig.getPort());
         server.addBean(Executors.newVirtualThreadPerTaskExecutor());
 
-        // Create a ServletContextHandler for managing different context paths
-        ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
-        context.setContextPath(appConfig.getRootPath());
-
-        // Register the AppShutdownListener programmatically
-        context.addEventListener(new AppShutdownListener());
-
-        // Initialize and configure the CORS filter
-        CorsFilterHolderHandler corsFilterSetup = new CorsFilterHolderHandler(appConfig);
-        FilterHolder cors = corsFilterSetup.createCorsFilter();
-        context.addFilter(cors, "/*", EnumSet.of(DispatcherType.REQUEST));
-
         // Set up proxies
-        ProxyConfigurationManager proxyService = new ProxyConfigurationManager(appConfig, context);
-        proxyService.setupProxies(server, context);
-
+        appContext.setupProxyHandler(server);
         // Add servlets for health check and statistics
         context.addServlet(HealthCheckServlet.class, "/healthcheck");
         context.addServlet(StatisticServlet.class, "/stats");
 
-        // Register AppConfigServlet with SetupProxyHolder
         ServletHolder configServletHolder = new ServletHolder(
                 new AppConfigServlet(
-                        new AppConfigService(proxyService)));
+                        new AppConfigService()));
         context.addServlet(configServletHolder, "/config/*");
 
         // Start the server

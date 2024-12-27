@@ -8,11 +8,13 @@ import org.json.JSONPropertyName;
 import java.time.Duration;
 import java.util.Base64;
 import java.util.List;
+import java.util.UUID;
 
 @Getter
 @Setter
 @ToString
 public class AppConfig {
+    private String uuid = UUID.randomUUID().toString();
     private String appName;
     private int port;
     private int defaultTimeout;
