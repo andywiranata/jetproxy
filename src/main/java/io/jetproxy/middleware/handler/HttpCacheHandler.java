@@ -1,4 +1,4 @@
-package io.jetproxy.service.holder.handler;
+package io.jetproxy.middleware.handler;
 
 import io.jetproxy.context.AppContext;
 import io.jetproxy.middleware.cache.ResponseCacheEntry;

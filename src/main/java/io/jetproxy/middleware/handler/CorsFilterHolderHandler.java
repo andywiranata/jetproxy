@@ -1,4 +1,4 @@
-package io.jetproxy.service.holder.handler;
+package io.jetproxy.middleware.handler;
 
 import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlets.CrossOriginFilter;

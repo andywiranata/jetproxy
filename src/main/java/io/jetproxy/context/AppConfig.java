@@ -8,6 +8,7 @@ import org.json.JSONPropertyName;
 import java.time.Duration;
 import java.util.Base64;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Getter
@@ -26,6 +27,7 @@ public class AppConfig {
     private List<Service> services;
     private List<User> users;
     private CorsFilter corsFilter = new CorsFilter(); // Default values if missing
+    private JwtAuthSource jwtAuthSource;
 
     @Getter
     @Setter
@@ -87,6 +89,7 @@ public class AppConfig {
     @ToString
     public static class Middleware {
         private Headers header;
+        private JwtAuth jwtAuth;
         private String basicAuth; // Updated basicAuth field to be nullable
         private ForwardAuth forwardAuth;
         private String rule = "";
@@ -100,9 +103,11 @@ public class AppConfig {
         }
 
         public boolean hasForwardAuth() {
-            return forwardAuth != null;
+            return forwardAuth != null && forwardAuth.enabled;
         }
-
+        public boolean hasJwtAuth() {
+            return jwtAuth != null && jwtAuth.enabled;
+        }
         public boolean hasCircuitBreaker() {
             return circuitBreaker != null && circuitBreaker.enabled;
         }
@@ -124,11 +129,18 @@ public class AppConfig {
     @Setter
     @ToString
     public static class ForwardAuth {
+        private boolean enabled;
         private String path;
         private String service;
         private String requestHeaders;
         private String responseHeaders;
 
+    }
+    @Getter
+    @Setter
+    @ToString
+    public static class JwtAuth {
+        private boolean enabled;
     }
 
     @Getter
@@ -267,5 +279,17 @@ public class AppConfig {
         public boolean hasResponseHeaders() {
             return responseHeaders != null;
         }
+    }
+    @Getter
+    @Setter
+    public static class JwtAuthSource {
+        private String headerName;                // HTTP header containing the JWT
+        private String tokenPrefix;               // Prefix (e.g., "Bearer ") in the Authorization header
+        private String secretKey;                 // Secret key for HS256 (symmetric key)
+        private String jwksUri;                   // JWKS URI for RS256 (asymmetric keys)
+        private List<String> algorithms;          // Allowed JWT signing algorithms
+        private Map<String, Object> claimValidations; // Optional claims to validate (e.g., iss, aud)
+        private Map<String, String> forwardClaims;   // Claims to forward as headers (e.g., sub -> X-User-Id)
+
     }
 }

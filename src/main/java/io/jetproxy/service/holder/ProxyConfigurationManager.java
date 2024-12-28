@@ -2,14 +2,11 @@ package io.jetproxy.service.holder;
 
 import io.jetproxy.context.*;
 import io.jetproxy.exception.JetProxyValidationException;
-import io.jetproxy.middleware.auth.ForwardAuthAuthenticator;
-import io.jetproxy.middleware.auth.MultiLayerAuthenticator;
-import io.jetproxy.middleware.auth.AuthProviderFactory;
-import io.jetproxy.middleware.auth.BasicAuthProvider;
+import io.jetproxy.middleware.auth.*;
 import io.jetproxy.middleware.log.AccessLog;
-import io.jetproxy.service.holder.handler.HttpCacheHandler;
-import io.jetproxy.service.holder.handler.MiddlewareChain;
-import io.jetproxy.service.holder.handler.RuleValidatorHandler;
+import io.jetproxy.middleware.handler.HttpCacheHandler;
+import io.jetproxy.middleware.handler.MiddlewareChain;
+import io.jetproxy.middleware.handler.RuleValidatorHandler;
 import org.eclipse.jetty.security.*;
 import org.eclipse.jetty.security.authentication.BasicAuthenticator;
 import org.eclipse.jetty.server.Handler;
@@ -95,9 +92,9 @@ public class ProxyConfigurationManager {
             // Set up forward authentication if needed
             if (shouldEnableForwardAuth(proxyRule)) {
                 authenticators.add(new ForwardAuthAuthenticator(proxyRule.getMiddleware()));
-                this.proxyAndsecurityHandler.addConstraintMapping(
-                        createForwardAuthConstraintMapping(whitelistPath, null)
-                );
+            }
+            if (shouldEnableJwtAuth(proxyRule)) {
+                authenticators.add(new JWTAuthAuthenticator());
             }
             multiLayerAuthenticator.registerAuthenticators(whitelistPath, authenticators);
         }
@@ -169,7 +166,6 @@ public class ProxyConfigurationManager {
             dynamicProxies.put(pathSpec, proxyServlet);
             // Set up authentication if needed
             if (basicAuthProvider.shouldEnableAuth(newProxy)) {
-                logger.info("Auth basicAuth {}", newProxy.getPath());
                 authenticators.add(new BasicAuthenticator());
                 this.proxyAndsecurityHandler.addConstraintMapping(
                         basicAuthProvider
@@ -179,16 +175,11 @@ public class ProxyConfigurationManager {
                 isRequiredRestart = true;
             }
             if (shouldEnableForwardAuth(newProxy)) {
-                logger.info("Auth forwardAuth {}", newProxy.getPath());
                 authenticators.add(new ForwardAuthAuthenticator(newProxy.getMiddleware()));
-                this.proxyAndsecurityHandler.addConstraintMapping(
-                        createForwardAuthConstraintMapping(pathSpec, null)
-                );
                 isRequiredRestart = true;
             }
 
             if (isRequiredRestart) {
-
                 if (this.proxyAndsecurityHandler.isStarted()) {
                     this.proxyAndsecurityHandler.stop();
                     AppContext.get().preventGracefullyShutdown();
@@ -272,6 +263,9 @@ public class ProxyConfigurationManager {
         }
     }
 
+    public boolean shouldEnableJwtAuth(AppConfig.Proxy proxy) {
+        return proxy.getMiddleware() != null && proxy.getMiddleware().hasJwtAuth();
+    }
 
     /**
      * Checks if forward authentication is enabled for a proxy.
