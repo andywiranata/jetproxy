@@ -1,6 +1,7 @@
 package io.jetproxy.service.holder;
 
 import io.jetproxy.context.*;
+import io.jetproxy.exception.JetProxyValidationException;
 import io.jetproxy.middleware.auth.ForwardAuthAuthenticator;
 import io.jetproxy.middleware.auth.MultiLayerAuthenticator;
 import io.jetproxy.middleware.auth.AuthProviderFactory;
@@ -62,7 +63,7 @@ public class ProxyConfigurationManager {
      * @param server The Jetty server instance.
      * @param context The servlet context handler.
      */
-    public void setupProxies(Server server, ServletContextHandler context) {
+    public void setupProxiesAndAdminApi(Server server, ServletContextHandler context) {
         List<AppConfig.Proxy> proxies = config.getProxies();
 
         for (AppConfig.Proxy proxyRule : proxies) {
@@ -83,7 +84,6 @@ public class ProxyConfigurationManager {
 
             // Set up authentication if needed
             if (basicAuthProvider.shouldEnableAuth(proxyRule)) {
-                logger.info("Auth basicAuth {}", proxyRule.getPath());
                 authenticators.add(new BasicAuthenticator());
                 this.proxyAndsecurityHandler.addConstraintMapping(
                         basicAuthProvider
@@ -94,7 +94,6 @@ public class ProxyConfigurationManager {
 
             // Set up forward authentication if needed
             if (shouldEnableForwardAuth(proxyRule)) {
-                logger.info("Auth forwardAuth {}", proxyRule.getPath());
                 authenticators.add(new ForwardAuthAuthenticator(proxyRule.getMiddleware()));
                 this.proxyAndsecurityHandler.addConstraintMapping(
                         createForwardAuthConstraintMapping(whitelistPath, null)
@@ -106,6 +105,8 @@ public class ProxyConfigurationManager {
         this.proxyAndsecurityHandler.setAuthenticator(multiLayerAuthenticator);
         this.proxyAndsecurityHandler.setHandler(context);
 
+        addAdminSecurityHandler(context);
+
         // Add handlers for security and logging
         RequestLogHandler requestLogHandler = new RequestLogHandler();
         requestLogHandler.setRequestLog(new AccessLog());
@@ -116,6 +117,23 @@ public class ProxyConfigurationManager {
         });
 
         server.setHandler(handlers);
+    }
+    /**
+     * Add a dedicated Basic Authentication security handler for /admin/*.
+     */
+    private void addAdminSecurityHandler(ServletContextHandler context) {
+        String adminPath = "/admin/*";
+        logger.info("Setting up Basic Authentication for path: {}", adminPath);
+
+        // Create and configure a security handler for /admin/*
+        ConstraintSecurityHandler adminSecurityHandler = basicAuthProvider.createSecurityHandler(config);
+        adminSecurityHandler.addConstraintMapping(basicAuthProvider
+                .createConstraintMapping(adminPath,"administrator"));
+;
+        adminSecurityHandler.setAuthenticator(new BasicAuthenticator());
+
+        // Add the admin security handler to the context
+        context.setSecurityHandler(adminSecurityHandler);
     }
 
     /**
@@ -141,7 +159,7 @@ public class ProxyConfigurationManager {
         // Fetch service configuration
         AppConfig.Service service = ConfigLoader.getServiceMap().get(newProxy.getService());
         if (service == null) {
-            throw new IllegalArgumentException("Service not found for: " + newProxy.getService());
+            throw new JetProxyValidationException("Service not found for: " + newProxy.getService());
         }
 
         // Add the new proxy
@@ -307,14 +325,6 @@ public class ProxyConfigurationManager {
         return proxyServlet;
     }
 
-    /**
-     * Helper method to remove a servlet holder from an array.
-     */
-    private ServletHolder[] removeServletFromArray(ServletHolder[] holders, ServletHolder toRemove) {
-        return Arrays.stream(holders)
-                .filter(holder -> !holder.equals(toRemove))
-                .toArray(ServletHolder[]::new);
-    }
 
     /**
      * Helper method to remove a servlet mapping from an array.
