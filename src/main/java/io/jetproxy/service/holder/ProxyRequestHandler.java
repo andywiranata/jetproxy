@@ -3,7 +3,7 @@ package io.jetproxy.service.holder;
 import io.jetproxy.exception.ResilienceCircuitBreakerException;
 import io.jetproxy.exception.ResilienceRateLimitException;
 import io.jetproxy.middleware.resilience.ResilienceFactory;
-import io.jetproxy.service.holder.handler.MiddlewareChain;
+import io.jetproxy.middleware.handler.MiddlewareChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

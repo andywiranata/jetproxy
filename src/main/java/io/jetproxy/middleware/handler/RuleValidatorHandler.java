@@ -1,4 +1,4 @@
-package io.jetproxy.service.holder.handler;
+package io.jetproxy.middleware.handler;
 
 import io.jetproxy.context.AppConfig;
 import io.jetproxy.middleware.rule.RuleContext;

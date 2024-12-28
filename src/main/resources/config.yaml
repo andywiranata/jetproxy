@@ -44,8 +44,11 @@ proxies:
   - path: /user
     service: userApi
     middleware:
-      basicAuth: 'basicAuth:roleA'
+#      basicAuth: 'basicAuth:roleA'
+      jwtAuth:
+        enabled: true
       forwardAuth:
+        enabled: true
         path: /verify
         service: authApi
         requestHeaders: "Forward(X-Custom-*);Forward(Authorization)"
@@ -138,6 +141,39 @@ users:
     password: passwordB
     role: roleB
 
+jwtAuthSource:
+  headerName: "Authorization"
+  tokenPrefix: "Bearer "
+  secretKey: "U2VjdXJlU3Ryb25nS2V5Rm9yVXNpbmdXaXRoSFMyNTY="
+  algorithms:
+    - HS256
+  claimValidations:
+    iss: "auth.myapp.com"
+
+#jwtAuth:
+#  headerName: "Authorization"
+#  tokenPrefix: "Bearer "
+#  jwksUri: "https://auth.example.com/.well-known/jwks.json"
+#  algorithms:
+#    - RS256
+#  claimValidations:
+#    aud: "my-application"
+
+
+#jwtAuth:
+#  headerName: "Authorization"         # Header containing the JWT
+#  tokenPrefix: "Bearer "              # Prefix before the token in the header
+#  secretKey: "your-secure-secret"     # Optional: Use for HS256 signing
+#  jwksUri: "https://auth.example.com/.well-known/jwks.json"  # Optional: JWKS endpoint for RS256
+#  algorithms:                         # Allowed algorithms
+#    - RS256
+#    - HS256
+#  claimValidations:                   # Optional claim validations
+#    iss: "auth.myapp.com"
+#    aud: "my-application"
+#  forwardClaims:                      # Forward claims to backend as headers
+#    sub: "X-User-Id"
+#    email: "X-User-Email"
 
 
 

@@ -8,7 +8,7 @@ import io.jetproxy.middleware.metric.MetricsListener;
 import io.jetproxy.middleware.metric.MetricsListenerFactory;
 import io.jetproxy.service.AppShutdownListener;
 import io.jetproxy.service.holder.ProxyConfigurationManager;
-import io.jetproxy.service.holder.handler.CorsFilterHolderHandler;
+import io.jetproxy.middleware.handler.CorsFilterHolderHandler;
 import io.jetproxy.util.GsonFactory;
 import jakarta.servlet.DispatcherType;
 import lombok.Getter;
