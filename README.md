@@ -13,6 +13,7 @@ By automatically discovering services and adjusting routes, this reverse proxy s
 - **Statistics**: Collect and display metrics for monitoring traffic and performance. **TODO - InReview to full utilize opentelemetry** 
 - **Basic Auth**:  [Link](https://jetproxy.andywiranata.me/docs/middleware/basic-auth)
 - **Forward Auth**: [Link](https://jetproxy.andywiranata.me/docs/middleware/forward-auth)
+- ** JWTAuth **: **INPROGRESS*
 - **Rules**: [Link](https://jetproxy.andywiranata.me/docs/middleware/rules)
 - **Headers**: [Link](https://jetproxy.andywiranata.me/docs/middleware/headers)
 - **CircuitBreaker**: [Link](https://jetproxy.andywiranata.me/docs/middleware/circuit-breaker)
