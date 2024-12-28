@@ -8,6 +8,7 @@ sidebar_position: 4
 
 The `ForwardAuth` is a flexible `Authenticator` implementation designed for external authentication delegation. It allows forwarding specific request headers to an external service and processing the response headers dynamically.
 
+
 [Learn more about header middleware actions](/docs/middleware/headers)
 
 ## Configuration Examples
@@ -19,38 +20,49 @@ service:
   - name: authApi
     url: http://localhost:30001
     methods: ['POST']
-forwardAuth:
-  service: authService
-  path: /validate
-  authRequestHeaders: |
-    Forward(Authorization); 
-    Forward(X-Custom-*)
-  authResponseHeaders: |
-    Forward(X-Auth-*)
+proxies:
+  - path: /user
+    service: userApi
+    middleware:
+      forwardAuth:
+        enabled: true
+        service: authService
+        path: /validate
+        authRequestHeaders: |
+          Forward(Authorization); 
+          Forward(X-Custom-*)
+        authResponseHeaders: |
+          Forward(X-Auth-*)
 ```
 Explanation
-* Forwards Authorization and all headers starting with `X-Custom-`.
+* Forwards `Authorization` and all headers starting with `X-Custom-`.
 * Extracts all headers starting with `X-Auth-` from the response.
 
 ### Example 2: Advanced Header Manipulation
+
 
 ```yaml
 service:
   - name: authApi
     url: http://localhost:30001
     methods: ['POST']
-forwardAuth:
-  service: authApi
-  path: /verify
-  authRequestHeaders: |
-    Forward(X-Custom-*); 
-    Copy(X-Trace-ID, X-New-); 
-    Append(X-Request-ID, trace123); 
-    Modify(User-Agent, Chrome, Firefox)
-  authResponseHeaders: |
-    Forward(X-Auth-*); 
-    Copy(Set-Cookie, Custom-Cookie)
-
+proxies:
+  - path: /user
+    service: userApi
+    middleware:
+      forwardAuth:
+        enabled: true
+        service: authApi
+        path: /verify
+        authRequestHeaders: |
+          Forward(X-Custom-*); 
+          Copy(X-Trace-ID, X-New-); 
+          Append(X-Request-ID, trace123); 
+          Modify(User-Agent, Chrome, Firefox)
+        authResponseHeaders: |
+          Forward(X-Auth-*); 
+          Copy(Set-Cookie, Custom-Cookie);
+          Forward(X-Auth-*)
 ```
 
 Explanation
