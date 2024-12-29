@@ -168,6 +168,7 @@ public abstract class BaseProxyRequestHandler extends ProxyServlet.Transparent {
 
             @Override
             public String getHeader(String name) {
+                System.out.println("Header::"+ name + "::" + modifiedHeaders.get(name));
                 return modifiedHeaders.get(name);
             }
 
@@ -201,8 +202,6 @@ public abstract class BaseProxyRequestHandler extends ProxyServlet.Transparent {
 
         return combined;
     }
-
-
     protected Map<String, String> applyResponseHeaderActions(Map<String, String> serverHeaders) {
         Map<String, String> modifiedHeaders = new HashMap<>();
         for (HeaderAction action : headerResponseActions) {

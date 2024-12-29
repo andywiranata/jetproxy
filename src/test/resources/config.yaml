@@ -23,7 +23,6 @@ storage:
     enabled: true
     maxMemory: 50 # MB
     size: 10000
-
 proxies:
   - path: /httpbin
     service: httpbinApi
@@ -38,6 +37,7 @@ proxies:
     service: userApi
     middleware:
       forwardAuth:
+        enabled: true
         path: /verify
         service: authApi
         requestHeaders: "Forward(X-Custom-*);Forward(Authorization)"

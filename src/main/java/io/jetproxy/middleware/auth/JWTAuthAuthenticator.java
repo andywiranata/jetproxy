@@ -5,6 +5,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import io.jetproxy.context.AppContext;
+import io.jsonwebtoken.MalformedJwtException;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
@@ -34,6 +35,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class JWTAuthAuthenticator implements Authenticator {
+    public static final String HEADER_NAME = "jetproxy-jwt-claims";
     private final AppConfig.JwtAuthSource jwtAuthSource;
     private final Key secretKey;
 
@@ -79,11 +81,11 @@ public class JWTAuthAuthenticator implements Authenticator {
                 response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Claim validation failed");
                 return Authentication.UNAUTHENTICATED;
             }
-
+            forwardClaimsToHeader(claims, request);
             // Return an authenticated user
             return new UserAuthentication(getAuthMethod(), new JWTUserIdentity(claims));
 
-        } catch (SignatureException e) {
+        } catch (SignatureException | MalformedJwtException e) {
             try {
                 response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid token signature");
             } catch (Exception ignored) {}
@@ -208,6 +210,10 @@ public class JWTAuthAuthenticator implements Authenticator {
             }
         }
         return true;
+    }
+    private void forwardClaimsToHeader(Claims claims, HttpServletRequest response) {
+        String claimsJson = AppContext.get().gson.toJson(claims); // Convert claims to JSON string
+        response.setAttribute(HEADER_NAME, claimsJson);
     }
 
     private static class JWTUserIdentity implements UserIdentity {

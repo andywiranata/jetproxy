@@ -9,15 +9,42 @@ sidebar_position: 1
 
 ## Getting Started
 
-In today’s fast-paced microservices architecture, an efficient and automated API gateway is crucial. Managing connections between microservices and external users can be challenging, especially in dynamic environments where services are frequently added, removed, updated, or scaled.
+In today’s fast-paced microservices architecture, an efficient and automated API gateway is crucial. Managing connections between microservices and external users can be challenging, especially in dynamic environments where services are frequently added, removed, or updated.
 
-Traditional reverse proxies require manual configuration for each route, making them less practical for modern setups. JetProxy introduces a modern API reverse proxy designed to automate routing and dynamically direct traffic to your microservices with minimal effort.
+Traditional reverse proxies require manual configuration for each route, making them less practical for modern setups. JetProxy introduces a lightweight, high-performance HTTP proxy library designed to simplify routing and dynamically direct traffic to your microservices with minimal effort.
 
-By automatically discovering services and adjusting routes, JetProxy simplifies management, enhances scalability, and reduces operational overhead, allowing you to focus on developing your services instead of maintaining complex routing configurations.
+With its YAML-based configuration, JetProxy enables developers to define routing rules, apply caching, and configure middleware efficiently. Its flexibility makes it ideal for modern microservices setups where scalability and simplicity are paramount.
 
-With built-in support for dynamic routing, automatic load balancing, and customizable middleware, JetProxy is ideal for developers seeking a modern, efficient proxy solution. Its seamless integration into microservices architectures allows for automated routing, service scaling, and reduced operational complexity—all without the need for constant manual updates.
+### Key Features
 
-Additionally, JetProxy ensures your API is secure with role-based access control. By integrating role authorization and basic authentication, you can manage access to sensitive routes easily, allowing only authorized users with specific roles to interact with your services. This adds a robust layer of security, protecting your API from unauthorized access while maintaining flexibility and ease of configuration.
+- **Dynamic Routing**  
+  Advanced routing rules based on headers, query parameters, paths, and more, allowing precise traffic management without complex scripts.
+
+- **Customizable Middleware**  
+  Pre-built middleware for tasks like authentication, rate limiting, header manipulation, and caching to streamline HTTP request handling.
+
+- **High Performance**  
+  Built on Jetty, JetProxy is designed for low-latency, high-throughput environments, ensuring reliability even under heavy traffic.
+
+- **Resilience**  
+  JetProxy ensures reliability and fault tolerance with built-in mechanisms such as:
+  - **Circuit Breaker**: Protects your system from cascading failures by halting traffic to unhealthy services and resuming only when stability is restored.
+  - **Rate Limiter**: Controls traffic flow to prevent overloading backend services, handling spikes gracefully and maintaining optimal performance.
+  - **HTTP Caching**: Reduces response times and backend load by caching frequently accessed resources using in-memory or Redis-based caching.
+
+## Enhanced Security
+
+JetProxy ensures your API is secure with robust authentication capabilities, including support for external authentication services. The `ForwardAuth` middleware allows seamless integration with external authentication mechanisms, enabling token validation and role-based access without tying security to a single system. This flexibility helps meet diverse security needs.
+
+## Simplicity and Efficiency
+
+JetProxy eliminates the need for constant manual updates by offering straightforward YAML configuration and real-time adjustments. Its intuitive design reduces operational complexity, enabling teams to focus on service development rather than maintaining intricate proxy configurations.
+
+---
+
+JetProxy is the modern solution for developers seeking an efficient and scalable API proxy. It integrates seamlessly into microservices architectures, offering dynamic routing, middleware customization, and robust security features to streamline API management. Whether you’re managing simple routes or complex traffic patterns, JetProxy delivers flexibility, performance, and ease of use.
+
+
 
 
 

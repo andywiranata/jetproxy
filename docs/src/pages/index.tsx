@@ -20,7 +20,7 @@ function HomepageHeader() {
           <Link
             className="button button--secondary button--lg"
             to="/docs/intro">
-            JetProxy Tutorial - 5min ⏱️
+            JetProxy Up & Running - 5min ⏱️
           </Link>
         </div>
       </div>

@@ -32,15 +32,6 @@ storage:
     size: 10000
 
 proxies:
-  - path: /httpbin
-    service: httpbinApi
-    ttl: -1
-  - path: /example
-    service: exampleApi
-    ttl: -1
-  - path: /google
-    service: googleApi
-    ttl: -1
   - path: /user
     service: userApi
     middleware:
@@ -51,7 +42,7 @@ proxies:
         enabled: true
         path: /verify
         service: authApi
-        requestHeaders: "Forward(X-Custom-*);Forward(Authorization)"
+        requestHeaders: "Forward(X-Custom-*);Forward(Authorization);"
         responseHeaders: "Remove(X-Powered-By)"
       rateLimiter:
         enabled: false
@@ -68,7 +59,7 @@ proxies:
         permittedNumberOfCallsInHalfOpenState: 2 # 3 calls in half-open state
         minimumNumberOfCalls: 4 # Minimum of 4 calls before evaluating
       header:
-        requestHeaders: "Remove(x-header-*);Remove(Authorization);Append(X-Custom-Header,-jetty)"
+        requestHeaders: "Remove(x-jwt-*);Remove(x-header-*);Remove(Authorization);Append(X-Custom-Header,-jetty)"
         responseHeaders: "Add(X-Powered-By,jetty-server)"
     ttl: 5000
   - path: /products
@@ -145,8 +136,6 @@ jwtAuthSource:
   headerName: "Authorization"
   tokenPrefix: "Bearer "
   secretKey: "U2VjdXJlU3Ryb25nS2V5Rm9yVXNpbmdXaXRoSFMyNTY="
-  algorithms:
-    - HS256
   claimValidations:
     iss: "auth.myapp.com"
 
