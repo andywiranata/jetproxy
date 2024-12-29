@@ -32,7 +32,7 @@ const FeatureList: FeatureItem[] = [
   },
   {
     title: 'Built for Flexibility',
-    img:  require('@site/static/img/undraw_copybara_mountain.png').default,
+    img:  require('@site/static/img/undraw_mountain.png').default,
     description: (
       <>
         Powered by a modern backend, JetProxy allows you to extend and customize functionality,

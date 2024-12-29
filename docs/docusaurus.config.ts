@@ -64,12 +64,12 @@ const config: Config = {
 
   themeConfig: {
     // Replace with your project's social card
-    image: 'img/docusaurus-social-card.jpg',
+    image: 'img/jetproxy-logo.png',
     navbar: {
       title: 'JetProxy',
       logo: {
         alt: 'JetProxy Logo',
-        src: 'img/logo.svg',
+        src: 'img/jetproxy.png',
       },
       items: [
         {
