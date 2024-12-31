@@ -5,7 +5,9 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import io.jetproxy.context.AppContext;
-import io.jsonwebtoken.MalformedJwtException;
+import io.jetproxy.middleware.auth.jwk.validator.BaseJwtValidator;
+import io.jetproxy.middleware.auth.jwk.validator.JwtValidator;
+import io.jsonwebtoken.*;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
@@ -14,9 +16,6 @@ import org.eclipse.jetty.security.Authenticator;
 import org.eclipse.jetty.security.UserAuthentication;
 import org.eclipse.jetty.server.Authentication;
 import org.eclipse.jetty.server.UserIdentity;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureException;
 import io.jsonwebtoken.security.Keys;
 import io.jetproxy.context.AppConfig;
 
@@ -38,6 +37,7 @@ public class JWTAuthAuthenticator implements Authenticator {
     public static final String HEADER_NAME = "jetproxy-jwt-claims";
     private final AppConfig.JwtAuthSource jwtAuthSource;
     private final Key secretKey;
+    private JwtValidator jwtValidator;
 
     public JWTAuthAuthenticator() {
         this.jwtAuthSource = AppContext.get().getConfig().getJwtAuthSource();
@@ -47,6 +47,13 @@ public class JWTAuthAuthenticator implements Authenticator {
                 this.secretKey = Keys.hmacShaKeyFor(jwtAuthSource.getSecretKey().getBytes());
             } else {
                 this.secretKey = null;
+                this.jwtValidator = new JwtValidator(
+                        jwtAuthSource.getJwksType(),
+                        jwtAuthSource.getJwksUri(),
+                        jwtAuthSource.getClaimValidations().get("iss").toString(),
+                        jwtAuthSource.getClaimValidations().get("aud").toString()
+                );
+
             }
     }
 
@@ -90,6 +97,11 @@ public class JWTAuthAuthenticator implements Authenticator {
                 response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid token signature");
             } catch (Exception ignored) {}
             return Authentication.UNAUTHENTICATED;
+        } catch (ExpiredJwtException e) {
+            try {
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token has expired");
+            } catch (Exception ignored) {}
+            return Authentication.UNAUTHENTICATED;
         } catch (Exception e) {
             e.printStackTrace();
             try {
@@ -122,12 +134,7 @@ public class JWTAuthAuthenticator implements Authenticator {
                     .getBody();
         } else if (jwtAuthSource.getJwksUri() != null) {
             // Validate using JWKS (RS256)
-            RSAPublicKey publicKey = fetchPublicKeyFromJWKS(token);
-            return Jwts.parserBuilder()
-                    .setSigningKey(publicKey)
-                    .build()
-                    .parseClaimsJws(token)
-                    .getBody();
+            return this.jwtValidator.validateToken(token);
         } else {
             throw new SignatureException("No valid key configuration found for JWT validation.");
         }

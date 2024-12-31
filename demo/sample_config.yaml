@@ -39,7 +39,7 @@ proxies:
       jwtAuth:
         enabled: true
       forwardAuth:
-        enabled: false
+        enabled: true
         path: /verify
         service: authApi
         requestHeaders: "Forward(X-Custom-*);Forward(Authorization);"
@@ -59,7 +59,7 @@ proxies:
         permittedNumberOfCallsInHalfOpenState: 2 # 3 calls in half-open state
         minimumNumberOfCalls: 4 # Minimum of 4 calls before evaluating
       header:
-        requestHeaders: "Remove(x-header-*);Remove(Authorization);Append(X-Custom-Header,-jetty)"
+        requestHeaders: "Remove(x-jwt-*);Remove(x-header-*);Remove(Authorization);Append(X-Custom-Header,-jetty)"
         responseHeaders: "Add(X-Powered-By,jetty-server)"
     ttl: 5000
   - path: /products
@@ -132,23 +132,12 @@ users:
     password: passwordB
     role: roleB
 
-
-#jwtAuthSource:
-#  headerName: "Authorization"
-#  tokenPrefix: "Bearer "
-#  jwksUri: "https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com"
-#  jwksType: "x509"  # Specify type: x509 or jwk
-#  claimValidations:
-#    iss: "https://securetoken.google.com/utility-app-90288"
-#    aud: "utility-app-90288"
-
-
 jwtAuthSource:
   headerName: "Authorization"
   tokenPrefix: "Bearer "
-  secretKey: "XtFGHMBF62XwN/QK8rxepkRSQLlY0d6DujLXilvfNGwoslFz4GGsP+uDAeMal+HadbfD5+AvzJs2d3HnwIHO1w=="
-#  claimValidations:
-#    iss: "auth.myapp.com"
+  secretKey: "U2VjdXJlU3Ryb25nS2V5Rm9yVXNpbmdXaXRoSFMyNTY="
+  claimValidations:
+    iss: "auth.myapp.com"
 
 #jwtAuth:
 #  headerName: "Authorization"

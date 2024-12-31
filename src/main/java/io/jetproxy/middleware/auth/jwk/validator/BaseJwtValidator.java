@@ -1,6 +1,5 @@
 package io.jetproxy.middleware.auth.jwk.validator;
 
-import com.google.gson.JsonParser;
 import com.nimbusds.jose.JWSObject;
 import io.jetproxy.middleware.auth.jwk.JwkSource;
 import io.jetproxy.middleware.auth.jwk.JwkSourceFactory;
@@ -9,14 +8,13 @@ import io.jsonwebtoken.Jwts;
 
 import java.security.interfaces.RSAPublicKey;
 import java.text.ParseException;
-import java.util.Base64;
 
-public abstract class GenericJwtValidator {
+public abstract class BaseJwtValidator {
     private final JwkSource jwkSource;
     private final String expectedIssuer;
     private final String expectedAudience;
 
-    public GenericJwtValidator(String providerType, String jwksUri, String expectedIssuer, String expectedAudience) {
+    public BaseJwtValidator(String providerType, String jwksUri, String expectedIssuer, String expectedAudience) {
         this.jwkSource = JwkSourceFactory.createJwkSource(providerType, jwksUri);
         this.expectedIssuer = expectedIssuer;
         this.expectedAudience = expectedAudience;

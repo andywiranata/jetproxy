@@ -3,6 +3,7 @@ import com.nimbusds.jose.JWSObject;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jose.crypto.MACVerifier;
 
+@Deprecated
 public class JwtUtils {
 
     public static JWTClaimsSet parseToken(String token, String secretKey) throws Exception {
