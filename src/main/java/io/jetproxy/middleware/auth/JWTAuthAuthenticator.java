@@ -91,6 +91,7 @@ public class JWTAuthAuthenticator implements Authenticator {
             } catch (Exception ignored) {}
             return Authentication.UNAUTHENTICATED;
         } catch (Exception e) {
+            e.printStackTrace();
             try {
                 response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Authentication service error");
             } catch (Exception ignored) {}
@@ -132,13 +133,34 @@ public class JWTAuthAuthenticator implements Authenticator {
         }
     }
 
+    private String extractKidFromJwt(String token) throws Exception {
+        // Split the JWT into its parts: header.payload.signature
+        String[] parts = token.split("\\.");
+        if (parts.length < 3) {
+            throw new IllegalArgumentException("Invalid JWT format: Must contain header, payload, and signature.");
+        }
+
+        // Decode the header (first part of the JWT)
+        String headerJson = new String(Base64.getUrlDecoder().decode(parts[0]));
+
+        // Parse the header JSON to extract the `kid`
+        JsonObject header = JsonParser.parseString(headerJson).getAsJsonObject();
+        if (!header.has("kid")) {
+            throw new IllegalArgumentException("No 'kid' found in JWT header.");
+        }
+
+        return header.get("kid").getAsString();
+    }
+
     private RSAPublicKey fetchPublicKeyFromJWKS(String token) throws Exception {
         // Extract the `kid` from the JWT header
-        String kid = (String) Jwts.parserBuilder()
-                .build()
-                .parseClaimsJwt(token)
-                .getHeader()
-                .get("kid");
+        String kid = extractKidFromJwt(token);
+
+//                (String) Jwts.parserBuilder()
+//                .build()
+//                .parseClaimsJwt(token)
+//                .getHeader()
+//                .get("kid");
 
         if (kid == null) {
             throw new Exception("No 'kid' (Key ID) found in JWT header.");

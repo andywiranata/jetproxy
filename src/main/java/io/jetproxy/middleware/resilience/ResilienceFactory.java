@@ -80,7 +80,6 @@ public class ResilienceFactory {
         if (!proxy.hasMiddleware()) {
             return null;
         }
-        logger.debug("Setting up resilience with id: {}", proxy.getUuid());
         AppConfig.Middleware middleware = proxy.getMiddleware();
 
         CircuitBreaker circuitBreaker = middleware.hasCircuitBreaker()

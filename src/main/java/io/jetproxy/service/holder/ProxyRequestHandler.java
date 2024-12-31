@@ -6,6 +6,7 @@ import io.jetproxy.middleware.resilience.ResilienceFactory;
 import io.jetproxy.middleware.handler.MiddlewareChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequestWrapper;
 import jakarta.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.client.api.Request;
 import org.eclipse.jetty.client.api.Response;
@@ -32,7 +33,7 @@ public class ProxyRequestHandler extends BaseProxyRequestHandler {
         this.proxyRule = proxyRule;
         this.middlewareChain = middlewareChain;
         this.resilience = ResilienceFactory.createResilienceUtil(proxyRule);
-        this.metricsListener = AppContext.get().getMetricsListener();
+        // this.metricsListener = AppContext.get().getMetricsListener();
         this.headerRequestActions = Optional.ofNullable(proxyRule.getMiddleware())
                 .filter(AppConfig.Middleware::hasHeaders)
                 .map(AppConfig.Middleware::getHeader)
@@ -47,10 +48,11 @@ public class ProxyRequestHandler extends BaseProxyRequestHandler {
                 .map(HeaderActionFactory::createActions)
                 .orElseGet(Collections::emptyList);
 
-        logger.debug("ProxyHolder initiated with Proxy Rules: {} - {}",
-                proxyRule.getPath(), proxyRule.toString());
-        logger.debug("ProxyHolder initiated with Service Name: {} - {} ",
-                configService.getName(), configService.toString());
+        logger.info("ProxyHolder Initialization ProxyID:{} - Rule: Path={} -> {}, Details={}",
+                proxyRule.getUuid(), proxyRule.getPath(),
+                AppContext.get().getServiceMap().get(proxyRule.getService()).getUrl(),
+                proxyRule);
+
 
     }
     @Override
@@ -64,7 +66,8 @@ public class ProxyRequestHandler extends BaseProxyRequestHandler {
             }
             this.resilience.execute(()-> {
                 try {
-                    super.service(this.modifyRequestHeaders(request), response);
+                    HttpServletRequestWrapper httpServletRequestWrapper = this.modifyRequestHeaders(request);
+                    super.service(httpServletRequestWrapper, response);
                 } catch (ServletException | IOException e) {
                     throw new RuntimeException(e);
                 }

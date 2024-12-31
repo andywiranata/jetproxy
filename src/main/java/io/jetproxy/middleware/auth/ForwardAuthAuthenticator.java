@@ -1,5 +1,7 @@
 package io.jetproxy.middleware.auth;
 
+import io.jetproxy.context.AppContext;
+import io.jetproxy.middleware.cache.CacheFactory;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServletRequest;

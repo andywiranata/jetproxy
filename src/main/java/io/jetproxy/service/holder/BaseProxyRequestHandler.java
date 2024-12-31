@@ -1,6 +1,8 @@
 package io.jetproxy.service.holder;
 
 import io.jetproxy.context.AppConfig;
+import io.jetproxy.logger.DebugAwareLogger;
+import io.jetproxy.middleware.cache.CacheFactory;
 import io.jetproxy.middleware.cache.ResponseCacheEntry;
 import io.jetproxy.middleware.rule.RuleContext;
 import jakarta.servlet.http.HttpServletRequest;
@@ -45,7 +47,7 @@ public abstract class BaseProxyRequestHandler extends ProxyServlet.Transparent {
     public static final String ERROR_RULE_NOT_ALLOWED = "Rule not allowed processing request";
 
     public final String MODIFIED_HEADER = "modifiedHeader";
-    private static final Logger logger = LoggerFactory.getLogger(BaseProxyRequestHandler.class);
+    private static final DebugAwareLogger logger = DebugAwareLogger.getLogger(DebugAwareLogger.class);
     protected AppConfig.Service configService;
     protected AppConfig.Proxy proxyRule;
     protected RuleContext ruleContext;
@@ -67,7 +69,7 @@ public abstract class BaseProxyRequestHandler extends ProxyServlet.Transparent {
         ResponseCacheEntry cacheEntry = new ResponseCacheEntry(
                 (Map<String, String>) request.getAttribute(MODIFIED_HEADER), responseBody);
         ctx.getCache()
-                .put(String.format("%s__%s", method, path),
+                .put(String.format(CacheFactory.HTTP_REQUEST_CACHE_KEY, method, path),
                         ctx.gson.toJson(cacheEntry),
                         proxyRule.getTtl());
 

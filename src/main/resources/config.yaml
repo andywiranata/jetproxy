@@ -35,11 +35,11 @@ proxies:
   - path: /user
     service: userApi
     middleware:
-#      basicAuth: 'basicAuth:roleA'
+      #      basicAuth: 'basicAuth:roleA'
       jwtAuth:
         enabled: true
       forwardAuth:
-        enabled: true
+        enabled: false
         path: /verify
         service: authApi
         requestHeaders: "Forward(X-Custom-*);Forward(Authorization);"
@@ -132,12 +132,23 @@ users:
     password: passwordB
     role: roleB
 
+
 jwtAuthSource:
   headerName: "Authorization"
   tokenPrefix: "Bearer "
-  secretKey: "U2VjdXJlU3Ryb25nS2V5Rm9yVXNpbmdXaXRoSFMyNTY="
+  jwksUri: "https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com"
+  jwksType: "x509"  # Specify type: x509 or jwk
   claimValidations:
-    iss: "auth.myapp.com"
+    iss: "https://securetoken.google.com/utility-app-90288"
+    aud: "utility-app-90288"
+
+
+#jwtAuthSource:
+#  headerName: "Authorization"
+#  tokenPrefix: "Bearer "
+#  secretKey: "U2VjdXJlU3Ryb25nS2V5Rm9yVXNpbmdXaXRoSFMyNTY="
+#  claimValidations:
+#    iss: "auth.myapp.com"
 
 #jwtAuth:
 #  headerName: "Authorization"
