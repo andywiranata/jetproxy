@@ -11,25 +11,19 @@ import java.text.ParseException;
 
 public abstract class BaseJwtValidator {
     private final JwkSource jwkSource;
-    private final String expectedIssuer;
-    private final String expectedAudience;
 
-    public BaseJwtValidator(String providerType, String jwksUri, String expectedIssuer, String expectedAudience) {
+    public BaseJwtValidator(String providerType, String jwksUri) {
         this.jwkSource = JwkSourceFactory.createJwkSource(providerType, jwksUri);
-        this.expectedIssuer = expectedIssuer;
-        this.expectedAudience = expectedAudience;
     }
 
     public Claims validateToken(String token) throws Exception {
         String kid = extractKidFromJwt(token);
         RSAPublicKey publicKey = jwkSource.getPublicKey(kid);
-        Claims claims = Jwts.parserBuilder()
+        return Jwts.parserBuilder()
                 .setSigningKey(publicKey)
                 .build()
                 .parseClaimsJws(token)
                 .getBody();
-        validateClaims(claims);
-        return claims;
     }
 
     private String extractKidFromJwt(String token) {
@@ -42,12 +36,5 @@ public abstract class BaseJwtValidator {
         return jwsObject.getHeader().getKeyID();
     }
 
-    private void validateClaims(Claims claims) {
-        if (!expectedIssuer.equals(claims.getIssuer())) {
-            throw new IllegalArgumentException("Invalid issuer: " + claims.getIssuer());
-        }
-        if (!expectedAudience.equals(claims.getAudience())) {
-            throw new IllegalArgumentException("Invalid audience: " + claims.getAudience());
-        }
-    }
+
 }

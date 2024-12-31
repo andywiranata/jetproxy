@@ -49,9 +49,7 @@ public class JWTAuthAuthenticator implements Authenticator {
                 this.secretKey = null;
                 this.jwtValidator = new JwtValidator(
                         jwtAuthSource.getJwksType(),
-                        jwtAuthSource.getJwksUri(),
-                        jwtAuthSource.getClaimValidations().get("iss").toString(),
-                        jwtAuthSource.getClaimValidations().get("aud").toString()
+                        jwtAuthSource.getJwksUri()
                 );
 
             }
@@ -158,71 +156,6 @@ public class JWTAuthAuthenticator implements Authenticator {
 
         return header.get("kid").getAsString();
     }
-
-    private RSAPublicKey fetchPublicKeyFromJWKS(String token) throws Exception {
-        // Extract the `kid` from the JWT header
-        String kid = extractKidFromJwt(token);
-
-//                (String) Jwts.parserBuilder()
-//                .build()
-//                .parseClaimsJwt(token)
-//                .getHeader()
-//                .get("kid");
-
-        if (kid == null) {
-            throw new Exception("No 'kid' (Key ID) found in JWT header.");
-        }
-
-        // Fetch JWKS from the URI
-        URL url = new URL(jwtAuthSource.getJwksUri());
-        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-        connection.setRequestMethod("GET");
-        connection.setConnectTimeout(5000);
-        connection.setReadTimeout(5000);
-
-        if (connection.getResponseCode() != 200) {
-            throw new Exception("Failed to fetch JWKS: HTTP " + connection.getResponseCode());
-        }
-
-        BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-        String jwksResponse = reader.lines().collect(Collectors.joining());
-        reader.close();
-
-        // Parse the JWKS and extract the public key
-        return extractPublicKeyFromJWKS(jwksResponse, kid);
-    }
-
-
-
-    private RSAPublicKey extractPublicKeyFromJWKS(String jwksResponse, String kid) throws Exception {
-        // Parse the JWKS response as JSON
-        JsonObject jwksJson = JsonParser.parseString(jwksResponse).getAsJsonObject();
-        JsonArray keys = jwksJson.getAsJsonArray("keys");
-
-        for (JsonElement keyElement : keys) {
-            JsonObject key = keyElement.getAsJsonObject();
-            if (kid.equals(key.get("kid").getAsString())) {
-                String modulusBase64 = key.get("n").getAsString();
-                String exponentBase64 = key.get("e").getAsString();
-
-                // Construct the RSA public key
-                return constructRSAPublicKey(modulusBase64, exponentBase64);
-            }
-        }
-
-        throw new Exception("No matching key found in JWKS for kid: " + kid);
-    }
-
-    private RSAPublicKey constructRSAPublicKey(String modulusBase64, String exponentBase64) throws Exception {
-        BigInteger modulus = new BigInteger(1, Base64.getUrlDecoder().decode(modulusBase64));
-        BigInteger exponent = new BigInteger(1, Base64.getUrlDecoder().decode(exponentBase64));
-
-        RSAPublicKeySpec spec = new RSAPublicKeySpec(modulus, exponent);
-        KeyFactory factory = KeyFactory.getInstance("RSA");
-
-        return (RSAPublicKey) factory.generatePublic(spec);
-    }
-
 
     private boolean validateClaims(Claims claims) {
         Map<String, Object> claimValidations = jwtAuthSource.getClaimValidations();
