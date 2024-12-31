@@ -49,7 +49,8 @@ public class JWTAuthAuthenticator implements Authenticator {
                 this.secretKey = null;
                 this.jwtValidator = new JwtValidator(
                         jwtAuthSource.getJwksType(),
-                        jwtAuthSource.getJwksUri()
+                        jwtAuthSource.getJwksUri(),
+                        jwtAuthSource.getJwksTtl()
                 );
 
             }
@@ -125,36 +126,15 @@ public class JWTAuthAuthenticator implements Authenticator {
     private Claims validateToken(String token) throws Exception {
         if (secretKey != null) {
             // Validate using secretKey (HS256)
-            return Jwts.parserBuilder()
-                    .setSigningKey(secretKey)
-                    .build()
-                    .parseClaimsJws(token)
-                    .getBody();
+            return this.jwtValidator
+                    .validateTokenWithSigningKey(this.secretKey, token);
         } else if (jwtAuthSource.getJwksUri() != null) {
             // Validate using JWKS (RS256)
-            return this.jwtValidator.validateToken(token);
+            return this.jwtValidator
+                    .validateTokenWithPublicKey(token);
         } else {
             throw new SignatureException("No valid key configuration found for JWT validation.");
         }
-    }
-
-    private String extractKidFromJwt(String token) throws Exception {
-        // Split the JWT into its parts: header.payload.signature
-        String[] parts = token.split("\\.");
-        if (parts.length < 3) {
-            throw new IllegalArgumentException("Invalid JWT format: Must contain header, payload, and signature.");
-        }
-
-        // Decode the header (first part of the JWT)
-        String headerJson = new String(Base64.getUrlDecoder().decode(parts[0]));
-
-        // Parse the header JSON to extract the `kid`
-        JsonObject header = JsonParser.parseString(headerJson).getAsJsonObject();
-        if (!header.has("kid")) {
-            throw new IllegalArgumentException("No 'kid' found in JWT header.");
-        }
-
-        return header.get("kid").getAsString();
     }
 
     private boolean validateClaims(Claims claims) {

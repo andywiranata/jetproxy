@@ -8,7 +8,7 @@ import java.util.stream.Collectors;
 public class CacheFactory {
 
     public static String HTTP_REQUEST_CACHE_KEY = "http_request::%s_%s";
-    public static String HTTP_FORWARD_AUTH_CACHE_KEY = "http_forward_auth::%s";
+    public static String HTTP_JWT_AUTH_SOURCE_CACHE_KEY = "http_jwt_auth_source::%s::%s";
     public static Cache createCache(AppConfig config) {
         AppConfig.Storage.InMemoryConfig inMemoryConfig = config.getStorage().getInMemory();
         AppConfig.Storage.RedisConfig redisConfig = config.getStorage().getRedis();

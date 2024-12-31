@@ -1,10 +1,8 @@
 package io.jetproxy;
 
 
-import io.jetproxy.middleware.auth.jwk.validator.FirebaseJwtValidator;
 import io.jetproxy.service.appConfig.servlet.AppConfigServlet;
 import io.jetproxy.service.appConfig.service.AppConfigService;
-import io.jsonwebtoken.Claims;
 import io.opentelemetry.api.GlobalOpenTelemetry;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.ServletContextHandler;

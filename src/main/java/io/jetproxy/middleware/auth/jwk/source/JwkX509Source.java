@@ -9,22 +9,27 @@ import java.security.cert.CertificateFactory;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.RSAPublicKeySpec;
 import java.util.Base64;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class JwkX509Source extends BaseJwkSource {
 
-    public JwkX509Source(String jwksUri) {
-        super(jwksUri);
+    public JwkX509Source(String jwksUri, Long cacheTtl) {
+        super(jwksUri, cacheTtl);
     }
 
     @Override
-    protected void parseJwks(String jwksResponse) throws Exception {
+    protected Map<String, RSAPublicKey> parseJwks(String jwksResponse) throws Exception {
         JsonObject jwksJson = JsonParser.parseString(jwksResponse).getAsJsonObject();
+        Map<String, RSAPublicKey> keys = new HashMap<>();
         for (var entry : jwksJson.entrySet()) {
             String kid = entry.getKey();
             String certificate = entry.getValue().getAsString();
             RSAPublicKey publicKey = convertCertificateToPublicKey(certificate);
-            keyCache.put(kid, publicKey);
+            keys.put(kid, publicKey);
         }
+        return keys;
     }
 
     private RSAPublicKey convertCertificateToPublicKey(String certificate) throws Exception {
@@ -40,28 +45,4 @@ public class JwkX509Source extends BaseJwkSource {
         return (RSAPublicKey) x509Cert.getPublicKey();
     }
 
-    @Override
-    protected String serializePublicKey(RSAPublicKey publicKey) {
-        BigInteger modulus = publicKey.getModulus();
-        BigInteger exponent = publicKey.getPublicExponent();
-
-        return Base64.getEncoder().encodeToString(modulus.toByteArray()) + ":" +
-                Base64.getEncoder().encodeToString(exponent.toByteArray());
-    }
-
-
-    @Override
-    protected RSAPublicKey deserializePublicKey(String serializedKey) throws Exception {
-        String[] parts = serializedKey.split(":");
-        if (parts.length != 2) {
-            throw new IllegalArgumentException("Invalid serialized key format");
-        }
-
-        BigInteger modulus = new BigInteger(1, Base64.getDecoder().decode(parts[0]));
-        BigInteger exponent = new BigInteger(1, Base64.getDecoder().decode(parts[1]));
-
-        RSAPublicKeySpec spec = new RSAPublicKeySpec(modulus, exponent);
-        KeyFactory keyFactory = KeyFactory.getInstance("RSA");
-        return (RSAPublicKey) keyFactory.generatePublic(spec);
-    }
 }

@@ -70,6 +70,9 @@ public class LRUCacheWithTTL implements Cache {
     }
     @Override
     public void put(String key, String value, long ttl) {
+        if (ttl <= 0) {
+            return;
+        }
         lock.lock();
         try {
             CacheEntry newEntry = new CacheEntry(value, ttl);

@@ -12,21 +12,21 @@ public class JwkSourceFactory {
      * @param jwkUri     The URI of the JSON Web Key Set (JWKS).
      * @return An implementation of JwkSource based on the source type.
      */
-    public static JwkSource createJwkSource(String sourceType, String jwkUri) {
+    public static JwkSource createJwkSource(String sourceType, String jwkUri, Long  cacheTtl) {
         if (sourceType == null || sourceType.isBlank()) {
             // Default to JwkJsonSource if sourceType is null or empty
-            return new JwkJsonSource(jwkUri);
+            return new JwkJsonSource(jwkUri, cacheTtl);
         }
 
         switch (sourceType.toLowerCase()) {
             case "firebase":
             case "x509":
-                return new JwkX509Source(jwkUri); // X.509 certificate-based JWK source
+                return new JwkX509Source(jwkUri, cacheTtl); // X.509 certificate-based JWK source
             case "generic":
-                return new JwkJsonSource(jwkUri); // JSON-based JWK source
+                return new JwkJsonSource(jwkUri, cacheTtl); // JSON-based JWK source
             default:
                 // Default to JwkJsonSource for any unrecognized type
-                return new JwkJsonSource(jwkUri);
+                return new JwkJsonSource(jwkUri, cacheTtl);
         }
     }
 }

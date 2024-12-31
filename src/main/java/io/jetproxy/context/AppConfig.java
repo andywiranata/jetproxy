@@ -285,6 +285,7 @@ public class AppConfig {
         private String secretKey;                 // Secret key for HS256 (symmetric key)
         private String jwksUri;                   // JWKS URI for RS256 (asymmetric keys)
         private String jwksType = "x509";         //  # Specify type: x509 or jwk
+        private long jwksTtl = -1;                 //  Cache Response
         private Map<String, Object> claimValidations = new HashMap<>(); // Optional claims to validate (e.g., iss, aud)
         private Map<String, String> forwardClaims = new HashMap<>();   // Claims to forward as headers (e.g., sub -> X-User-Id)
 

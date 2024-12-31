@@ -6,17 +6,24 @@ import io.jetproxy.middleware.auth.jwk.JwkSourceFactory;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 
+import java.security.Key;
 import java.security.interfaces.RSAPublicKey;
 import java.text.ParseException;
 
 public abstract class BaseJwtValidator {
     private final JwkSource jwkSource;
 
-    public BaseJwtValidator(String providerType, String jwksUri) {
-        this.jwkSource = JwkSourceFactory.createJwkSource(providerType, jwksUri);
+    public BaseJwtValidator(String providerType, String jwksUri, Long cacheTtl) {
+        this.jwkSource = JwkSourceFactory.createJwkSource(providerType, jwksUri, cacheTtl);
     }
-
-    public Claims validateToken(String token) throws Exception {
+    public Claims validateTokenWithSigningKey(Key secretKey, String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(secretKey)
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+    }
+    public Claims validateTokenWithPublicKey(String token) throws Exception {
         String kid = extractKidFromJwt(token);
         RSAPublicKey publicKey = jwkSource.getPublicKey(kid);
         return Jwts.parserBuilder()
@@ -35,6 +42,4 @@ public abstract class BaseJwtValidator {
         }
         return jwsObject.getHeader().getKeyID();
     }
-
-
 }

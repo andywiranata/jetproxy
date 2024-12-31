@@ -14,4 +14,23 @@ public class RequestUtils {
             return uri;                               // If there is no query string, just return the URI
         }
     }
+    public static int parseMaxAge(String cacheControl) {
+        if (cacheControl == null || cacheControl.isEmpty()) {
+            return -1; // Default value when max-age is not provided
+        }
+
+        String[] directives = cacheControl.split(",");
+        for (String directive : directives) {
+            directive = directive.trim();
+            if (directive.startsWith("max-age=")) {
+                try {
+                    return Integer.parseInt(directive.substring(8)); // Extract and parse max-age value
+                } catch (NumberFormatException e) {
+                    System.err.println("Invalid max-age value: " + directive);
+                    return -1;
+                }
+            }
+        }
+        return -1; // Default value when max-age is not found
+    }
 }

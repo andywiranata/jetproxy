@@ -14,7 +14,7 @@ corsFilter:
 
 storage:
   redis:
-    enabled: false
+    enabled: true
     host: localhost
     port: 6379
     database: 1
@@ -133,20 +133,21 @@ users:
     role: roleB
 
 
-#jwtAuthSource:
-#  headerName: "Authorization"
-#  tokenPrefix: "Bearer "
-#  jwksUri: "https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com"
-#  jwksType: "x509"  # Specify type: x509 or jwk
-#  claimValidations:
-#    iss: "https://securetoken.google.com/utility-app-90288"
-#    aud: "utility-app-90288"
-
-
 jwtAuthSource:
   headerName: "Authorization"
   tokenPrefix: "Bearer "
-  secretKey: "XtFGHMBF62XwN/QK8rxepkRSQLlY0d6DujLXilvfNGwoslFz4GGsP+uDAeMal+HadbfD5+AvzJs2d3HnwIHO1w=="
+  jwksUri: "https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com"
+  jwksType: "x509"  # Specify type: x509 or jwk
+  jwksTtl: -1
+  claimValidations:
+    iss: "https://securetoken.google.com/utility-app-90288"
+    aud: "utility-app-90288"
+
+
+#jwtAuthSource:
+#  headerName: "Authorization"
+#  tokenPrefix: "Bearer "
+#  secretKey: "XtFGHMBF62XwN/QK8rxepkRSQLlY0d6DujLXilvfNGwoslFz4GGsP+uDAeMal+HadbfD5+AvzJs2d3HnwIHO1w=="
 #  claimValidations:
 #    iss: "auth.myapp.com"
 
