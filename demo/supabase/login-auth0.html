@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auth0 JWKS Sign-In</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            text-align: center;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        button {
+            margin: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button#login {
+            background: #4caf50;
+            color: white;
+        }
+
+        button#logout {
+            background: #f44336;
+            color: white;
+        }
+
+        #user-info {
+            margin-top: 20px;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Auth0 JWKS Demo</h1>
+    <button id="login">Log In</button>
+    <button id="logout" style="display: none;">Log Out</button>
+    <div id="user-info" style="display: none;">
+        <h2>User Info</h2>
+        <pre id="user-details"></pre>
+    </div>
+</div>
+
+<!-- Include the jose library -->
+<script src="https://cdn.jsdelivr.net/npm/jose@4.0.0/dist/jose.min.js"></script>
+
+<script>
+    const AUTH0_DOMAIN = "andy-test.auth0.com"; // Replace with your Auth0 domain
+    const CLIENT_ID = "RLj0oByoKyxr2Ob1HqZ5T0g0tJqiEbLP"; // Replace with your Auth0 client ID
+    const JWKS_URL = `https://${AUTH0_DOMAIN}/.well-known/jwks.json`;
+
+    let accessToken = null;
+
+    document.getElementById("login").addEventListener("click", async () => {
+        const authUrl = `https://${AUTH0_DOMAIN}/authorize?response_type=token&client_id=${CLIENT_ID}&redirect_uri=http://127.0.0.1:8081/supabase/login-auth0.html`;
+        window.location.href = authUrl;
+    });
+
+    document.getElementById("logout").addEventListener("click", () => {
+        accessToken = null;
+        document.getElementById("user-info").style.display = "none";
+        document.getElementById("logout").style.display = "none";
+        document.getElementById("login").style.display = "inline-block";
+    });
+
+    async function verifyToken(token) {
+        const response = await fetch(JWKS_URL);
+        console.log(token);
+        alert(token)
+        // const { keys } = await response.json();
+        // const jwk = keys[0];
+        // const publicKey = await jose.importJWK(jwk, "RS256");
+        //
+        // const { payload } = await jose.jwtVerify(token, publicKey, {
+        //     issuer: `https://${AUTH0_DOMAIN}/`,
+        //     audience: CLIENT_ID,
+        // });
+
+        return payload;
+    }
+
+    async function handleCallback() {
+        const hash = window.location.hash.substring(1);
+        const params = new URLSearchParams(hash);
+        const token = params.get("access_token");
+
+        if (token) {
+            accessToken = token;
+            const userInfo = await verifyToken(token);
+
+            document.getElementById("user-info").style.display = "block";
+            document.getElementById("user-details").textContent = JSON.stringify(userInfo, null, 2);
+            document.getElementById("login").style.display = "none";
+            document.getElementById("logout").style.display = "inline-block";
+        }
+    }
+
+    if (window.location.hash) {
+        handleCallback();
+    }
+</script>
+</body>
+</html>

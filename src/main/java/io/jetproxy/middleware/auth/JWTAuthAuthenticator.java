@@ -45,6 +45,11 @@ public class JWTAuthAuthenticator implements Authenticator {
         // Initialize the secret key if configured
             if (jwtAuthSource.getSecretKey() != null) {
                 this.secretKey = Keys.hmacShaKeyFor(jwtAuthSource.getSecretKey().getBytes());
+                this.jwtValidator =  new JwtValidator(
+                        jwtAuthSource.getJwksType(),
+                        jwtAuthSource.getJwksUri(),
+                        jwtAuthSource.getJwksTtl()
+                );
             } else {
                 this.secretKey = null;
                 this.jwtValidator = new JwtValidator(
@@ -81,7 +86,6 @@ public class JWTAuthAuthenticator implements Authenticator {
             }
 
             Claims claims = validateToken(token);
-
             // Optional: Validate claims
             if (!validateClaims(claims)) {
                 response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Claim validation failed");
@@ -92,6 +96,7 @@ public class JWTAuthAuthenticator implements Authenticator {
             return new UserAuthentication(getAuthMethod(), new JWTUserIdentity(claims));
 
         } catch (SignatureException | MalformedJwtException e) {
+            e.printStackTrace();
             try {
                 response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid token signature");
             } catch (Exception ignored) {}
