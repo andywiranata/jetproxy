@@ -120,7 +120,6 @@ public class ProxyConfigurationManager {
      */
     private void addAdminSecurityHandler(ServletContextHandler context) {
         String adminPath = "/admin/*";
-        logger.info("Setting up Basic Authentication for path: {}", adminPath);
 
         // Create and configure a security handler for /admin/*
         ConstraintSecurityHandler adminSecurityHandler = basicAuthProvider.createSecurityHandler(config);
@@ -315,7 +314,6 @@ public class ProxyConfigurationManager {
         proxyServlet.setInitParameter(PREFIX, prefix);
         proxyServlet.setInitParameter(TIMEOUT, timeout);
 
-        logger.info("Proxy added: {} -> {}", proxyRule.getPath(), proxyTo);
         return proxyServlet;
     }
 

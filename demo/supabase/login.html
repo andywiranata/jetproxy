@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supabase Login App</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+</head>
+<body>
+<h1>Supabase Login</h1>
+
+<!-- Signup Form -->
+<div id="signup">
+    <h2>Signup</h2>
+    <input id="signup-email" type="email" placeholder="Email" />
+    <input id="signup-password" type="password" placeholder="Password" />
+    <button id="signup-btn">Signup</button>
+</div>
+
+<!-- Login Form -->
+<div id="login">
+    <h2>Login</h2>
+    <input id="login-email" value="andywiranatawijaya@gmail.com" type="email" placeholder="Email" />
+    <input id="login-password" value="welcome1" type="password" placeholder="Password" />
+    <button id="login-btn">Login</button>
+</div>
+
+<!-- User Info -->
+<div id="user-info" style="display: none;">
+    <h2>Welcome!</h2>
+    <p id="user-email"></p>
+    <button id="logout-btn">Logout</button>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        let SUPABASE_URL="https://mxzqstnjkfciktxzixpr.supabase.co";
+        let SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im14enFzdG5qa2ZjaWt0eHppeHByIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzU2MjY5NTYsImV4cCI6MjA1MTIwMjk1Nn0.nmTmlTeTUJW4Zc9w-6ek74r6_1SMKDIaZyuFVvejius";
+
+
+        const sbase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // DOM Elements
+        const signupEmail = document.getElementById('signup-email');
+        const signupPassword = document.getElementById('signup-password');
+        const signupBtn = document.getElementById('signup-btn');
+
+        const loginEmail = document.getElementById('login-email');
+        const loginPassword = document.getElementById('login-password');
+        const loginBtn = document.getElementById('login-btn');
+
+        const userInfo = document.getElementById('user-info');
+        const userEmail = document.getElementById('user-email');
+        const logoutBtn = document.getElementById('logout-btn');
+
+        // Signup Event
+        signupBtn.addEventListener('click', async () => {
+            const email = signupEmail.value;
+            const password = signupPassword.value;
+
+            const { user, error } = await sbase.auth.signUpWithPassword({ email, password });
+
+            if (error) {
+                alert('Signup failed: ' + error.message);
+            } else {
+                alert('Signup successful! Please check your email for confirmation.');
+            }
+        });
+
+        // Login Event
+        loginBtn.addEventListener('click', async () => {
+            const email = loginEmail.value;
+            const password = loginPassword.value;
+
+            const { data, error } = await sbase.auth.signInWithPassword({ email, password });
+            console.log(data)
+            if (error) {
+                alert('Login failed: ' + error.message);
+            } else {
+                // alert('Login successful!');
+                showUserInfo(data);
+            }
+        });
+
+        // Logout Event
+        logoutBtn.addEventListener('click', async () => {
+            const { error } = await sbase.auth.signOut();
+
+            if (error) {
+                alert('Logout failed: ' + error.message);
+            } else {
+                alert('Logout successful!');
+                hideUserInfo();
+            }
+        });
+
+        // Show user info
+        function showUserInfo(data) {
+            document.getElementById('signup').style.display = 'none';
+            document.getElementById('login').style.display = 'none';
+            userInfo.style.display = 'block';
+            userEmail.textContent = 'Logged in as: ' + data.user.email + " \n \n token: \n"+ data.session.access_token;
+        }
+
+        // Hide user info
+        function hideUserInfo() {
+            document.getElementById('signup').style.display = 'block';
+            document.getElementById('login').style.display = 'block';
+            userInfo.style.display = 'none';
+        }
+    });
+</script>
+</body>
+</html>

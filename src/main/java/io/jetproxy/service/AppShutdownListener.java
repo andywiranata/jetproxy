@@ -14,7 +14,6 @@ public class AppShutdownListener implements ServletContextListener {
 
     @Override
     public void contextInitialized(ServletContextEvent sce) {
-        logger.debug("AppShutdownListener context initialized.");
     }
 
     @Override

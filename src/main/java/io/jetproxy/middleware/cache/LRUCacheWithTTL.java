@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Supplier;
 
 public class LRUCacheWithTTL implements Cache {
     public static Logger logger = LoggerFactory.getLogger(LRUCacheWithTTL.class);
@@ -99,5 +100,25 @@ public class LRUCacheWithTTL implements Cache {
             CacheEntry eldestEntry = cache.remove(eldestKey);
             currentMemoryUsage -= eldestEntry.getSize();
         }
+    }
+    @Override
+    public String getAsideStrategy(String key, long ttl, Supplier<String> fetchFunction) {
+        // Try to get the value from the cache
+        String cacheData = get(key);
+
+        if (cacheData != null) {
+            // Return the cached value immediately if it exists
+            return cacheData;
+        }
+
+        // If no cache data exists, fetch data using the fetch function
+        String fetchedData = fetchFunction.get();
+
+        if (fetchedData != null) {
+            // Store the fetched data in the cache with the specified TTL
+            put(key, fetchedData, ttl);
+        }
+
+        return fetchedData;
     }
 }

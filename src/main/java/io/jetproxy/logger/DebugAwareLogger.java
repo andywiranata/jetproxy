@@ -1,19 +1,21 @@
 package io.jetproxy.logger;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import io.jetproxy.context.AppContext;
 
+import java.io.BufferedReader;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Map;
 
 public class DebugAwareLogger {
-
     private final Logger logger;
     private final boolean debugMode;
-
     private final SimpleDateFormat dateFormatter = new SimpleDateFormat("dd/MMM/yyyy:HH:mm:ss Z");
 
     // ANSI color codes
@@ -52,7 +54,9 @@ public class DebugAwareLogger {
                 response.getHeader("X-JetProxy-Cache") != null ? "true" : "false",
                 "Request processed"
         );
+
         logger.info(logMessage);
+
     }
 
     public void logAuth(Request request, String targetUrl, int responseCode, long startTime, String status) {

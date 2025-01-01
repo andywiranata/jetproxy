@@ -1,6 +1,7 @@
 package io.jetproxy.middleware.handler;
 
 import io.jetproxy.context.AppContext;
+import io.jetproxy.middleware.cache.CacheFactory;
 import io.jetproxy.middleware.cache.ResponseCacheEntry;
 import io.jetproxy.util.RequestUtils;
 import jakarta.servlet.http.HttpServletRequest;
@@ -37,7 +38,7 @@ public class HttpCacheHandler  implements MiddlewareHandler {
         AppContext ctx = AppContext.get();
         String path = RequestUtils.getFullPath(request);
         String method = request.getMethod();
-        String responseBody = ctx.getCache().get(String.format("%s__%s", method, path));
+        String responseBody = ctx.getCache().get(String.format(CacheFactory.HTTP_REQUEST_CACHE_KEY, method, path));
 
         return ctx.gson.fromJson(responseBody, ResponseCacheEntry.class);
     }

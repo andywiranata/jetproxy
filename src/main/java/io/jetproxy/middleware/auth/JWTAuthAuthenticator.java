@@ -5,7 +5,9 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import io.jetproxy.context.AppContext;
-import io.jsonwebtoken.MalformedJwtException;
+import io.jetproxy.middleware.auth.jwk.validator.BaseJwtValidator;
+import io.jetproxy.middleware.auth.jwk.validator.JwtValidator;
+import io.jsonwebtoken.*;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
@@ -14,9 +16,6 @@ import org.eclipse.jetty.security.Authenticator;
 import org.eclipse.jetty.security.UserAuthentication;
 import org.eclipse.jetty.server.Authentication;
 import org.eclipse.jetty.server.UserIdentity;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureException;
 import io.jsonwebtoken.security.Keys;
 import io.jetproxy.context.AppConfig;
 
@@ -38,6 +37,7 @@ public class JWTAuthAuthenticator implements Authenticator {
     public static final String HEADER_NAME = "jetproxy-jwt-claims";
     private final AppConfig.JwtAuthSource jwtAuthSource;
     private final Key secretKey;
+    private JwtValidator jwtValidator;
 
     public JWTAuthAuthenticator() {
         this.jwtAuthSource = AppContext.get().getConfig().getJwtAuthSource();
@@ -45,8 +45,19 @@ public class JWTAuthAuthenticator implements Authenticator {
         // Initialize the secret key if configured
             if (jwtAuthSource.getSecretKey() != null) {
                 this.secretKey = Keys.hmacShaKeyFor(jwtAuthSource.getSecretKey().getBytes());
+                this.jwtValidator =  new JwtValidator(
+                        jwtAuthSource.getJwksType(),
+                        jwtAuthSource.getJwksUri(),
+                        jwtAuthSource.getJwksTtl()
+                );
             } else {
                 this.secretKey = null;
+                this.jwtValidator = new JwtValidator(
+                        jwtAuthSource.getJwksType(),
+                        jwtAuthSource.getJwksUri(),
+                        jwtAuthSource.getJwksTtl()
+                );
+
             }
     }
 
@@ -75,7 +86,6 @@ public class JWTAuthAuthenticator implements Authenticator {
             }
 
             Claims claims = validateToken(token);
-
             // Optional: Validate claims
             if (!validateClaims(claims)) {
                 response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Claim validation failed");
@@ -86,11 +96,18 @@ public class JWTAuthAuthenticator implements Authenticator {
             return new UserAuthentication(getAuthMethod(), new JWTUserIdentity(claims));
 
         } catch (SignatureException | MalformedJwtException e) {
+            e.printStackTrace();
             try {
                 response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid token signature");
             } catch (Exception ignored) {}
             return Authentication.UNAUTHENTICATED;
+        } catch (ExpiredJwtException e) {
+            try {
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token has expired");
+            } catch (Exception ignored) {}
+            return Authentication.UNAUTHENTICATED;
         } catch (Exception e) {
+            e.printStackTrace();
             try {
                 response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Authentication service error");
             } catch (Exception ignored) {}
@@ -114,86 +131,16 @@ public class JWTAuthAuthenticator implements Authenticator {
     private Claims validateToken(String token) throws Exception {
         if (secretKey != null) {
             // Validate using secretKey (HS256)
-            return Jwts.parserBuilder()
-                    .setSigningKey(secretKey)
-                    .build()
-                    .parseClaimsJws(token)
-                    .getBody();
+            return this.jwtValidator
+                    .validateTokenWithSigningKey(this.secretKey, token);
         } else if (jwtAuthSource.getJwksUri() != null) {
             // Validate using JWKS (RS256)
-            RSAPublicKey publicKey = fetchPublicKeyFromJWKS(token);
-            return Jwts.parserBuilder()
-                    .setSigningKey(publicKey)
-                    .build()
-                    .parseClaimsJws(token)
-                    .getBody();
+            return this.jwtValidator
+                    .validateTokenWithPublicKey(token);
         } else {
             throw new SignatureException("No valid key configuration found for JWT validation.");
         }
     }
-
-    private RSAPublicKey fetchPublicKeyFromJWKS(String token) throws Exception {
-        // Extract the `kid` from the JWT header
-        String kid = (String) Jwts.parserBuilder()
-                .build()
-                .parseClaimsJwt(token)
-                .getHeader()
-                .get("kid");
-
-        if (kid == null) {
-            throw new Exception("No 'kid' (Key ID) found in JWT header.");
-        }
-
-        // Fetch JWKS from the URI
-        URL url = new URL(jwtAuthSource.getJwksUri());
-        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-        connection.setRequestMethod("GET");
-        connection.setConnectTimeout(5000);
-        connection.setReadTimeout(5000);
-
-        if (connection.getResponseCode() != 200) {
-            throw new Exception("Failed to fetch JWKS: HTTP " + connection.getResponseCode());
-        }
-
-        BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-        String jwksResponse = reader.lines().collect(Collectors.joining());
-        reader.close();
-
-        // Parse the JWKS and extract the public key
-        return extractPublicKeyFromJWKS(jwksResponse, kid);
-    }
-
-
-
-    private RSAPublicKey extractPublicKeyFromJWKS(String jwksResponse, String kid) throws Exception {
-        // Parse the JWKS response as JSON
-        JsonObject jwksJson = JsonParser.parseString(jwksResponse).getAsJsonObject();
-        JsonArray keys = jwksJson.getAsJsonArray("keys");
-
-        for (JsonElement keyElement : keys) {
-            JsonObject key = keyElement.getAsJsonObject();
-            if (kid.equals(key.get("kid").getAsString())) {
-                String modulusBase64 = key.get("n").getAsString();
-                String exponentBase64 = key.get("e").getAsString();
-
-                // Construct the RSA public key
-                return constructRSAPublicKey(modulusBase64, exponentBase64);
-            }
-        }
-
-        throw new Exception("No matching key found in JWKS for kid: " + kid);
-    }
-
-    private RSAPublicKey constructRSAPublicKey(String modulusBase64, String exponentBase64) throws Exception {
-        BigInteger modulus = new BigInteger(1, Base64.getUrlDecoder().decode(modulusBase64));
-        BigInteger exponent = new BigInteger(1, Base64.getUrlDecoder().decode(exponentBase64));
-
-        RSAPublicKeySpec spec = new RSAPublicKeySpec(modulus, exponent);
-        KeyFactory factory = KeyFactory.getInstance("RSA");
-
-        return (RSAPublicKey) factory.generatePublic(spec);
-    }
-
 
     private boolean validateClaims(Claims claims) {
         Map<String, Object> claimValidations = jwtAuthSource.getClaimValidations();

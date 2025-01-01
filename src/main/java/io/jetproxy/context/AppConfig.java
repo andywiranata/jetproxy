@@ -6,10 +6,7 @@ import lombok.ToString;
 import org.json.JSONPropertyName;
 
 import java.time.Duration;
-import java.util.Base64;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 @Getter
 @Setter
@@ -287,8 +284,10 @@ public class AppConfig {
         private String tokenPrefix;               // Prefix (e.g., "Bearer ") in the Authorization header
         private String secretKey;                 // Secret key for HS256 (symmetric key)
         private String jwksUri;                   // JWKS URI for RS256 (asymmetric keys)
-        private Map<String, Object> claimValidations; // Optional claims to validate (e.g., iss, aud)
-        private Map<String, String> forwardClaims;   // Claims to forward as headers (e.g., sub -> X-User-Id)
+        private String jwksType = "x509";         //  # Specify type: x509 or jwk
+        private long jwksTtl = -1;                 //  Cache Response
+        private Map<String, Object> claimValidations = new HashMap<>(); // Optional claims to validate (e.g., iss, aud)
+        private Map<String, String> forwardClaims = new HashMap<>();   // Claims to forward as headers (e.g., sub -> X-User-Id)
 
     }
 }
