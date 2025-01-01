@@ -96,7 +96,6 @@ public class JWTAuthAuthenticator implements Authenticator {
             return new UserAuthentication(getAuthMethod(), new JWTUserIdentity(claims));
 
         } catch (SignatureException | MalformedJwtException e) {
-            e.printStackTrace();
             try {
                 response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid token signature");
             } catch (Exception ignored) {}
@@ -107,7 +106,6 @@ public class JWTAuthAuthenticator implements Authenticator {
             } catch (Exception ignored) {}
             return Authentication.UNAUTHENTICATED;
         } catch (Exception e) {
-            e.printStackTrace();
             try {
                 response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Authentication service error");
             } catch (Exception ignored) {}

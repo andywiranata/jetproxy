@@ -170,7 +170,6 @@ public abstract class BaseProxyRequestHandler extends ProxyServlet.Transparent {
 
             @Override
             public String getHeader(String name) {
-                System.out.println("Header::"+ name + "::" + modifiedHeaders.get(name));
                 return modifiedHeaders.get(name);
             }
 
