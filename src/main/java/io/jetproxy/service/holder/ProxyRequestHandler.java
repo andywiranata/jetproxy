@@ -121,6 +121,10 @@ public class ProxyRequestHandler extends BaseProxyRequestHandler {
     protected void onProxyResponseFailure(HttpServletRequest clientRequest, HttpServletResponse proxyResponse, Response serverResponse, Throwable failure) {
         int status = this.proxyResponseStatus(failure);
         resilience.handleHttpResponse(clientRequest, status, failure);
+        logger.error("Proxy response failure. Client request URI: {}, Server response status: {}, Error: {}",
+                clientRequest.getRequestURI(),
+                status,
+                failure.getMessage());
         super.onProxyResponseFailure(clientRequest, proxyResponse, serverResponse, failure);
     }
     @Override
