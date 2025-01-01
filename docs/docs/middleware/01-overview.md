@@ -31,15 +31,19 @@ proxies:
     ttl: 1000 # Enabled HTTP Cache
 
 ```
+
 ## Available HTTP Middlewares
 
-| Middleware      | Description                          | Link                                     |
-|------------------|--------------------------------------|------------------------------------------|
-| **BasicAuth**    | Handles basic authentication.        | [Documentation](/docs/middleware/basic-auth) |
-| **ForwardAuth**  | Forwards authentication to an external service. | [Documentation](/docs/middleware/forward-auth) |
-| **Rules**        | Defines routing and matching rules.  | [Documentation](/docs/middleware/rules) |
-| **Headers**      | Manages request and response headers.| [Documentation](/docs/middleware/headers) |
-| **Cache**        | Configures caching for responses.    | [Documentation](/docs/middleware/cache) |
+| Middleware         | Description                                        | Link                                             |
+|---------------------|----------------------------------------------------|-------------------------------------------------|
+| **BasicAuth**       | Handles basic authentication.                      | [Documentation](/docs/middleware/basic-auth)    |
+| **ForwardAuth**     | Forwards authentication to an external service.    | [Documentation](/docs/middleware/forward-auth)  |
+| **JWT Auth**        | Validates and processes JSON Web Tokens (JWT).     | [Documentation](/docs/middleware/jwt-auth)      |
+| **Rules**           | Defines routing and matching rules.                | [Documentation](/docs/middleware/rules)         |
+| **Headers**         | Manages request and response headers.              | [Documentation](/docs/middleware/headers)       |
+| **Cache**           | Configures caching for responses.                  | [Documentation](/docs/middleware/cache)         |
 | **Circuit Breaker** | Implements circuit breaker logic for fault tolerance. | [Documentation](/docs/middleware/circuit-breaker) |
+| **CORS Headers**    | Handles Cross-Origin Resource Sharing (CORS) headers. | [Documentation](/docs/middleware/cors-headers)  |
+| **Rate Limiter**    | Limits the rate of incoming requests.              | [Documentation](/docs/middleware/rate-limiter)  |
 
 
