@@ -43,7 +43,7 @@ proxies:
 | **Headers**         | Manages request and response headers.              | [Documentation](/docs/middleware/headers)       |
 | **Cache**           | Configures caching for responses.                  | [Documentation](/docs/middleware/cache)         |
 | **Circuit Breaker** | Implements circuit breaker logic for fault tolerance. | [Documentation](/docs/middleware/circuit-breaker) |
-| **CORS Headers**    | Handles Cross-Origin Resource Sharing (CORS) headers. | [Documentation](/docs/middleware/cors-headers)  |
+| **CORS Headers**    | Handles Cross-Origin Resource Sharing (CORS) headers. | [Documentation](/docs/middleware/cors)  |
 | **Rate Limiter**    | Limits the rate of incoming requests.              | [Documentation](/docs/middleware/rate-limiter)  |
 
 
