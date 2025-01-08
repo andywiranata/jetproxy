@@ -21,11 +21,7 @@ storage:
     maxTotal: 128
     maxIdle: 64
     minIdle: 16
-  statsd:
-    enabled: false
-    host: localhost
-    port: 8011
-    prefix: my.prefix
+
   inMemory:
     enabled: true
     maxMemory: 50 # MB
@@ -34,89 +30,9 @@ storage:
 proxies:
   - path: /user
     service: userApi
-    middleware:
-      #      basicAuth: 'basicAuth:roleA'
-      jwtAuth:
-        enabled: true
-      forwardAuth:
-        enabled: false
-        path: /verify
-        service: authApi
-        requestHeaders: "Forward(X-Custom-*);Forward(Authorization);"
-        responseHeaders: "Remove(X-Powered-By)"
-      rateLimiter:
-        enabled: false
-        limitRefreshPeriod: 200000
-        limitForPeriod: 5
-        maxBurstCapacity: 6
-      circuitBreaker:
-        enabled: false
-        failureThreshold: 30 # 50% failure rate threshold
-        slowCallThreshold: 50 # 50% slow call rate threshold
-        slowCallDuration: 500 # 0.5 seconds threshold for slow calls
-        openStateDuration: 5 # 5-second wait in open state
-        waitDurationInOpenState: 10000  # 10-second wait in open state
-        permittedNumberOfCallsInHalfOpenState: 2 # 3 calls in half-open state
-        minimumNumberOfCalls: 4 # Minimum of 4 calls before evaluating
-      header:
-        requestHeaders: "Remove(x-header-*);Remove(Authorization);Append(X-Custom-Header,-jetty)"
-        responseHeaders: "Add(X-Powered-By,jetty-server)"
     ttl: -1
-  - path: /products
-    service: productApi
-    middleware:
-      basicAuth: 'basicAuth:roleA'
-      forwardAuth:
-        path: /verify
-        service: authApi
-        requestHeaders: "Forward(X-Custom-*);Forward(Authorization)"
-      rule: "(Header('Content-Type', 'application/json') && HeaderPrefix('User-Agent', 'Mozilla')) || HeaderRegex('X-Custom-Header', '^[a-zA-Z0-9]{10}$')"
-      circuitBreaker:
-        enabled: true
-        failureThreshold: 50 # 50% failure rate threshold
-        slowCallThreshold: 50 # 50% slow call rate threshold
-        slowCallDuration: 2000 # 2 seconds threshold for slow calls
-        openStateDuration: 10 # 10-second wait in open state
-        waitDurationInOpenState: 10000  # 10-second wait in open state
-        permittedNumberOfCallsInHalfOpenState: 3 # 3 calls in half-open state
-        minimumNumberOfCalls: 5 # Minimum of 5 calls before evaluating
-    ttl: -1
-  - path: /task
-    service: tasksApi
-    middleware:
-      header:
-        requestHeaders: "Forward(X-Custom-*);Forward(Authorization)"
-        responseHeaders: "Append(x-ganteng,andy)"
-      basicAuth: 'basicAuth:roleB'
-      forwardAuth:
-        path: /verify
-        service: authApi
-        requestHeaders: "Forward(X-Custom-*);Forward(Authorization)"
-      rule: "(Header('Content-Type', 'application/json') && HeaderPrefix('User-Agent', 'Mozilla')) || HeaderRegex('X-Custom-Header', '^[a-zA-Z0-9]{10}$')"
-    ttl: 10000
 
 services:
-  - name: tasksApi
-    url: http://localhost:5173/template/1on1-meeting-agenda/tasks.json
-    methods: ['GET', 'POST', 'PUT']
-    healthcheck: /ping
-  - name: productApi
-    url: https://dummyjson.com/products
-    methods: ['GET']
-    role: userA
-    healthcheck: /ping
-  - name: googleApi
-    url: http://www.google.com
-    methods: ['GET', 'POST', 'PUT']
-  - name: exampleApi
-    url: http://example.com
-    methods: ['GET', 'POST', 'PUT']
-  - name: httpbinApi
-    url: http://httpbin.org
-    methods: ['GET', 'POST', 'PUT']
-  - name: authApi
-    url: http://localhost:30001
-    methods: ['POST']
   - name: userApi
     url: http://localhost:30001
     methods: ['GET']
@@ -125,63 +41,5 @@ users:
   - username: admin
     password: admin
     role: administrator
-  - username: userA
-    password: passwordA
-    role: roleA
-  - username: userB
-    password: passwordB
-    role: roleB
-
-jwtAuthSource:
-  headerName: "Authorization"
-  tokenPrefix: "Bearer "
-  jwksUri: "https://andy-test.auth0.com/.well-known/jwks.json"
-  jwksTtl: -1
-  jwksType: "jwk"
-
-# google api
-#jwtAuthSource:
-#  headerName: "Authorization"
-#  tokenPrefix: "Bearer "
-#  jwksUri: "https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com"
-#  jwksType: "x509"  # Specify type: x509 or jwk
-#  jwksTtl: -1
-#  claimValidations:
-#    iss: "https://securetoken.google.com/utility-app-90288"
-#    aud: "utility-app-90288"
-
-# supabase
-#jwtAuthSource:
-#  headerName: "Authorization"
-#  tokenPrefix: "Bearer "
-#  secretKey: "XtFGHMBF62XwN/QK8rxepkRSQLlY0d6DujLXilvfNGwoslFz4GGsP+uDAeMal+HadbfD5+AvzJs2d3HnwIHO1w=="
-#  claimValidations:
-#    iss: "https://mxzqstnjkfciktxzixpr.supabase.co/auth/v1"
-
-#jwtAuth:
-#  headerName: "Authorization"
-#  tokenPrefix: "Bearer "
-#  jwksUri: "https://auth.example.com/.well-known/jwks.json"
-#  algorithms:
-#    - RS256
-#  claimValidations:
-#    aud: "my-application"
-
-
-#jwtAuth:
-#  headerName: "Authorization"         # Header containing the JWT
-#  tokenPrefix: "Bearer "              # Prefix before the token in the header
-#  secretKey: "your-secure-secret"     # Optional: Use for HS256 signing
-#  jwksUri: "https://auth.example.com/.well-known/jwks.json"  # Optional: JWKS endpoint for RS256
-#  algorithms:                         # Allowed algorithms
-#    - RS256
-#    - HS256
-#  claimValidations:                   # Optional claim validations
-#    iss: "auth.myapp.com"
-#    aud: "my-application"
-#  forwardClaims:                      # Forward claims to backend as headers
-#    sub: "X-User-Id"
-#    email: "X-User-Email"
-
 
 
