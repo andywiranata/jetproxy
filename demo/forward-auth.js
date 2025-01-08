@@ -4,9 +4,10 @@ const { SimpleSpanProcessor } = require('@opentelemetry/sdk-trace-base');
 const { OTLPTraceExporter } = require('@opentelemetry/exporter-otlp-http');
 const { Resource } = require('@opentelemetry/resources');
 const { trace } = require('@opentelemetry/api');
+const http = require('http');
+
 
 process.env.OTEL_LOG_LEVEL = 'debug';  // Enable debug level logs for OpenTelemetry
-
 // Initialize OpenTelemetry Tracer provider
 const provider = new NodeTracerProvider({
     resource: new Resource({
@@ -86,7 +87,11 @@ app.get('/health', (req, res) => {
     res.status(200).send('Forward Auth Server is running');
 });
 
+
+const server = http.createServer({
+    maxHeaderSize: 16 * 1024 // Example: 16 KB (default is 8 KB)
+}, app);
 // Start the server
-app.listen(PORT, () => {
+server.listen(PORT, () => {
     console.log(`Forward Auth server running on port ${PORT}`);
 });
