@@ -2,8 +2,11 @@ package io.jetproxy.service.holder;
 
 import io.jetproxy.exception.ResilienceCircuitBreakerException;
 import io.jetproxy.exception.ResilienceRateLimitException;
+import io.jetproxy.middleware.handler.MatchServiceHandler;
 import io.jetproxy.middleware.resilience.ResilienceFactory;
 import io.jetproxy.middleware.handler.MiddlewareChain;
+import io.jetproxy.util.CustomHttpServletRequestWrapper;
+import io.jetproxy.util.RequestUtils;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletRequestWrapper;
@@ -52,9 +55,31 @@ public class ProxyRequestHandler extends BaseProxyRequestHandler {
                 proxyRule.getUuid(), proxyRule.getPath(),
                 AppContext.get().getServiceMap().get(proxyRule.getService()).getUrl(),
                 proxyRule);
-
-
     }
+
+    @Override
+    protected String rewriteTarget(HttpServletRequest request) {
+        // Get the rewritten target URI from the superclass
+        String target = super.rewriteTarget(request);
+
+        // Retrieve the matched service name from the request attribute
+            String serviceName = (String) request.getAttribute(MatchServiceHandler.JETPROXY_REWRITE_SERVICE);
+
+        // Fetch the corresponding service configuration
+        AppConfig.Service service = AppContext.get().getServiceMap().get(serviceName);
+
+        // If a matching service is found, construct the new target URL
+        if (service != null) {
+            String serviceUrl = service.getUrl();
+            String pathWithQuery = RequestUtils.extractPathWithQuery(target);
+            return serviceUrl + pathWithQuery;
+        }
+
+        // Default to the original target if no service matched
+        return target;
+    }
+
+
     @Override
     protected void service(HttpServletRequest request, HttpServletResponse response) {
         try {

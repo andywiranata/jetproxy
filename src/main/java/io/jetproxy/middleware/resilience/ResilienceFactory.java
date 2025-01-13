@@ -78,7 +78,7 @@ public class ResilienceFactory {
      */
     public static ResilienceUtil createResilienceUtil(AppConfig.Proxy proxy) {
         if (!proxy.hasMiddleware()) {
-            return null;
+            return new ResilienceUtil();
         }
         AppConfig.Middleware middleware = proxy.getMiddleware();
 
