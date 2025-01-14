@@ -30,12 +30,22 @@ storage:
 proxies:
   - path: /user
     service: userApi
+    matches:
+      - rule: "Header('Content-Type', 'application/json')"
+        service: userV3Api
+      - rule: "Header('x-header-hello', 'x-header-hello')"
+        service: userV2Api
+    middleware:
+
     ttl: -1
 
 services:
   - name: userApi
     url: http://localhost:30001
     methods: ['GET']
+  - name: userV2Api
+    url: http://localhost:30001/v2
+    methods: [ 'GET' ]
 
 users:
   - username: admin

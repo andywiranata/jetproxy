@@ -63,22 +63,32 @@ public class AppConfig {
     @Getter
     @Setter
     @ToString
-
     public static class Proxy {
         private String path;
         private String service;
         private Middleware middleware = null;
         private long ttl;
         private String uuid;
+        private List<Match> matches = new ArrayList<>(); // Added rules list
 
         public boolean hasMiddleware() {
             return middleware != null;
+        }
+        public boolean hasMatchRules() {
+            return matches.isEmpty();
         }
         public String getUuid() {
             return Base64.getUrlEncoder()
                     .withoutPadding()
                     .encodeToString((service + path).getBytes());
         }
+    }
+    @Getter
+    @Setter
+    @ToString
+    public static class Match {
+        private String rule;  // The condition to match, e.g., "Header('Content-Type', 'application/json')"
+        private String service; // Target service for the matched rule
     }
 
     @Getter

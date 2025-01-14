@@ -23,6 +23,11 @@ public class ResilienceUtil {
     private final Retry retry;
     private final RateLimiter rateLimiter;
 
+    ResilienceUtil() {
+        this.circuitBreaker = null;
+        this.retry =  null;
+        this.rateLimiter = null;
+    }
     /**
      * Constructs a ResilienceUtil with the given resilience components.
      *

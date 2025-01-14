@@ -4,10 +4,7 @@ import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import io.jetproxy.context.AppConfig;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
-import redis.clients.jedis.JedisPoolConfig;
-import redis.clients.jedis.JedisPubSub;
+import redis.clients.jedis.*;
 
 public class RedisPoolManager {
     public static String CHANNEL_CONFIG_CHANGE = "jetproxy_config_change";

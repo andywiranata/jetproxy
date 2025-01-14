@@ -81,6 +81,18 @@ app.get('/user', (req, res) =>{
         }
     });
 });
+app.get('/v2/user', (req, res) =>{
+    console.log('user::header::', req.headers);
+    res.setHeader('X-Custom-Header', 'CustomValue');
+    res.setHeader('X-Powered-By', 'Express with Love');
+    res.status(200).json({
+        user: {
+            id: 'userV2',
+            name: 'User V2',
+            roles: ['roleA', 'roleB'],
+        }
+    });
+});
 
 // Health check endpoint
 app.get('/health', (req, res) => {

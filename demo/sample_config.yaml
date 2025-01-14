@@ -83,6 +83,11 @@ proxies:
     ttl: -1
   - path: /task
     service: tasksApi
+    rules:
+      - match:
+          rule: "Header('Content-Type', 'application/json')"
+          service: taskApi
+          path: v1/task
     middleware:
       header:
         requestHeaders: "Forward(X-Custom-*);Forward(Authorization)"

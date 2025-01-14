@@ -4,6 +4,17 @@ package io.jetproxy.util;
 import jakarta.servlet.http.HttpServletRequest;
 
 public class RequestUtils {
+    /**
+     * Extracts the path and query string from the given target URL.
+     *
+     * @param target the full target URL
+     * @return the path and query string
+     */
+    public static String extractPathWithQuery(String target) {
+        int pathStartIndex = target.indexOf("/", target.indexOf("://") + 3);
+        return target.substring(pathStartIndex);
+    }
+
     public static String getFullPath(HttpServletRequest request) {
         String uri = request.getRequestURI();        // e.g., /example
         String queryString = request.getQueryString(); // e.g., params=1
