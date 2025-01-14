@@ -1,10 +1,10 @@
 ---
-sidebar_position: 7
+sidebar_position: 8
 ---
 
-# Cache
+# HTTP Cache
 
-![alt text](cache-middleware.png)
+![HTTP cache](cache-middleware.png)
 
 
 The HTTP cache stores a response associated with a request and reuses it for subsequent requests. Cache types can be enabled based on requirements:
