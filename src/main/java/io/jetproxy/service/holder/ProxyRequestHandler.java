@@ -5,14 +5,17 @@ import io.jetproxy.exception.ResilienceRateLimitException;
 import io.jetproxy.middleware.handler.MatchServiceHandler;
 import io.jetproxy.middleware.resilience.ResilienceFactory;
 import io.jetproxy.middleware.handler.MiddlewareChain;
+import io.jetproxy.util.Constants;
 import io.jetproxy.util.CustomHttpServletRequestWrapper;
 import io.jetproxy.util.RequestUtils;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletRequestWrapper;
 import jakarta.servlet.http.HttpServletResponse;
+import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.api.Request;
 import org.eclipse.jetty.client.api.Response;
+import org.eclipse.jetty.client.api.Result;
 import org.eclipse.jetty.http.HttpHeader;
 import org.eclipse.jetty.util.Callback;
 import io.jetproxy.context.AppConfig;
@@ -24,6 +27,8 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
+
+import static io.jetproxy.util.Constants.REQUEST_ATTRIBUTE_JETPROXY_REWRITE_SERVICE;
 
 public class ProxyRequestHandler extends BaseProxyRequestHandler {
     private static final DebugAwareLogger logger = DebugAwareLogger.getLogger(ProxyRequestHandler.class);
@@ -61,25 +66,19 @@ public class ProxyRequestHandler extends BaseProxyRequestHandler {
     protected String rewriteTarget(HttpServletRequest request) {
         // Get the rewritten target URI from the superclass
         String target = super.rewriteTarget(request);
-
         // Retrieve the matched service name from the request attribute
-            String serviceName = (String) request.getAttribute(MatchServiceHandler.JETPROXY_REWRITE_SERVICE);
-
+        String serviceName = (String) request.getAttribute(REQUEST_ATTRIBUTE_JETPROXY_REWRITE_SERVICE);
         // Fetch the corresponding service configuration
         AppConfig.Service service = AppContext.get().getServiceMap().get(serviceName);
-
         // If a matching service is found, construct the new target URL
         if (service != null) {
             String serviceUrl = service.getUrl();
             String pathWithQuery = RequestUtils.extractPathWithQuery(target);
             return serviceUrl + pathWithQuery;
         }
-
         // Default to the original target if no service matched
         return target;
     }
-
-
     @Override
     protected void service(HttpServletRequest request, HttpServletResponse response) {
         try {
@@ -109,16 +108,27 @@ public class ProxyRequestHandler extends BaseProxyRequestHandler {
             } else {
                 response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
             }
-        } finally {
-            // TODO: DISABLED TEMPORARY
-            // this.metricsListener.captureMetricProxyResponse(request, response);
         }
     }
 
     @Override
     protected void sendProxyRequest(HttpServletRequest clientRequest, HttpServletResponse proxyResponse, Request proxyRequest) {
         clientRequest.setAttribute("startTime", System.nanoTime());
+
         super.sendProxyRequest(clientRequest, proxyResponse, proxyRequest);
+
+        if (clientRequest.getAttribute(Constants.REQUEST_ATTRIBUTE_JETPROXY_MIRRORING) != null) {
+            String mirroringService = (String) clientRequest.getAttribute(
+                    Constants.REQUEST_ATTRIBUTE_JETPROXY_MIRRORING);
+            AppConfig.Service service = AppContext.get().getServiceMap().get(mirroringService);
+            if (service != null) {
+                sendMirrorProxyRequest(
+                        this.rewriteTarget(clientRequest),
+                        proxyRequest,
+                        service);
+            }
+
+        }
     }
 
     @Override
@@ -172,6 +182,34 @@ public class ProxyRequestHandler extends BaseProxyRequestHandler {
                 logger.error("Error decode response content {}", e.getMessage());
             }
         }
+    }
+    private void sendMirrorProxyRequest(String target,
+                                        Request request,
+                                        AppConfig.Service service) {
+        try {
+            HttpClient httpClient = getHttpClient();
+            String pathWithQuery = RequestUtils.extractPathWithQuery(target);
+            String mirrorServiceUri = service.getUrl() + pathWithQuery;
 
+            httpClient.newRequest(mirrorServiceUri)
+                    .method(request.getMethod())
+                    .headers(mutable -> {
+                        Enumeration<String> headerNames = request.getHeaders().getFieldNames();
+                        while (headerNames.hasMoreElements()) {
+                            String headerName = headerNames.nextElement();
+                            String headerValue = request.getHeaders().get(headerName);
+                            mutable.put(headerName, headerValue);
+                        }
+                    })
+                    .send(result -> {
+                        if (result.isFailed()) {
+                            logger.error("Failed to mirror request to: {}", mirrorServiceUri, result.getFailure());
+                        } else {
+                            logger.info("Successfully mirrored request to: {}", mirrorServiceUri);
+                        }
+                    });
+        } catch (Exception e) {
+            logger.error("Error mirroring request", e);
+        }
     }
 }

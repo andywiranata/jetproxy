@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletRequestWrapper;
 import jakarta.servlet.http.HttpServletResponse;
 import org.brotli.dec.BrotliInputStream;
+import org.eclipse.jetty.client.api.Request;
 import org.eclipse.jetty.client.api.Response;
 import org.eclipse.jetty.http.HttpField;
 import org.eclipse.jetty.proxy.ProxyServlet;
@@ -107,11 +108,6 @@ public abstract class BaseProxyRequestHandler extends ProxyServlet.Transparent {
         }
         return "UTF-8"; // Default to UTF-8 if no charset is specified
     }
-    public boolean isMethodNotAllowed(HttpServletRequest request) {
-        List<String> allowedMethods = this.configService.getMethods();
-        String requestMethod = request.getMethod();
-        return !allowedMethods.contains(requestMethod);
-    }
     protected void sendServiceUnavailableResponse(HttpServletResponse response, int retryAfter, String errorMessage, String errorType) {
         response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
         response.setHeader(HEADER_RETRY_AFTER, String.valueOf(retryAfter));
@@ -186,22 +182,6 @@ public abstract class BaseProxyRequestHandler extends ProxyServlet.Transparent {
                         HttpField::getName,
                         HttpField::getValue
                 ));
-    }
-
-    protected Map<String, String> extractHeadersAndAttributes(Response serverResponse, Map<String, String> attributes) {
-        // Extract headers from serverResponse
-        Map<String, String> headers = serverResponse.getHeaders().stream()
-                .collect(Collectors.toMap(
-                        HttpField::getName,
-                        HttpField::getValue,
-                        (existingValue, newValue) -> existingValue + "," + newValue // Handle duplicates
-                ));
-
-        // Merge headers and attributes, with attributes taking precedence
-        Map<String, String> combined = new HashMap<>(headers);
-        combined.putAll(attributes);
-
-        return combined;
     }
     protected Map<String, String> applyResponseHeaderActions(Map<String, String> serverHeaders) {
         Map<String, String> modifiedHeaders = new HashMap<>();
