@@ -82,7 +82,7 @@ app.get('/user', (req, res) =>{
     });
 });
 app.get('/v2/user', (req, res) =>{
-    console.log('user::header::', req.headers);
+    console.log('user::header::v2', req.headers);
     res.setHeader('X-Custom-Header', 'CustomValue');
     res.setHeader('X-Powered-By', 'Express with Love');
     res.status(200).json({
