@@ -37,17 +37,17 @@ proxies:
         service: userApi
     middleware:
       mirroring:
-        enabled: true
+        enabled: false
         mirrorService: userV2Api
         mirrorPercentage: 100
-    ttl: 10000
+    ttl: -1
 services:
   - name: userApi
     url: http://localhost:30001
-    methods: ['GET']
+    methods: ['GET', 'POST']
   - name: userV2Api
     url: http://localhost:30001/v2
-    methods: [ 'GET' ]
+    methods: [ 'GET', 'POST']
 
 users:
   - username: admin
