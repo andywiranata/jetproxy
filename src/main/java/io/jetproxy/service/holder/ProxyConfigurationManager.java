@@ -3,11 +3,8 @@ package io.jetproxy.service.holder;
 import io.jetproxy.context.*;
 import io.jetproxy.exception.JetProxyValidationException;
 import io.jetproxy.middleware.auth.*;
-import io.jetproxy.middleware.handler.MatchServiceHandler;
+import io.jetproxy.middleware.handler.*;
 import io.jetproxy.middleware.log.AccessLog;
-import io.jetproxy.middleware.handler.HttpCacheHandler;
-import io.jetproxy.middleware.handler.MiddlewareChain;
-import io.jetproxy.middleware.handler.RuleValidatorHandler;
 import org.eclipse.jetty.security.*;
 import org.eclipse.jetty.security.authentication.BasicAuthenticator;
 import org.eclipse.jetty.server.Handler;
@@ -308,7 +305,8 @@ public class ProxyConfigurationManager {
         MiddlewareChain middlewareChain = new MiddlewareChain(List.of(
                 new RuleValidatorHandler(service, proxyRule),
                 new HttpCacheHandler(),
-                new MatchServiceHandler(proxyRule)
+                new MatchServiceHandler(proxyRule),
+                new MirroringHandler(proxyRule)
         ));
         ServletHolder proxyServlet = new ServletHolder(new ProxyRequestHandler(
                 service, proxyRule, middlewareChain));

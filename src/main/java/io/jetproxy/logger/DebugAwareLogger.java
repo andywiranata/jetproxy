@@ -1,5 +1,6 @@
 package io.jetproxy.logger;
 
+import io.jetproxy.util.Constants;
 import jakarta.servlet.http.HttpServletRequest;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Response;
@@ -89,16 +90,28 @@ public class DebugAwareLogger {
         String protocol = request.getProtocol();
         String userAgent = request.getHeader("User-Agent") != null ? request.getHeader("User-Agent") : "-";
         String referrer = request.getHeader("Referer") != null ? request.getHeader("Referer") : "-";
-
+        String mirroring = request.getAttribute(Constants.REQUEST_ATTRIBUTE_JETPROXY_MIRRORING) != null ?
+                (String) request.getAttribute(Constants.REQUEST_ATTRIBUTE_JETPROXY_MIRRORING) : "-";
         // Extract details from the response
         String responseDetails = response != null ? String.valueOf(response.getHttpChannel().getBytesWritten()) : "-";
         String color = getStatusColor(responseCode);
 
         // Format the log entry
         return String.format(
-                "%s - %s [%s] \"%s %s%s %s\" %s%d%s %s \"%s\" \"%s\" [%dms] Cache: [%s] Status: [%s]",
-                remoteAddr, clientUserName, timestamp, method, path, queryParams, protocol,
-                color, responseCode, RESET, responseDetails, referrer, userAgent, responseTime, cacheIndicator, status
+                "%s - %s [%s] \"%s %s%s %s\" %s%d%s %s \"%s\" \"%s\" [%dms] Cache: [%s] MirroringRequest: [%s] Status: [%s]",
+                remoteAddr,
+                clientUserName,
+                timestamp,
+                method, path,
+                queryParams, protocol,
+                color, responseCode, RESET,
+                responseDetails,
+                referrer,
+                userAgent,
+                responseTime,
+                cacheIndicator,
+                mirroring,
+                status
         );
     }
 

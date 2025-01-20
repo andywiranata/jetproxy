@@ -5,6 +5,7 @@ const { OTLPTraceExporter } = require('@opentelemetry/exporter-otlp-http');
 const { Resource } = require('@opentelemetry/resources');
 const { trace } = require('@opentelemetry/api');
 const http = require('http');
+const {request} = require("express");
 
 
 process.env.OTEL_LOG_LEVEL = 'debug';  // Enable debug level logs for OpenTelemetry
@@ -71,6 +72,7 @@ app.post('/verify', (req, res) => {
 // Route to simulate fetching user details
 app.get('/user', (req, res) =>{
     console.log('user::header::', req.headers);
+    // console.log(req.body)
     res.setHeader('X-Custom-Header', 'CustomValue');
     res.setHeader('X-Powered-By', 'Express with Love');
     res.status(200).json({
@@ -81,8 +83,35 @@ app.get('/user', (req, res) =>{
         }
     });
 });
-app.get('/v2/user', (req, res) =>{
-    console.log('user::header::', req.headers);
+app.post('/user', (req, res) =>{
+    console.log('POST::user::header::', req.headers);
+    console.log(req.body)
+    res.setHeader('X-Custom-Header', 'CustomValue');
+    res.setHeader('X-Powered-By', 'Express with Love');
+    res.status(200).json({
+        user: {
+            id: 'user123',
+            name: 'Mock User',
+            roles: ['roleA', 'roleB'],
+        }
+    });
+});
+app.get('/user', (req, res) =>{
+    console.log('POST::user::header::v2', req.headers);
+    console.log(req.body)
+    res.setHeader('X-Custom-Header', 'CustomValue');
+    res.setHeader('X-Powered-By', 'Express with Love');
+    res.status(200).json({
+        user: {
+            id: 'userV2',
+            name: 'User V2',
+            roles: ['roleA', 'roleB'],
+        }
+    });
+});
+app.post('/v2/user', (req, res) =>{
+    console.log('POST:user::header::v2', req.headers);
+    console.log(req.body)
     res.setHeader('X-Custom-Header', 'CustomValue');
     res.setHeader('X-Powered-By', 'Express with Love');
     res.status(200).json({

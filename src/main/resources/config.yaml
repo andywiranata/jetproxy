@@ -32,20 +32,22 @@ proxies:
     service: userApi
     matches:
       - rule: "Header('Content-Type', 'application/json')"
-        service: userV3Api
+        service: userApi
       - rule: "Header('x-header-hello', 'x-header-hello')"
-        service: userV2Api
+        service: userApi
     middleware:
-
+      mirroring:
+        enabled: false
+        mirrorService: userV2Api
+        mirrorPercentage: 100
     ttl: -1
-
 services:
   - name: userApi
     url: http://localhost:30001
-    methods: ['GET']
+    methods: ['GET', 'POST']
   - name: userV2Api
     url: http://localhost:30001/v2
-    methods: [ 'GET' ]
+    methods: [ 'GET', 'POST']
 
 users:
   - username: admin

@@ -70,7 +70,6 @@ public class AppConfig {
         private long ttl;
         private String uuid;
         private List<Match> matches = new ArrayList<>(); // Added rules list
-
         public boolean hasMiddleware() {
             return middleware != null;
         }
@@ -90,7 +89,6 @@ public class AppConfig {
         private String rule;  // The condition to match, e.g., "Header('Content-Type', 'application/json')"
         private String service; // Target service for the matched rule
     }
-
     @Getter
     @Setter
     @ToString
@@ -104,11 +102,10 @@ public class AppConfig {
         private RateLimiter rateLimiter;
         private Bulkhead bulkhead;
         private Retry retry;
-
+        private Mirroring mirroring;
         public boolean hasBasicAuth() {
             return basicAuth != null;
         }
-
         public boolean hasForwardAuth() {
             return forwardAuth != null && forwardAuth.enabled;
         }
@@ -130,8 +127,18 @@ public class AppConfig {
         public boolean hasHeaders() {
             return header != null;
         }
+        public boolean hasMirroring() {
+            return mirroring != null && mirroring.enabled;
+        }
     }
-
+    @Getter
+    @Setter
+    @ToString
+    public static class Mirroring {
+        private boolean enabled;
+        private String mirrorService;
+        private int mirrorPercentage;
+    }
     @Getter
     @Setter
     @ToString

@@ -33,8 +33,9 @@ import java.security.spec.RSAPublicKeySpec;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static io.jetproxy.util.Constants.REQUEST_ATTRIBUTE_JETPROXY_JWT_CLAIMS;
+
 public class JWTAuthAuthenticator implements Authenticator {
-    public static final String HEADER_NAME = "jetproxy-jwt-claims";
     private final AppConfig.JwtAuthSource jwtAuthSource;
     private final Key secretKey;
     private JwtValidator jwtValidator;
@@ -158,7 +159,7 @@ public class JWTAuthAuthenticator implements Authenticator {
     }
     private void forwardClaimsToHeader(Claims claims, HttpServletRequest response) {
         String claimsJson = AppContext.get().gson.toJson(claims); // Convert claims to JSON string
-        response.setAttribute(HEADER_NAME, claimsJson);
+        response.setAttribute(REQUEST_ATTRIBUTE_JETPROXY_JWT_CLAIMS, claimsJson);
     }
 
     private static class JWTUserIdentity implements UserIdentity {

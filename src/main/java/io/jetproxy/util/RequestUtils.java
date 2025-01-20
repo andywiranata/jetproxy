@@ -1,6 +1,7 @@
 package io.jetproxy.util;
 
 
+import io.jetproxy.context.AppConfig;
 import jakarta.servlet.http.HttpServletRequest;
 
 public class RequestUtils {
@@ -43,5 +44,14 @@ public class RequestUtils {
             }
         }
         return -1; // Default value when max-age is not found
+    }
+
+    public static String rewriteRequest(String targetUrl, AppConfig.Service newService) {
+        if (newService == null) {
+            return null;
+        }
+        String serviceUrl = newService.getUrl();
+        String pathWithQuery = RequestUtils.extractPathWithQuery(targetUrl);
+        return serviceUrl + pathWithQuery;
     }
 }
