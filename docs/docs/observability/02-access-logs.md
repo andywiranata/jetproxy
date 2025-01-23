@@ -15,7 +15,7 @@ appName: ${JET_APP_NAME:API-PROXY}
 port: ${JET_PORT:8080}
 defaultTimeout: ${JET_DEFAULT_TIMEOUT:10000}
 rootPath: ${JET_DASHBOARD:/}
-debugMode: ${JET_DEBUG_MODE:true}
+accessLog: ${JET_DEBUG_MODE:true}
 ```
 **Log Format**
 ```
