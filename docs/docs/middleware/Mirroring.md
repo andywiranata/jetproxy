@@ -22,11 +22,6 @@ Mirroring traffic to your microservices enables you to test new backends in prod
 proxies:
   - path: /user
     service: userApi
-    matches:
-      - rule: "Header('Content-Type', 'application/json')"
-        service: userApi
-      - rule: "Header('x-header-hello', 'x-header-hello')"
-        service: userApi
     middleware:
         mirroring:
         enabled: true              # Enable or disable mirroring
