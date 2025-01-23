@@ -1,13 +1,30 @@
+<!--<configuration>-->
+<!--    &lt;!&ndash; Set the root logger level to DEBUG to enable debug-level logging globally &ndash;&gt;-->
+<!--    <root level="INFO">-->
+<!--        <appender-ref ref="STDOUT" />-->
+<!--    </root>-->
+
+<!--    &lt;!&ndash; Define a console appender &ndash;&gt;-->
+<!--    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">-->
+<!--        <encoder>-->
+<!--            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>-->
+<!--        </encoder>-->
+<!--    </appender>-->
+<!--</configuration>-->
 <configuration>
-    <!-- Set the root logger level to DEBUG to enable debug-level logging globally -->
+    <!-- Define the root logger -->
     <root level="INFO">
         <appender-ref ref="STDOUT" />
     </root>
 
-    <!-- Define a console appender -->
+    <!-- Define the appenders -->
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
         </encoder>
     </appender>
+
+    <!-- Define specific loggers -->
+<!--    <logger name="io.jetproxy" level="DEBUG" />-->
 </configuration>
+

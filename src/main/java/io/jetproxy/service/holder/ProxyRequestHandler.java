@@ -95,7 +95,7 @@ public class ProxyRequestHandler extends BaseProxyRequestHandler {
             });
 
         } catch (Exception e) {
-            logger.debug("Error Occurred to process request {}", e.getMessage());
+            logger.error("Error Occurred to process request {}", e.getMessage());
             if (e instanceof ResilienceRateLimitException) {
                 sendRateLimiterResponse(response, e.getMessage());
             } else if (e instanceof ResilienceCircuitBreakerException) {
