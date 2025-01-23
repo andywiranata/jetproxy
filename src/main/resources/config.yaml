@@ -3,7 +3,24 @@ port: ${JET_PORT:8080}
 defaultTimeout: ${JET_DEFAULT_TIMEOUT:10000}
 dashboard: ${JET_DASHBOARD:true}
 rootPath: ${JET_DASHBOARD:/}
-debugMode: ${JET_DEBUG_MODE:true}
+#debugLog: ${JET_DEBUG_LOG_MODE:true}
+accessLog: ${JET_DEBUG_MODE:true}
+
+logging:
+  root:
+    level: INFO
+  appenders:
+    - name: STDOUT
+      className: "ch.qos.logback.core.ConsoleAppender"
+      encoder:
+        pattern: "%d{yyyy-MM-dd HH:mm:ss} %-1level %logger{36} - %msg%n"
+  loggers:
+#    - name: "io.jetproxy"
+#      level: INFO
+#    - name: "org.eclipse.jetty"
+#      level: INFO
+
+
 corsFilter:
   accessControlAllowMethods:
     - "*"

@@ -3,8 +3,6 @@ package io.jetproxy.context;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-import org.json.JSONPropertyName;
-
 import java.time.Duration;
 import java.util.*;
 
@@ -17,7 +15,7 @@ public class AppConfig {
     private int port;
     private int defaultTimeout;
     private boolean dashboard;
-    private boolean debugMode = false;
+    private boolean accessLog = false;
     private String rootPath;
     private Storage storage;
     private List<Proxy> proxies;
@@ -25,6 +23,7 @@ public class AppConfig {
     private List<User> users;
     private CorsFilter corsFilter = new CorsFilter(); // Default values if missing
     private JwtAuthSource jwtAuthSource;
+    private Logging logging; // Added logging configuration
 
     @Getter
     @Setter
@@ -40,14 +39,12 @@ public class AppConfig {
                 "PATCH",
                 "TRACE",
                 "CONNECT");
-        private List<String> accessControlAllowHeaders = List.of(
-                "*");
-        private List<String> accessControlAllowOriginList = List.of(
-                "*");
+        private List<String> accessControlAllowHeaders = List.of("*");
+        private List<String> accessControlAllowOriginList = List.of("*");
 
         public List<String> getAccessControlAllowMethods() {
             if (accessControlAllowMethods.contains("*")) {
-                return List.of( "GET",
+                return List.of("GET",
                         "POST",
                         "PUT",
                         "DELETE",
@@ -60,6 +57,47 @@ public class AppConfig {
             return accessControlAllowMethods;
         }
     }
+
+    @Getter
+    @Setter
+    @ToString
+    public static class Logging {
+        private Root root;
+        private List<Appender> appenders;
+        private List<Logger> loggers;
+
+    }
+    @Getter
+    @Setter
+    @ToString
+    public static class Root {
+        private String level = "INFO"; // Default level
+    }
+
+    @Getter
+    @Setter
+    @ToString
+    public static class Appender {
+        private String name;
+        private String className; // Use className to avoid keyword conflict
+        private Encoder encoder;
+
+        @Getter
+        @Setter
+        @ToString
+        public static class Encoder {
+            private String pattern = "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"; // Default pattern
+        }
+    }
+
+    @Getter
+    @Setter
+    @ToString
+    public static class Logger {
+        private String name;
+        private String level = "INFO"; // Default level
+    }
+
     @Getter
     @Setter
     @ToString
@@ -70,18 +108,22 @@ public class AppConfig {
         private long ttl;
         private String uuid;
         private List<Match> matches = new ArrayList<>(); // Added rules list
+
         public boolean hasMiddleware() {
             return middleware != null;
         }
+
         public boolean hasMatchRules() {
             return matches.isEmpty();
         }
+
         public String getUuid() {
             return Base64.getUrlEncoder()
                     .withoutPadding()
                     .encodeToString((service + path).getBytes());
         }
     }
+
     @Getter
     @Setter
     @ToString
@@ -89,6 +131,7 @@ public class AppConfig {
         private String rule;  // The condition to match, e.g., "Header('Content-Type', 'application/json')"
         private String service; // Target service for the matched rule
     }
+
     @Getter
     @Setter
     @ToString
@@ -103,34 +146,44 @@ public class AppConfig {
         private Bulkhead bulkhead;
         private Retry retry;
         private Mirroring mirroring;
+
         public boolean hasBasicAuth() {
             return basicAuth != null;
         }
+
         public boolean hasForwardAuth() {
             return forwardAuth != null && forwardAuth.enabled;
         }
+
         public boolean hasJwtAuth() {
             return jwtAuth != null && jwtAuth.enabled;
         }
+
         public boolean hasCircuitBreaker() {
             return circuitBreaker != null && circuitBreaker.enabled;
         }
+
         public boolean hasRateLimiter() {
             return rateLimiter != null && rateLimiter.enabled;
         }
+
         public boolean hasBulkHead() {
             return bulkhead != null && rateLimiter.enabled;
         }
+
         public boolean hasRetry() {
             return retry != null;
         }
+
         public boolean hasHeaders() {
             return header != null;
         }
+
         public boolean hasMirroring() {
             return mirroring != null && mirroring.enabled;
         }
     }
+
     @Getter
     @Setter
     @ToString
@@ -139,6 +192,7 @@ public class AppConfig {
         private String mirrorService;
         private int mirrorPercentage;
     }
+
     @Getter
     @Setter
     @ToString
@@ -148,8 +202,8 @@ public class AppConfig {
         private String service;
         private String requestHeaders;
         private String responseHeaders;
-
     }
+
     @Getter
     @Setter
     @ToString
@@ -169,7 +223,7 @@ public class AppConfig {
         private int waitDurationInOpenState = 1000;
         private int permittedNumberOfCallsInHalfOpenState = 10;
         private int minimumNumberOfCalls = 5;
-        // Derived method for Retry-After
+
         public int getRetryAfterSeconds() {
             return (int) Math.ceil(waitDurationInOpenState / 1000.0); // Convert ms to seconds
         }
@@ -183,22 +237,23 @@ public class AppConfig {
         private int limitForPeriod = 10;              // Default 10 requests per period
         private Duration timeoutDuration = Duration.ZERO; // No waiting by default
         private int maxBurstCapacity = 20;           // Default burst capacity of 20
-
     }
+
     @Getter
     @Setter
-    public  static class Retry {
+    public static class Retry {
         private boolean enabled = false;
         private int maxAttempts = 5;
         private int waitDuration = 1000;
     }
+
     @Getter
     @Setter
     public static class Bulkhead {
         private boolean enabled = false;
         private int maxConcurrentCalls = 10; // Default: 10 concurrent calls
         private long maxWaitDuration = 500; // Default: 500 ms
-        // Derived method for Retry-After
+
         public int getRetryAfterSeconds() {
             return (int) Math.ceil(maxWaitDuration / 1000.0); // Convert ms to seconds
         }
@@ -213,6 +268,7 @@ public class AppConfig {
         private List<String> methods;
         private String role;
         private String healthcheck;
+
         public String getUuid() {
             return Base64.getUrlEncoder()
                     .withoutPadding()
@@ -259,10 +315,10 @@ public class AppConfig {
             private long maxMemory = 50;
             private int size = 10000;
         }
+
         public boolean hasRedisServer() {
             return redis != null && redis.isEnabled();
         }
-
     }
 
     @Getter
@@ -272,6 +328,7 @@ public class AppConfig {
         private String username;
         private String password;
         private String role;
+
         public String getUuid() {
             return Base64.getUrlEncoder()
                     .withoutPadding()
@@ -294,6 +351,7 @@ public class AppConfig {
             return responseHeaders != null;
         }
     }
+
     @Getter
     @Setter
     public static class JwtAuthSource {
@@ -305,6 +363,5 @@ public class AppConfig {
         private long jwksTtl = -1;                 //  Cache Response
         private Map<String, Object> claimValidations = new HashMap<>(); // Optional claims to validate (e.g., iss, aud)
         private Map<String, String> forwardClaims = new HashMap<>();   // Claims to forward as headers (e.g., sub -> X-User-Id)
-
     }
 }

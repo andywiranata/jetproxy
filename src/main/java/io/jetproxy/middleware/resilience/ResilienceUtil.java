@@ -92,6 +92,7 @@ public class ResilienceUtil {
         try {
             resilientRunnable.run();
         } catch (RuntimeException ex) {
+            ex.printStackTrace();
             // Wrap exceptions to ensure proper propagation
             throw ex;
         } catch (Exception ex) {
