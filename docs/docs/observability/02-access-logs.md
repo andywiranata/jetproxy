@@ -2,7 +2,7 @@
 sidebar_position: 2
 ---
 
-# Logs
+# Access Logs
 
 The proxy supports structured and dynamic logging to facilitate debugging and observability. The logging behavior is influenced by the debugMode configuration.
 
@@ -15,7 +15,7 @@ appName: ${JET_APP_NAME:API-PROXY}
 port: ${JET_PORT:8080}
 defaultTimeout: ${JET_DEFAULT_TIMEOUT:10000}
 rootPath: ${JET_DASHBOARD:/}
-accessLog: ${JET_DEBUG_MODE:true}
+accessLog: ${JET_ACCESS_LOG:true}
 ```
 **Log Format**
 ```
