@@ -1,13 +1,9 @@
 package io.jetproxy.service.holder;
 
-import io.grpc.ManagedChannel;
 import io.jetproxy.exception.ResilienceCircuitBreakerException;
 import io.jetproxy.exception.ResilienceRateLimitException;
-import io.jetproxy.middleware.grpc.GrpcChannelManager;
 import io.jetproxy.middleware.resilience.ResilienceFactory;
 import io.jetproxy.middleware.handler.MiddlewareChain;
-import io.jetproxy.util.BufferedHttpServletRequestWrapper;
-import io.jetproxy.util.Constants;
 import io.jetproxy.util.RequestUtils;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -15,7 +11,6 @@ import jakarta.servlet.http.HttpServletRequestWrapper;
 import jakarta.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.client.api.Request;
 import org.eclipse.jetty.client.api.Response;
-import org.eclipse.jetty.client.util.BytesContentProvider;
 import org.eclipse.jetty.http.HttpHeader;
 import org.eclipse.jetty.util.Callback;
 import io.jetproxy.context.AppConfig;
@@ -25,20 +20,13 @@ import io.jetproxy.middleware.rule.header.HeaderActionFactory;
 
 import java.io.*;
 import java.util.*;
-import com.google.protobuf.Descriptors;
-import com.google.protobuf.DynamicMessage;
-
-
-import static io.jetproxy.util.Constants.REQUEST_ATTRIBUTE_JETPROXY_REWRITE_SERVICE;
 
 public class ProxyRequestHandler extends BaseProxyRequestHandler {
     private static final DebugAwareLogger logger = DebugAwareLogger.getLogger(ProxyRequestHandler.class);
     private final MiddlewareChain middlewareChain;
 
-    public ProxyRequestHandler(AppConfig.Service configService,
-                               AppConfig.Proxy proxyRule,
+    public ProxyRequestHandler(AppConfig.Proxy proxyRule,
                                MiddlewareChain middlewareChain) {
-        this.configService = configService;
         this.proxyRule = proxyRule;
         this.middlewareChain = middlewareChain;
         this.resilience = ResilienceFactory.createResilienceUtil(proxyRule);
@@ -57,25 +45,17 @@ public class ProxyRequestHandler extends BaseProxyRequestHandler {
                 .map(HeaderActionFactory::createActions)
                 .orElseGet(Collections::emptyList);
 
-        logger.info("ProxyHolder Initialization ProxyID:{} - Rule: Path={} -> {}, Details={}",
+        logger.info("ProxyHolder Initialization ProxyID:{} - Rule: Path={}, Details={}",
                 proxyRule.getUuid(), proxyRule.getPath(),
-                AppContext.get().getServiceMap().get(proxyRule.getService()).getUrl(),
                 proxyRule);
     }
 
     @Override
     protected String rewriteTarget(HttpServletRequest request) {
-        // Get the rewritten target URI from the superclass
-        String target = super.rewriteTarget(request);
-        AppConfig.Service service = AppContext.get().getServiceMap().get(
-                (String) request.getAttribute(REQUEST_ATTRIBUTE_JETPROXY_REWRITE_SERVICE));
-        String rewriteRequestUrl = RequestUtils.rewriteRequest(target, service);
-        if (rewriteRequestUrl != null) {
-            return rewriteRequestUrl;
-        }
-        // Default to the original target if no service matched
-        return target;
+        String target = super.rewriteTarget(request); // Original target
+        return RequestUtils.rewriteTarget(request, target);
     }
+
     @Override
     protected void service(HttpServletRequest request, HttpServletResponse response) {
         try {
@@ -131,36 +111,23 @@ public class ProxyRequestHandler extends BaseProxyRequestHandler {
     @Override
     protected void sendProxyRequest(HttpServletRequest clientRequest, HttpServletResponse proxyResponse, Request proxyRequest) {
         clientRequest.setAttribute("startTime", System.nanoTime());
-        String mirroringService = (String) clientRequest.getAttribute(Constants.REQUEST_ATTRIBUTE_JETPROXY_MIRRORING);
-        AppConfig.Service service = AppContext.get().getServiceMap().get(mirroringService);
-        if (service != null) {
-            BufferedHttpServletRequestWrapper bufferedRequest = null;
-            try {
-                // Wrap the original request to buffer its content
-                bufferedRequest = new BufferedHttpServletRequestWrapper(clientRequest);
-
-                // Optionally, set the body to the proxyRequest
-                if (!bufferedRequest.isEmptyBody()) {
-                    proxyRequest.content(new BytesContentProvider(
-                            bufferedRequest.getBodyAsByte()), bufferedRequest.getContentType());
-                }
-                // Forward the headers from the original request to the proxyRequest
-                copyHeaders(bufferedRequest, proxyRequest);
-                // Proceed with the proxy request
-                super.sendProxyRequest(bufferedRequest, proxyResponse, proxyRequest);
-
-                sendMirrorRequest(
-                        RequestUtils.rewriteRequest(this.rewriteTarget(clientRequest), service),
-                        clientRequest,
-                        bufferedRequest);
-            } catch (IOException e) {
-                throw new RuntimeException("Error buffering request content", e);
+        try {
+            // Check if mirroring is required
+            Optional<AppConfig.Service> mirroringService = RequestUtils.getMirroringService(
+                    clientRequest);
+            super.sendProxyGrpcRequest(clientRequest, proxyResponse, proxyRequest);
+            if (mirroringService.isPresent()) {
+                super.sendProxyRequestWithMirroring(
+                        clientRequest, proxyResponse, proxyRequest, mirroringService.get());
+            } else {
+                // No mirroring required, proceed as normal
+                super.sendProxyRequest(clientRequest, proxyResponse, proxyRequest);
             }
-        } else {
-            super.sendProxyRequest(clientRequest, proxyResponse, proxyRequest);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
-
     }
+
     @Override
     protected void onServerResponseHeaders(HttpServletRequest clientRequest, HttpServletResponse proxyResponse, Response serverResponse) {
         super.onServerResponseHeaders(clientRequest, proxyResponse, serverResponse);
@@ -204,5 +171,4 @@ public class ProxyRequestHandler extends BaseProxyRequestHandler {
             }
         }
     }
-
 }

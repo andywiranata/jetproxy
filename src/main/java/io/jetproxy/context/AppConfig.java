@@ -263,6 +263,21 @@ public class AppConfig {
         private String host;
         private Integer port = 80;
         private String healthcheck;
+        public List<String> getMethods() {
+            return List.of("GET",
+                    "POST",
+                    "PUT",
+                    "DELETE",
+                    "HEAD",
+                    "OPTIONS",
+                    "PATCH",
+                    "TRACE",
+                    "CONNECT");
+        }
+        // dummy http request, to bypass URI validation
+        public String getUrl() {
+            return "http://" + host + ":" + port;
+        }
     }
     @Getter
     @Setter
@@ -270,10 +285,23 @@ public class AppConfig {
     public static class Service {
         private String name;
         private String url;
-        private List<String> methods;
+        private List<String> methods = List.of("*");
         private String role;
         private String healthcheck;
-
+        public List<String> getMethods() {
+            if (methods.contains("*")) {
+                return List.of("GET",
+                        "POST",
+                        "PUT",
+                        "DELETE",
+                        "HEAD",
+                        "OPTIONS",
+                        "PATCH",
+                        "TRACE",
+                        "CONNECT");
+            }
+            return methods;
+        }
         public String getUuid() {
             return Base64.getUrlEncoder()
                     .withoutPadding()

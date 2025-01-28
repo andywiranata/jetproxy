@@ -78,6 +78,7 @@ public class ConfigLoader {
             // Validate and create service map
             ConfigValidator.validateConfig(config);
             createServiceMap(config.getServices());
+            createGrpcServiceMap(config.getGrpcServices());
         } catch (Exception e) {
             logger.error("Failed to load and parse config.yaml: {}", e.getMessage(), e);
             throw new RuntimeException("Failed to load and parse config.yaml", e);

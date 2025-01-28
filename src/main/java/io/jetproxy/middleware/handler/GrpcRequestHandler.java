@@ -37,9 +37,7 @@ public class GrpcRequestHandler  implements MiddlewareHandler{
             response.flushBuffer();
         } else {
             request.setAttribute(Constants.REQUEST_ATTRIBUTE_JETPROXY_GRPC_SERVICE_NAME, grpcServiceNameFromHeader);
-            request.setAttribute(Constants.REQUEST_ATTRIBUTE_JETPROXY_GRPC_METHOD, grpcMethodNameFromHeader);
+            request.setAttribute(Constants.REQUEST_ATTRIBUTE_JETPROXY_GRPC_METHOD_NAME, grpcMethodNameFromHeader);
         }
-
-
     }
 }

@@ -45,7 +45,7 @@ storage:
     size: 10000
 
 proxies:
-  - path: /user/grpc
+  - path: /v2/grpc
     service: userGrpcApi
   - path: /user
     service: userApi

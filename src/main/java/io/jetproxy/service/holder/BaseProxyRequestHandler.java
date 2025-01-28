@@ -56,10 +56,9 @@ public abstract class BaseProxyRequestHandler extends ProxyServlet.Transparent {
 
     public final String MODIFIED_HEADER = "modifiedHeader";
     private static final DebugAwareLogger logger = DebugAwareLogger.getLogger(DebugAwareLogger.class);
-    protected AppConfig.Service configService;
     protected AppConfig.Proxy proxyRule;
     protected RuleContext ruleContext;
-    protected MetricsListener metricsListener;
+
     protected ResilienceUtil resilience;
     protected List<HeaderAction> headerRequestActions = Collections.emptyList();;
     protected List<HeaderAction> headerResponseActions;
@@ -198,8 +197,6 @@ public abstract class BaseProxyRequestHandler extends ProxyServlet.Transparent {
         serverHeaders.putAll(modifiedHeaders);
         clientRequest.setAttribute(MODIFIED_HEADER, serverHeaders);
     }
-
-
     protected Map<String, String> extractHeadersFromServerResponse(Response serverResponse) {
         return serverResponse.getHeaders().stream()
                 .collect(Collectors.toMap(
@@ -213,6 +210,35 @@ public abstract class BaseProxyRequestHandler extends ProxyServlet.Transparent {
             action.execute(serverHeaders, modifiedHeaders);
         }
         return modifiedHeaders;
+    }
+    protected void sendProxyGrpcRequest(HttpServletRequest clientRequest, HttpServletResponse proxyResponse, Request proxyRequest) throws IOException {
+        BufferedHttpServletRequestWrapper bufferedRequest = new BufferedHttpServletRequestWrapper(clientRequest);
+        String jsonBody = bufferedRequest.getBodyAsString();
+        String serviceName = RequestUtils.getGrpcServiceName(clientRequest);
+        String methodName = RequestUtils.getGrpcMethodName(clientRequest);
+
+    }
+    protected void sendProxyRequestWithMirroring(HttpServletRequest clientRequest, HttpServletResponse proxyResponse,
+                                               Request proxyRequest, AppConfig.Service service) throws IOException {
+        // Wrap the original request to buffer its content
+        BufferedHttpServletRequestWrapper bufferedRequest = new BufferedHttpServletRequestWrapper(clientRequest);
+
+        // Optionally, set the body to the proxyRequest
+        if (!bufferedRequest.isEmptyBody()) {
+            proxyRequest.content(new BytesContentProvider(
+                    bufferedRequest.getBodyAsByte()), bufferedRequest.getContentType());
+        }
+        // Forward the headers from the original request to the proxyRequest
+        copyHeaders(bufferedRequest, proxyRequest);
+
+        // Proceed with the proxy request
+        super.sendProxyRequest(bufferedRequest, proxyResponse, proxyRequest);
+
+        // Handle the mirroring logic
+        String mirrorTarget = RequestUtils.rewriteRequest(this.rewriteTarget(clientRequest), service);
+        sendMirrorRequest(mirrorTarget, clientRequest, bufferedRequest);
+
+
     }
     protected void sendMirrorRequest(String mirrorServiceUrl, HttpServletRequest clientRequest,
                                      BufferedHttpServletRequestWrapper bufferedRequest) {
