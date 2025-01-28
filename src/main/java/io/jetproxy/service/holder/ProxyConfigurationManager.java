@@ -137,7 +137,8 @@ public class ProxyConfigurationManager {
      */
     public synchronized void addOrUpdateProxy(AppConfig.Proxy newProxy) {
 
-        ConfigValidator.validateProxies(List.of(newProxy), config.getServices());
+        ConfigValidator.validateProxies(List.of(newProxy),
+                config.getServices(), config.getGrpcServices());
         ConfigValidator.validateMiddleware(newProxy);
 
         String pathSpec = newProxy.getPath() + "/*";
@@ -281,6 +282,7 @@ public class ProxyConfigurationManager {
      * @param role     The role associated with the constraint.
      * @return A ConstraintMapping object.
      */
+    @Deprecated
     public ConstraintMapping createForwardAuthConstraintMapping(String pathSpec, String role) {
         Constraint constraint = new Constraint();
         constraint.setName("forwardAuth");
@@ -298,6 +300,7 @@ public class ProxyConfigurationManager {
      * Helper method to create a servlet holder for a proxy.
      */
     private ServletHolder createServletHolder(AppConfig.Proxy proxyRule, String targetServiceUrl, AppConfig.Service service) {
+        AppContext ctx = AppContext.get();
         String proxyTo = targetServiceUrl + proxyRule.getPath();
         String prefix = proxyRule.getPath();
         String timeout = String.valueOf(config.getDefaultTimeout());
@@ -306,10 +309,12 @@ public class ProxyConfigurationManager {
                 new RuleValidatorHandler(service, proxyRule),
                 new HttpCacheHandler(),
                 new MatchServiceHandler(proxyRule),
-                new MirroringHandler(proxyRule)
+                new MirroringHandler(proxyRule),
+                new GrpcRequestHandler(proxyRule, ctx)
         ));
         ServletHolder proxyServlet = new ServletHolder(new ProxyRequestHandler(
                 service, proxyRule, middlewareChain));
+
         proxyServlet.setInitParameter(PROXY_TO, proxyTo);
         proxyServlet.setInitParameter(PREFIX, prefix);
         proxyServlet.setInitParameter(TIMEOUT, timeout);

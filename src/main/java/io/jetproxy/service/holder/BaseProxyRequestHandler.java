@@ -5,12 +5,16 @@ import io.jetproxy.logger.DebugAwareLogger;
 import io.jetproxy.middleware.cache.CacheFactory;
 import io.jetproxy.middleware.cache.ResponseCacheEntry;
 import io.jetproxy.middleware.rule.RuleContext;
+import io.jetproxy.util.BufferedHttpServletRequestWrapper;
+import io.jetproxy.util.Constants;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletRequestWrapper;
 import jakarta.servlet.http.HttpServletResponse;
 import org.brotli.dec.BrotliInputStream;
+import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.api.Request;
 import org.eclipse.jetty.client.api.Response;
+import org.eclipse.jetty.client.util.BytesContentProvider;
 import org.eclipse.jetty.http.HttpField;
 import org.eclipse.jetty.proxy.ProxyServlet;
 import org.slf4j.Logger;
@@ -28,6 +32,8 @@ import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.InflaterInputStream;
 
+import static io.jetproxy.util.Constants.REQUEST_ATTRIBUTE_JETPROXY_REWRITE_SERVICE;
+
 public abstract class BaseProxyRequestHandler extends ProxyServlet.Transparent {
     // Header Names
     public static final String HEADER_RETRY_AFTER = "Retry-After";
@@ -42,6 +48,7 @@ public abstract class BaseProxyRequestHandler extends ProxyServlet.Transparent {
     public static final String TYPE_BULKHEAD = "bulkhead";
     public static final String TYPE_RATE_LIMITER = "rate-limiter";
     public static final String TYPE_METHOD_NOT_ALLOWED = "method-not-allowed";
+    public static final String TYPE_GRPC_SERV0CE_METHOD_NOT_FOUND = "grpc-service-or-method-not-found";
     public static final String TYPE_RULE_NOT_ALLOWED = "rule-not-allowed";
     // Error Messages
     public static final String ERROR_METHOD_NOT_ALLOWED = "Method Not Allowed";
@@ -56,7 +63,6 @@ public abstract class BaseProxyRequestHandler extends ProxyServlet.Transparent {
     protected ResilienceUtil resilience;
     protected List<HeaderAction> headerRequestActions = Collections.emptyList();;
     protected List<HeaderAction> headerResponseActions;
-
 
     // Shared logic for caching the response
     protected void cacheResponseContent(HttpServletRequest request,
@@ -73,7 +79,6 @@ public abstract class BaseProxyRequestHandler extends ProxyServlet.Transparent {
                 .put(String.format(CacheFactory.HTTP_REQUEST_CACHE_KEY, method, path),
                         ctx.gson.toJson(cacheEntry),
                         proxyRule.getTtl());
-
     }
 
     // Shared logic for decoding content streams
@@ -175,6 +180,25 @@ public abstract class BaseProxyRequestHandler extends ProxyServlet.Transparent {
             }
         };
     }
+    protected void modifyResponseHeaders(HttpServletRequest clientRequest,
+                                       HttpServletResponse proxyResponse,
+                                       Response serverResponse) {
+        // Extract existing headers from the server response
+        Map<String, String> serverHeaders = extractHeadersFromServerResponse(serverResponse);
+
+        // Apply response header actions
+        Map<String, String> modifiedHeaders = applyResponseHeaderActions(serverHeaders);
+
+        // Set modified headers to the proxy response
+        for (Map.Entry<String, String> entry : modifiedHeaders.entrySet()) {
+            proxyResponse.setHeader(entry.getKey(), entry.getValue());
+        }
+
+        // Update the client request attributes with modified headers
+        serverHeaders.putAll(modifiedHeaders);
+        clientRequest.setAttribute(MODIFIED_HEADER, serverHeaders);
+    }
+
 
     protected Map<String, String> extractHeadersFromServerResponse(Response serverResponse) {
         return serverResponse.getHeaders().stream()
@@ -189,5 +213,51 @@ public abstract class BaseProxyRequestHandler extends ProxyServlet.Transparent {
             action.execute(serverHeaders, modifiedHeaders);
         }
         return modifiedHeaders;
+    }
+    protected void sendMirrorRequest(String mirrorServiceUrl, HttpServletRequest clientRequest,
+                                     BufferedHttpServletRequestWrapper bufferedRequest) {
+        // Get mirroring service details (e.g., from config)
+
+        try {
+            HttpClient httpClient = getHttpClient(); // Assuming you have an HttpClient instance
+
+            // Create a new mirrored request
+            Request mirrorRequest = httpClient.newRequest(mirrorServiceUrl)
+                    .method(clientRequest.getMethod())
+                    .headers(mutable -> {
+                        Enumeration<String> headerNames = clientRequest.getHeaderNames();
+                        while (headerNames.hasMoreElements()) {
+                            String headerName = headerNames.nextElement();
+                            String headerValue = clientRequest.getHeader(headerName);
+                            mutable.put(headerName, headerValue);
+                        }
+                    });
+            // Set the mirrored request body
+            if (!bufferedRequest.isEmptyBody()) {
+                mirrorRequest.content(new BytesContentProvider(
+                        bufferedRequest.getBodyAsByte()), clientRequest.getContentType());
+            }
+
+            // Send the mirrored request asynchronously
+            mirrorRequest.send(result -> {
+                if (result.isFailed()) {
+                    logger.debug("Failed to mirror request to: {}", mirrorServiceUrl, result.getFailure());
+                } else {
+                    logger.debug("Successfully mirrored request to: {}", mirrorServiceUrl);
+                }
+            });
+        } catch (Exception e) {
+            logger.error("Error mirroring request", e);
+        }
+    }
+    protected void copyHeaders(HttpServletRequest clientRequest, Request proxyRequest) {
+        Enumeration<String> headerNames = clientRequest.getHeaderNames();
+        while (headerNames.hasMoreElements()) {
+            String headerName = headerNames.nextElement();
+            String headerValue = clientRequest.getHeader(headerName);
+            if (headerValue != null) {
+                proxyRequest.header(headerName, headerValue);
+            }
+        }
     }
 }

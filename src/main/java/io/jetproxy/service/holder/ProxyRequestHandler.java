@@ -1,24 +1,21 @@
 package io.jetproxy.service.holder;
 
+import io.grpc.ManagedChannel;
 import io.jetproxy.exception.ResilienceCircuitBreakerException;
 import io.jetproxy.exception.ResilienceRateLimitException;
-import io.jetproxy.middleware.handler.MatchServiceHandler;
+import io.jetproxy.middleware.grpc.GrpcChannelManager;
 import io.jetproxy.middleware.resilience.ResilienceFactory;
 import io.jetproxy.middleware.handler.MiddlewareChain;
 import io.jetproxy.util.BufferedHttpServletRequestWrapper;
 import io.jetproxy.util.Constants;
-import io.jetproxy.util.CustomHttpServletRequestWrapper;
 import io.jetproxy.util.RequestUtils;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletRequestWrapper;
 import jakarta.servlet.http.HttpServletResponse;
-import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.api.Request;
 import org.eclipse.jetty.client.api.Response;
-import org.eclipse.jetty.client.api.Result;
 import org.eclipse.jetty.client.util.BytesContentProvider;
-import org.eclipse.jetty.client.util.StringContentProvider;
 import org.eclipse.jetty.http.HttpHeader;
 import org.eclipse.jetty.util.Callback;
 import io.jetproxy.context.AppConfig;
@@ -28,6 +25,9 @@ import io.jetproxy.middleware.rule.header.HeaderActionFactory;
 
 import java.io.*;
 import java.util.*;
+import com.google.protobuf.Descriptors;
+import com.google.protobuf.DynamicMessage;
+
 
 import static io.jetproxy.util.Constants.REQUEST_ATTRIBUTE_JETPROXY_REWRITE_SERVICE;
 
@@ -85,6 +85,26 @@ public class ProxyRequestHandler extends BaseProxyRequestHandler {
                     return;
                 }
             }
+            /*
+            String jsonRequest = "{ \"name\": \"Alice\", \"email\": \"alice@example.com\" }";
+            String serviceName = "userservice.UserService";
+            String methodName = "CreateUser";
+            String fullMethodName = serviceName + "/" + methodName;
+
+            GrpcChannelManager manager = GrpcChannelManager.getInstance();
+            ManagedChannel channel = GrpcChannelManager.getInstance().getGrpcChannel("userApi");
+
+            Descriptors.ServiceDescriptor serviceDescriptor = manager.fetchServiceDescriptor(channel, serviceName);
+            Descriptors.MethodDescriptor methodDescriptor = serviceDescriptor.findMethodByName(methodName);
+            DynamicMessage grpcRequest = manager.buildGrpcRequest(jsonRequest, methodDescriptor.getInputType());
+
+            // Invoke the gRPC method dynamically
+            DynamicMessage response1 = manager.invokeGrpcMethod(fullMethodName, grpcRequest, channel);
+            String jsonResponse = manager.convertGrpcResponseToJson(response1);
+
+            System.out.println(jsonResponse);
+            */
+
             this.resilience.execute(()-> {
                 try {
                     HttpServletRequestWrapper httpServletRequestWrapper = this.modifyRequestHeaders(request);
@@ -141,20 +161,10 @@ public class ProxyRequestHandler extends BaseProxyRequestHandler {
         }
 
     }
-
     @Override
     protected void onServerResponseHeaders(HttpServletRequest clientRequest, HttpServletResponse proxyResponse, Response serverResponse) {
         super.onServerResponseHeaders(clientRequest, proxyResponse, serverResponse);
-        // Extract existing headers from the server response
-        Map<String, String> serverHeaders = extractHeadersFromServerResponse(serverResponse);
-        // Apply response header actions
-        Map<String, String> modifiedHeaders = applyResponseHeaderActions(serverHeaders);
-        // Set modified headers to the proxy response
-        for (Map.Entry<String, String> entry : modifiedHeaders.entrySet()) {
-            proxyResponse.setHeader(entry.getKey(), entry.getValue());
-        }
-        serverHeaders.putAll(modifiedHeaders);
-        clientRequest.setAttribute(MODIFIED_HEADER,serverHeaders);
+        this.modifyResponseHeaders(clientRequest, proxyResponse, serverResponse);
     }
 
     @Override
@@ -195,52 +205,4 @@ public class ProxyRequestHandler extends BaseProxyRequestHandler {
         }
     }
 
-    private void copyHeaders(HttpServletRequest clientRequest, Request proxyRequest) {
-        Enumeration<String> headerNames = clientRequest.getHeaderNames();
-        while (headerNames.hasMoreElements()) {
-            String headerName = headerNames.nextElement();
-            String headerValue = clientRequest.getHeader(headerName);
-            if (headerValue != null) {
-                proxyRequest.header(headerName, headerValue);
-            }
-        }
-    }
-    private void sendMirrorRequest(String mirrorServiceUrl, HttpServletRequest clientRequest,
-                                   BufferedHttpServletRequestWrapper bufferedRequest) {
-        // Get mirroring service details (e.g., from config)
-
-        try {
-            HttpClient httpClient = getHttpClient(); // Assuming you have an HttpClient instance
-
-            // Create a new mirrored request
-            Request mirrorRequest = httpClient.newRequest(mirrorServiceUrl)
-                    .method(clientRequest.getMethod())
-                    .headers(mutable -> {
-                        Enumeration<String> headerNames = clientRequest.getHeaderNames();
-                        while (headerNames.hasMoreElements()) {
-                            String headerName = headerNames.nextElement();
-                            String headerValue = clientRequest.getHeader(headerName);
-                            mutable.put(headerName, headerValue);
-                        }
-                    });
-
-
-            // Set the mirrored request body
-            if (!bufferedRequest.isEmptyBody()) {
-                mirrorRequest.content(new BytesContentProvider(
-                        bufferedRequest.getBodyAsByte()), clientRequest.getContentType());
-            }
-
-            // Send the mirrored request asynchronously
-            mirrorRequest.send(result -> {
-                if (result.isFailed()) {
-                    logger.error("Failed to mirror request to: {}", mirrorServiceUrl, result.getFailure());
-                } else {
-                    logger.info("Successfully mirrored request to: {}", mirrorServiceUrl);
-                }
-            });
-        } catch (Exception e) {
-            logger.error("Error mirroring request", e);
-        }
-    }
 }

@@ -32,7 +32,8 @@ public class MatchServiceHandler implements MiddlewareHandler {
         int index = 0;
         for (RuleContext ruleContext: ruleContextList){
             if (ruleContext.evaluate(request)) {
-                request.setAttribute(Constants.REQUEST_ATTRIBUTE_JETPROXY_REWRITE_SERVICE,  this.matches.get(index).getService());
+                request.setAttribute(Constants.REQUEST_ATTRIBUTE_JETPROXY_REWRITE_SERVICE,
+                        this.matches.get(index).getService());
                 return;
             }
             index++;

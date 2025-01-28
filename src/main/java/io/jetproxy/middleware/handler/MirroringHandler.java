@@ -7,7 +7,7 @@ import jakarta.servlet.http.HttpServletResponse;
 
 import java.util.Objects;
 
-import static io.jetproxy.util.Constants.REQUEST_SESSION_USER_ID;
+import static io.jetproxy.util.Constants.REQUEST_HEADER_USER_ID;
 
 public class MirroringHandler implements MiddlewareHandler{
     private final AppConfig.Proxy proxyRule;
@@ -27,7 +27,7 @@ public class MirroringHandler implements MiddlewareHandler{
     }
 
     private boolean shouldMirrorRequest(HttpServletRequest request, int mirrorPercentage) {
-        String identifier = request.getHeader(REQUEST_SESSION_USER_ID); // Preferred
+        String identifier = request.getHeader(REQUEST_HEADER_USER_ID); // Preferred
 
         if (identifier == null) {
             identifier = request.getSession().getId();

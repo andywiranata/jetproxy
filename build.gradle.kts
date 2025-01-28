@@ -48,6 +48,7 @@ dependencies {
 
     // Protocol Buffers
     implementation("com.google.protobuf:protobuf-java:3.24.3")
+    implementation("com.google.protobuf:protobuf-java-util:3.21.12") // Use a version matching your protobuf compiler
 
     // SnakeYAML for parsing YAML files
     implementation("org.yaml:snakeyaml:2.0")
