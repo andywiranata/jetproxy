@@ -9,6 +9,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletRequestWrapper;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.SneakyThrows;
 import org.eclipse.jetty.client.api.Request;
 import org.eclipse.jetty.client.api.Response;
 import org.eclipse.jetty.http.HttpHeader;
@@ -30,7 +31,8 @@ public class ProxyRequestHandler extends BaseProxyRequestHandler {
         this.proxyRule = proxyRule;
         this.middlewareChain = middlewareChain;
         this.resilience = ResilienceFactory.createResilienceUtil(proxyRule);
-        // this.metricsListener = AppContext.get().getMetricsListener();
+        this.isProxyToGrpc = AppContext.get().isUseGrpcService(proxyRule.getService());
+
         this.headerRequestActions = Optional.ofNullable(proxyRule.getMiddleware())
                 .filter(AppConfig.Middleware::hasHeaders)
                 .map(AppConfig.Middleware::getHeader)
@@ -65,26 +67,6 @@ public class ProxyRequestHandler extends BaseProxyRequestHandler {
                     return;
                 }
             }
-            /*
-            String jsonRequest = "{ \"name\": \"Alice\", \"email\": \"alice@example.com\" }";
-            String serviceName = "userservice.UserService";
-            String methodName = "CreateUser";
-            String fullMethodName = serviceName + "/" + methodName;
-
-            GrpcChannelManager manager = GrpcChannelManager.getInstance();
-            ManagedChannel channel = GrpcChannelManager.getInstance().getGrpcChannel("userApi");
-
-            Descriptors.ServiceDescriptor serviceDescriptor = manager.fetchServiceDescriptor(channel, serviceName);
-            Descriptors.MethodDescriptor methodDescriptor = serviceDescriptor.findMethodByName(methodName);
-            DynamicMessage grpcRequest = manager.buildGrpcRequest(jsonRequest, methodDescriptor.getInputType());
-
-            // Invoke the gRPC method dynamically
-            DynamicMessage response1 = manager.invokeGrpcMethod(fullMethodName, grpcRequest, channel);
-            String jsonResponse = manager.convertGrpcResponseToJson(response1);
-
-            System.out.println(jsonResponse);
-            */
-
             this.resilience.execute(()-> {
                 try {
                     HttpServletRequestWrapper httpServletRequestWrapper = this.modifyRequestHeaders(request);
@@ -108,29 +90,29 @@ public class ProxyRequestHandler extends BaseProxyRequestHandler {
         }
     }
 
+    @SneakyThrows
     @Override
     protected void sendProxyRequest(HttpServletRequest clientRequest, HttpServletResponse proxyResponse, Request proxyRequest) {
         clientRequest.setAttribute("startTime", System.nanoTime());
-        try {
             // Check if mirroring is required
-            Optional<AppConfig.Service> mirroringService = RequestUtils.getMirroringService(
-                    clientRequest);
+        Optional<AppConfig.Service> mirroringService = RequestUtils.getMirroringService(
+                clientRequest);
+        if (RequestUtils.isProxyToGrpc(clientRequest)) {
             super.sendProxyGrpcRequest(clientRequest, proxyResponse, proxyRequest);
-            if (mirroringService.isPresent()) {
-                super.sendProxyRequestWithMirroring(
-                        clientRequest, proxyResponse, proxyRequest, mirroringService.get());
-            } else {
-                // No mirroring required, proceed as normal
-                super.sendProxyRequest(clientRequest, proxyResponse, proxyRequest);
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        } else if (mirroringService.isPresent()) {
+            super.sendProxyRequestWithMirroring(clientRequest, proxyResponse, proxyRequest, mirroringService.get());
+        } else {
+            // No mirroring required, proceed as normal
+            super.sendProxyRequest(clientRequest, proxyResponse, proxyRequest);
         }
+
     }
 
     @Override
     protected void onServerResponseHeaders(HttpServletRequest clientRequest, HttpServletResponse proxyResponse, Response serverResponse) {
-        super.onServerResponseHeaders(clientRequest, proxyResponse, serverResponse);
+        if (!this.isProxyToGrpc) {
+            super.onServerResponseHeaders(clientRequest, proxyResponse, serverResponse);
+        }
         this.modifyResponseHeaders(clientRequest, proxyResponse, serverResponse);
     }
 

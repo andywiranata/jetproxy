@@ -1,12 +1,17 @@
 package io.jetproxy.service.holder;
 
+import com.google.protobuf.Descriptors;
+import com.google.protobuf.DynamicMessage;
+import io.grpc.ManagedChannel;
 import io.jetproxy.context.AppConfig;
 import io.jetproxy.logger.DebugAwareLogger;
 import io.jetproxy.middleware.cache.CacheFactory;
 import io.jetproxy.middleware.cache.ResponseCacheEntry;
+import io.jetproxy.middleware.grpc.GrpcChannelManager;
+import io.jetproxy.middleware.grpc.GrpcResponse;
 import io.jetproxy.middleware.rule.RuleContext;
 import io.jetproxy.util.BufferedHttpServletRequestWrapper;
-import io.jetproxy.util.Constants;
+import io.netty.util.internal.ObjectUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletRequestWrapper;
 import jakarta.servlet.http.HttpServletResponse;
@@ -14,19 +19,23 @@ import org.brotli.dec.BrotliInputStream;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.api.Request;
 import org.eclipse.jetty.client.api.Response;
+import org.eclipse.jetty.client.api.Result;
 import org.eclipse.jetty.client.util.BytesContentProvider;
 import org.eclipse.jetty.http.HttpField;
+import org.eclipse.jetty.http.HttpHeader;
 import org.eclipse.jetty.proxy.ProxyServlet;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.eclipse.jetty.util.Callback;
 import io.jetproxy.context.AppContext;
-import io.jetproxy.middleware.metric.MetricsListener;
 import io.jetproxy.middleware.resilience.ResilienceUtil;
 import io.jetproxy.middleware.rule.header.HeaderAction;
 import io.jetproxy.util.RequestUtils;
+import org.eclipse.jetty.client.api.Response;
+
 
 import java.io.*;
+import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
@@ -53,15 +62,16 @@ public abstract class BaseProxyRequestHandler extends ProxyServlet.Transparent {
     // Error Messages
     public static final String ERROR_METHOD_NOT_ALLOWED = "Method Not Allowed";
     public static final String ERROR_RULE_NOT_ALLOWED = "Rule not allowed processing request";
-
     public final String MODIFIED_HEADER = "modifiedHeader";
+    public final String REQUEST_MODIFIED_HEADER = "requestModifiedHeader";
+
     private static final DebugAwareLogger logger = DebugAwareLogger.getLogger(DebugAwareLogger.class);
     protected AppConfig.Proxy proxyRule;
     protected RuleContext ruleContext;
-
     protected ResilienceUtil resilience;
     protected List<HeaderAction> headerRequestActions = Collections.emptyList();;
     protected List<HeaderAction> headerResponseActions;
+    protected boolean isProxyToGrpc = false;
 
     // Shared logic for caching the response
     protected void cacheResponseContent(HttpServletRequest request,
@@ -161,6 +171,7 @@ public abstract class BaseProxyRequestHandler extends ProxyServlet.Transparent {
         modifiedHeaders.putAll(modifiedAttributes);
         // Apply request header actions
         applyHeaderActions(request, modifiedHeaders);
+        request.setAttribute(REQUEST_MODIFIED_HEADER, modifiedHeaders);
         // Wrap the request with the modified headers
         return new HttpServletRequestWrapper(request) {
             @Override
@@ -211,13 +222,87 @@ public abstract class BaseProxyRequestHandler extends ProxyServlet.Transparent {
         }
         return modifiedHeaders;
     }
-    protected void sendProxyGrpcRequest(HttpServletRequest clientRequest, HttpServletResponse proxyResponse, Request proxyRequest) throws IOException {
+    protected void sendProxyGrpcRequest(HttpServletRequest clientRequest, HttpServletResponse proxyResponse, Request proxyRequest) throws Exception {
         BufferedHttpServletRequestWrapper bufferedRequest = new BufferedHttpServletRequestWrapper(clientRequest);
-        String jsonBody = bufferedRequest.getBodyAsString();
+        String jsonRequest = bufferedRequest.getBodyAsString();
         String serviceName = RequestUtils.getGrpcServiceName(clientRequest);
         String methodName = RequestUtils.getGrpcMethodName(clientRequest);
+        String fullMethodName = serviceName + "/" + methodName;
+        Response.Listener listener = new Response.Listener.Adapter() {
+            @Override
+            public void onHeaders(Response response) {
+                onServerResponseHeaders(clientRequest, proxyResponse, response);
+            }
 
+            @Override
+            public void onComplete(Result result) {
+                if (result.isSucceeded()) {
+                    onProxyResponseSuccess(clientRequest, proxyResponse, result.getResponse());
+                } else {
+                    onProxyResponseFailure(clientRequest, proxyResponse, result.getResponse(), result.getFailure());
+                }
+            }
+
+            @Override
+            public void onContent(Response response, ByteBuffer content) {
+                try {
+                    byte[] buffer = new byte[content.remaining()];
+                    content.get(buffer);
+                    onResponseContent(clientRequest, proxyResponse, response, buffer, 0, buffer.length, Callback.NOOP);
+                } catch (Exception e) {
+                    logger.error("Error handling gRPC content: {}", e.getMessage());
+                }
+            }
+        };
+
+        try {
+            // gRPC Processing
+            GrpcChannelManager manager = GrpcChannelManager.getInstance();
+            ManagedChannel channel = manager.getGrpcChannel(this.proxyRule.getService());
+            Map<String, String> metadataMap = (Map<String, String>)
+                    clientRequest.getAttribute(REQUEST_MODIFIED_HEADER);
+
+            Descriptors.ServiceDescriptor serviceDescriptor = manager.fetchServiceDescriptor(channel, serviceName);
+            Descriptors.MethodDescriptor methodDescriptor = serviceDescriptor.findMethodByName(methodName);
+
+            if (methodDescriptor == null) {
+                throw new IllegalArgumentException("gRPC method not found: " + methodName);
+            }
+
+            // Build the gRPC request
+            DynamicMessage grpcRequest = manager.buildGrpcRequest(jsonRequest, methodDescriptor.getInputType());
+
+            // Invoke the gRPC method
+            DynamicMessage grpcResponse = manager.invokeGrpcMethod(
+                    fullMethodName, grpcRequest,
+                    channel, metadataMap);
+
+//            // Convert the gRPC response to JSON
+            String jsonResponse = manager.convertGrpcResponseToJson(grpcResponse);
+
+            // Create a mock Jetty Response object to pass to listeners
+            Response grpcJettyResponse = createMockJettyResponse(jsonResponse);
+
+            // Trigger Jetty proxy response listeners
+            listener.onHeaders(grpcJettyResponse);
+            listener.onContent(grpcJettyResponse, ByteBuffer.wrap(jsonResponse.getBytes(StandardCharsets.UTF_8)));
+//            listener.onComplete(new Result(null, grpcJettyResponse)); // FIXED: Correct `Result` usage
+//
+//            // Send the final response to the client
+//            proxyResponse.setContentType("application/json");
+//            proxyResponse.setStatus(HttpServletResponse.SC_OK);
+//            proxyResponse.getWriter().write(jsonResponse);
+//            proxyResponse.getWriter().flush();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Error handling gRPC request: {}", e.getMessage());
+            proxyResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            proxyResponse.flushBuffer();
+
+        }
     }
+
     protected void sendProxyRequestWithMirroring(HttpServletRequest clientRequest, HttpServletResponse proxyResponse,
                                                Request proxyRequest, AppConfig.Service service) throws IOException {
         // Wrap the original request to buffer its content
@@ -286,4 +371,14 @@ public abstract class BaseProxyRequestHandler extends ProxyServlet.Transparent {
             }
         }
     }
+
+    private GrpcResponse createMockJettyResponse(String jsonResponse) {
+        Map<String, String> headers = Map.of(
+                HttpHeader.CONTENT_TYPE.asString(), "application/json",
+                HttpHeader.CONTENT_LENGTH.asString(), String.valueOf(jsonResponse.length())
+        );
+
+        return new GrpcResponse(200, headers);
+    }
+
 }

@@ -95,4 +95,8 @@ public class RequestUtils {
         return (String) request.getAttribute(Constants
                 .REQUEST_ATTRIBUTE_JETPROXY_GRPC_METHOD_NAME);
     }
+    public static boolean isProxyToGrpc(HttpServletRequest request) {
+        return request.getAttribute(Constants.REQUEST_ATTRIBUTE_JETPROXY_GRPC_SERVICE_NAME) != null &&
+                request.getAttribute(Constants.REQUEST_ATTRIBUTE_JETPROXY_GRPC_METHOD_NAME) != null;
+    }
 }

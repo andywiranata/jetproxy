@@ -13,8 +13,14 @@ import io.grpc.stub.ClientCalls;
 import io.grpc.stub.StreamObserver;
 import io.jetproxy.context.AppConfig;
 import com.google.protobuf.DescriptorProtos;
+
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import io.grpc.Metadata;
+import io.grpc.stub.MetadataUtils;
 
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -122,7 +128,8 @@ public class GrpcChannelManager {
      * @return The DynamicMessage response.
      * @throws Exception if invocation fails.
      */
-    public DynamicMessage invokeGrpcMethod(String fullMethodName, DynamicMessage grpcRequest, ManagedChannel channel) throws Exception {
+    public DynamicMessage invokeGrpcMethod(String fullMethodName, DynamicMessage grpcRequest, ManagedChannel channel, Map<String, String> metadataMap) throws Exception {
+
         String[] parts = fullMethodName.split("/");
         if (parts.length != 2) {
             throw new IllegalArgumentException("Invalid fullMethodName format. Expected 'ServiceName/MethodName'.");
@@ -131,7 +138,19 @@ public class GrpcChannelManager {
         String serviceName = parts[0];
         String methodName = parts[1];
 
-        // Use reflection to get the ServiceDescriptor
+        // "Connection" not allowed per RFC 7230 section 6.1.
+        // This header is typically used in HTTP/1.x for connection-specific actions and
+        // should not be forwarded in an HTTP/2 (gRPC) request.
+        // Forbidden headers (case-insensitive)
+        Set<String> forbiddenHeaders = Set.of(
+                "connection", "keep-alive", "proxy-connection", "transfer-encoding", "upgrade",
+                "host", "accept", "accept-encoding", "cache-control", "content-length", "user-agent"
+        );
+
+        // Remove forbidden headers from metadataMap before converting
+        metadataMap.entrySet().removeIf(entry -> forbiddenHeaders.contains(entry.getKey().toLowerCase()));
+
+        // Fetch Service Descriptor
         Descriptors.ServiceDescriptor serviceDescriptor = fetchServiceDescriptor(channel, serviceName);
         Descriptors.MethodDescriptor methodDescriptor = serviceDescriptor.findMethodByName(methodName);
 
@@ -142,13 +161,28 @@ public class GrpcChannelManager {
         MethodDescriptor<DynamicMessage, DynamicMessage> dynamicMethod = MethodDescriptor.<DynamicMessage, DynamicMessage>newBuilder()
                 .setType(MethodDescriptor.MethodType.UNARY)
                 .setFullMethodName(fullMethodName)
-                .setRequestMarshaller(io.grpc.protobuf.ProtoUtils.marshaller(DynamicMessage.getDefaultInstance(methodDescriptor.getInputType())))
-                .setResponseMarshaller(io.grpc.protobuf.ProtoUtils.marshaller(DynamicMessage.getDefaultInstance(methodDescriptor.getOutputType())))
+                .setRequestMarshaller(
+                        io.grpc.protobuf.ProtoUtils.marshaller(
+                                DynamicMessage.getDefaultInstance(methodDescriptor.getInputType())))
+                .setResponseMarshaller(
+                        io.grpc.protobuf.ProtoUtils.marshaller(
+                                DynamicMessage.getDefaultInstance(methodDescriptor.getOutputType())))
                 .build();
 
-        // Invoke the method
+        // Create Metadata and populate it
+        Metadata metadata = new Metadata();
+        for (Map.Entry<String, String> entry : metadataMap.entrySet()) {
+            Metadata.Key<String> key = Metadata.Key.of(entry.getKey(), Metadata.ASCII_STRING_MARSHALLER);
+            metadata.put(key, entry.getValue());
+        }
+
+        // Use the custom CallCredentials to pass metadata
+        io.grpc.CallOptions callOptions = io.grpc.CallOptions.DEFAULT.withCallCredentials(
+                new GrpcMetadataCredentials(metadata));
+
+        // Invoke the method with metadata
         return ClientCalls.blockingUnaryCall(
-                channel.newCall(dynamicMethod, io.grpc.CallOptions.DEFAULT),
+                channel.newCall(dynamicMethod, callOptions),
                 grpcRequest
         );
     }
@@ -167,9 +201,7 @@ public class GrpcChannelManager {
 
     public Descriptors.ServiceDescriptor fetchServiceDescriptor(ManagedChannel channel, String serviceName) throws Exception {
         CompletableFuture<Descriptors.ServiceDescriptor> future = new CompletableFuture<>();
-
         ServerReflectionGrpc.ServerReflectionStub reflectionStub = ServerReflectionGrpc.newStub(channel);
-
         StreamObserver<ServerReflectionRequest> requestObserver = reflectionStub.serverReflectionInfo(new StreamObserver<>() {
             @Override
             public void onNext(ServerReflectionResponse response) {

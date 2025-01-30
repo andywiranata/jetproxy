@@ -23,6 +23,7 @@ const users = {};
 // Implement CRUD operations
 const userService = {
     CreateUser: (call, callback) => {
+        console.log('Metadata:', call.metadata.getMap()); // Log metadata
         const user = call.request;
         user.id = uuidv4(); // Generate a unique ID
         users[user.id] = user;
@@ -30,6 +31,7 @@ const userService = {
     },
 
     GetUser: (call, callback) => {
+        console.log('Metadata:', call.metadata.getMap()); // Log metadata
         const { id } = call.request;
         if (!users[id]) {
             return callback({ code: grpc.status.NOT_FOUND, message: 'User not found' });
@@ -38,6 +40,7 @@ const userService = {
     },
 
     UpdateUser: (call, callback) => {
+        console.log('Metadata:', call.metadata.getMap()); // Log metadata
         const user = call.request;
         if (!users[user.id]) {
             return callback({ code: grpc.status.NOT_FOUND, message: 'User not found' });
@@ -47,6 +50,7 @@ const userService = {
     },
 
     DeleteUser: (call, callback) => {
+        console.log('Metadata:', call.metadata.getMap()); // Log metadata
         const { id } = call.request;
         if (!users[id]) {
             return callback({ code: grpc.status.NOT_FOUND, message: 'User not found' });
@@ -56,6 +60,7 @@ const userService = {
     },
 
     ListUsers: (call, callback) => {
+        console.log('Metadata:', call.metadata.getMap()); // Log metadata
         const userList = Object.values(users);
         callback(null, { users: userList });
     },
