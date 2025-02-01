@@ -110,9 +110,7 @@ public class ProxyRequestHandler extends BaseProxyRequestHandler {
 
     @Override
     protected void onServerResponseHeaders(HttpServletRequest clientRequest, HttpServletResponse proxyResponse, Response serverResponse) {
-        if (!this.isProxyToGrpc) {
-            super.onServerResponseHeaders(clientRequest, proxyResponse, serverResponse);
-        }
+        super.onServerResponseHeaders(clientRequest, proxyResponse, serverResponse);
         this.modifyResponseHeaders(clientRequest, proxyResponse, serverResponse);
     }
 
@@ -144,7 +142,7 @@ public class ProxyRequestHandler extends BaseProxyRequestHandler {
             String contentType = proxyResponse.getHeaders().get(HttpHeader.CONTENT_TYPE);
             String contentEncoding = proxyResponse.getHeaders().get(HttpHeader.CONTENT_ENCODING);
             try (InputStream decodedStream = decodeContentStream(new ByteArrayInputStream(buffer, offset, length), contentEncoding)) {
-                if (isJsonContent(contentType)) {
+                if (RequestUtils.isJsonContent(contentType)) {
                     String bodyContent = readStreamAsString(decodedStream, contentType);
                     cacheResponseContent(request, bodyContent);
                 }

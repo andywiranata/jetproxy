@@ -48,7 +48,9 @@ public class RequestUtils {
         }
         return -1; // Default value when max-age is not found
     }
-
+    public static boolean isJsonContent(String contentType) {
+        return contentType != null && contentType.contains("application/json");
+    }
     public static String rewriteRequest(String targetUrl, AppConfig.Service newService) {
         if (newService == null) {
             return null;
@@ -99,4 +101,6 @@ public class RequestUtils {
         return request.getAttribute(Constants.REQUEST_ATTRIBUTE_JETPROXY_GRPC_SERVICE_NAME) != null &&
                 request.getAttribute(Constants.REQUEST_ATTRIBUTE_JETPROXY_GRPC_METHOD_NAME) != null;
     }
+
+
 }

@@ -47,6 +47,7 @@ storage:
 proxies:
   - path: /v2/grpc
     service: userGrpcApi
+    ttl: 10000
   - path: /user
     service: userApi
     matches:
@@ -59,7 +60,7 @@ proxies:
         enabled: true
         mirrorService: userV2Api
         mirrorPercentage: 100
-    ttl: -1
+    ttl: 1000
 services:
   - name: userApi
     url: http://localhost:30001

@@ -3,9 +3,7 @@ package io.jetproxy.middleware.grpc;
 import com.google.protobuf.Descriptors;
 import com.google.protobuf.DynamicMessage;
 import com.google.protobuf.util.JsonFormat;
-import io.grpc.ManagedChannel;
-import io.grpc.ManagedChannelBuilder;
-import io.grpc.MethodDescriptor;
+import io.grpc.*;
 import io.grpc.reflection.v1alpha.ServerReflectionGrpc;
 import io.grpc.reflection.v1alpha.ServerReflectionRequest;
 import io.grpc.reflection.v1alpha.ServerReflectionResponse;
@@ -19,7 +17,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
-import io.grpc.Metadata;
+
 import io.grpc.stub.MetadataUtils;
 
 import java.util.List;
@@ -143,7 +141,12 @@ public class GrpcChannelManager {
         // should not be forwarded in an HTTP/2 (gRPC) request.
         // Forbidden headers (case-insensitive)
         Set<String> forbiddenHeaders = Set.of(
-                "connection", "keep-alive", "proxy-connection", "transfer-encoding", "upgrade",
+                "proxy-authorization",
+                "proxy-authenticate",
+                "te",
+                "trailer",
+                "connection",
+                "keep-alive", "proxy-connection", "transfer-encoding", "upgrade",
                 "host", "accept", "accept-encoding", "cache-control", "content-length", "user-agent"
         );
 
@@ -181,10 +184,22 @@ public class GrpcChannelManager {
                 new GrpcMetadataCredentials(metadata));
 
         // Invoke the method with metadata
-        return ClientCalls.blockingUnaryCall(
-                channel.newCall(dynamicMethod, callOptions),
-                grpcRequest
-        );
+        try {
+            // Invoke the gRPC method
+            return ClientCalls.blockingUnaryCall(
+                    channel.newCall(dynamicMethod, callOptions),
+                    grpcRequest
+            );
+        } catch (StatusRuntimeException e) {
+            if (e.getStatus().getCode() == Status.Code.NOT_FOUND) {
+                System.err.println("Error: gRPC method not found - " + e.getStatus().getDescription());
+            } else if (e.getStatus().getCode() == Status.Code.UNAVAILABLE) {
+                System.err.println("Error: gRPC service is unavailable. Check server status.");
+            } else {
+                System.err.println("gRPC call failed: " + e.getMessage());
+            }
+            throw e; // Rethrow exception to propagate error handling
+        }
     }
 
     /**
