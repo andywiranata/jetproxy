@@ -20,7 +20,6 @@ import org.brotli.dec.BrotliInputStream;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.api.Request;
 import org.eclipse.jetty.client.api.Response;
-import org.eclipse.jetty.client.api.Result;
 import org.eclipse.jetty.client.util.BytesContentProvider;
 import org.eclipse.jetty.http.HttpField;
 import org.eclipse.jetty.http.HttpStatus;
@@ -31,7 +30,6 @@ import io.jetproxy.middleware.resilience.ResilienceUtil;
 import io.jetproxy.middleware.rule.header.HeaderAction;
 import io.jetproxy.util.RequestUtils;
 import java.io.*;
-import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -40,25 +38,7 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.InflaterInputStream;
 
 public abstract class BaseProxyRequestHandler extends ProxyServlet.Transparent {
-    // Header Names
-    public static final String HEADER_RETRY_AFTER = "Retry-After";
-    public static final String HEADER_X_PROXY_ERROR = "X-Proxy-Error";
-    public static final String HEADER_X_PROXY_TYPE = "X-Proxy-Type";
-    public static final String HEADER_X_JETPROXY_CACHE = "X-JetProxy-Cache";
-    public static final String HEADER_X_RATE_LIMIT_LIMIT = "X-RateLimit-Limit";
-    public static final String HEADER_X_RATE_LIMIT_REMAINING = "X-RateLimit-Remaining";
-    public static final String HEADER_X_RATE_LIMIT_RESET = "X-RateLimit-Reset";
-    // Error Types
-    public static final String TYPE_CIRCUIT_BREAKER = "circuit-breaker";
-    public static final String TYPE_BULKHEAD = "bulkhead";
-    public static final String TYPE_RATE_LIMITER = "rate-limiter";
-    public static final String TYPE_METHOD_NOT_ALLOWED = "method-not-allowed";
-    public static final String TYPE_GRPC_SERV0CE_METHOD_NOT_FOUND = "grpc-service-or-method-not-found";
-    public static final String TYPE_RULE_NOT_ALLOWED = "rule-not-allowed";
-    // Error Messages
-    public static final String ERROR_METHOD_NOT_ALLOWED = "Method Not Allowed";
-    public static final String ERROR_RULE_NOT_ALLOWED = "Rule not allowed processing request";
-    public final String MODIFIED_HEADER = "modifiedHeader";
+    public final String RESPONSE_MODIFIED_HEADER = "modifiedHeader";
     public final String REQUEST_MODIFIED_HEADER = "requestModifiedHeader";
 
     private static final DebugAwareLogger logger = DebugAwareLogger.getLogger(DebugAwareLogger.class);
@@ -79,7 +59,7 @@ public abstract class BaseProxyRequestHandler extends ProxyServlet.Transparent {
         String path = RequestUtils.getFullPath(request);
         String method = request.getMethod();
         ResponseCacheEntry cacheEntry = new ResponseCacheEntry(
-                (Map<String, String>) request.getAttribute(MODIFIED_HEADER), responseBody);
+                (Map<String, String>) request.getAttribute(RESPONSE_MODIFIED_HEADER), responseBody);
         ctx.getCache()
                 .put(String.format(CacheFactory.HTTP_REQUEST_CACHE_KEY, method, path),
                         ctx.gson.toJson(cacheEntry),
@@ -112,23 +92,6 @@ public abstract class BaseProxyRequestHandler extends ProxyServlet.Transparent {
             return contentType.split("charset=")[1];
         }
         return "UTF-8"; // Default to UTF-8 if no charset is specified
-    }
-    protected void sendServiceUnavailableResponse(HttpServletResponse response, int retryAfter, String errorMessage, String errorType) {
-        response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
-        response.setHeader(HEADER_RETRY_AFTER, String.valueOf(retryAfter));
-        response.setHeader(HEADER_X_PROXY_ERROR, errorMessage);
-        response.setHeader(HEADER_X_PROXY_TYPE, errorType);
-    }
-    protected void sendTooManyRequestsResponse(HttpServletResponse response, int retryAfter, String errorMessage, String errorType) {
-        response.setStatus(429);
-        response.setHeader(HEADER_RETRY_AFTER, String.valueOf(retryAfter));
-        response.setHeader(HEADER_X_PROXY_ERROR, errorMessage);
-        response.setHeader(HEADER_X_PROXY_TYPE, errorType);
-    }
-    protected void sendRateLimiterResponse(HttpServletResponse response, String errorMessage) {
-        response.setStatus(429);
-        response.setHeader(HEADER_X_PROXY_ERROR, errorMessage);
-        response.setHeader(HEADER_X_PROXY_TYPE, TYPE_RATE_LIMITER);
     }
     protected boolean isCacheActive() {
         return proxyRule.getTtl() > 0;
@@ -197,7 +160,7 @@ public abstract class BaseProxyRequestHandler extends ProxyServlet.Transparent {
 
         // Update the client request attributes with modified headers
         serverHeaders.putAll(modifiedHeaders);
-        clientRequest.setAttribute(MODIFIED_HEADER, serverHeaders);
+        clientRequest.setAttribute(RESPONSE_MODIFIED_HEADER, serverHeaders);
     }
     protected Map<String, String> extractHeadersFromServerResponse(Response serverResponse) {
         return serverResponse.getHeaders().stream()
@@ -283,41 +246,41 @@ public abstract class BaseProxyRequestHandler extends ProxyServlet.Transparent {
     }
     protected void sendProxyGrpcRequest(HttpServletRequest clientRequest, HttpServletResponse proxyResponse, Request proxyRequest) throws Exception {
         try {
-            // ✅ Read JSON Request
+            // Read JSON Request
             BufferedHttpServletRequestWrapper bufferedRequest = new BufferedHttpServletRequestWrapper(clientRequest);
             String jsonRequest = bufferedRequest.getBodyAsString();
 
-            // ✅ Extract gRPC Service & Method Names
+            // Extract gRPC Service & Method Names
             String serviceName = RequestUtils.getGrpcServiceName(clientRequest);
             String methodName = RequestUtils.getGrpcMethodName(clientRequest);
             String fullMethodName = serviceName + "/" + methodName;
 
-            // ✅ Get gRPC Channel & Metadata
+            // Get gRPC Channel & Metadata
             GrpcChannelManager manager = GrpcChannelManager.getInstance();
             ManagedChannel channel = manager.getGrpcChannel(this.proxyRule.getService());
             Map<String, String> metadataMap = (Map<String, String>) clientRequest.getAttribute(REQUEST_MODIFIED_HEADER);
 
-            // ✅ Fetch Service Descriptor
+            // Fetch Service Descriptor
             Descriptors.ServiceDescriptor serviceDescriptor = manager.fetchServiceDescriptor(channel, serviceName);
             Descriptors.MethodDescriptor methodDescriptor = serviceDescriptor.findMethodByName(methodName);
             if (methodDescriptor == null) {
                 throw new IllegalArgumentException("gRPC method not found: " + methodName);
             }
 
-            // ✅ Build & Invoke gRPC Request
+            // Build & Invoke gRPC Request
             DynamicMessage grpcRequest = manager.buildGrpcRequest(jsonRequest, methodDescriptor.getInputType());
             DynamicMessage grpcResponse = manager.invokeGrpcMethod(fullMethodName, grpcRequest, channel, metadataMap);
 
-            // ✅ Convert gRPC Response to JSON
+            // Convert gRPC Response to JSON
             String jsonResponse = manager.convertGrpcResponseToJson(grpcResponse);
             MockResponse mockResponse = MockResponse.createSuccessResponse(jsonResponse);
 
-            // ✅ Send Headers & Content
+            // Send Headers & Content
             onServerResponseHeaders(clientRequest, proxyResponse, mockResponse);
             onResponseContent(clientRequest, proxyResponse, mockResponse,
                     jsonResponse.getBytes(StandardCharsets.UTF_8), 0, jsonResponse.length(), Callback.NOOP);
 
-            // ✅ Call Success Handler
+            // Call Success Handler
             onProxyResponseSuccess(clientRequest, proxyResponse, mockResponse);
 
         } catch (StatusRuntimeException e) {

@@ -30,10 +30,8 @@ public class GrpcRequestHandler  implements MiddlewareHandler{
         if (StringUtil.isBlank(grpcServiceNameFromHeader)
                 && StringUtil.isBlank(grpcMethodNameFromHeader)) {
             response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            response.setHeader(BaseProxyRequestHandler.HEADER_X_PROXY_ERROR,
-                    BaseProxyRequestHandler.ERROR_METHOD_NOT_ALLOWED);
-            response.setHeader(BaseProxyRequestHandler.HEADER_X_PROXY_TYPE,
-                    BaseProxyRequestHandler.TYPE_GRPC_SERV0CE_METHOD_NOT_FOUND);
+            response.setHeader(Constants.HEADER_X_PROXY_ERROR, Constants.ERROR_METHOD_NOT_ALLOWED);
+            response.setHeader(Constants.HEADER_X_PROXY_TYPE, Constants.TYPE_GRPC_SERV0CE_METHOD_NOT_FOUND);
             response.flushBuffer();
         } else {
             request.setAttribute(Constants.REQUEST_ATTRIBUTE_JETPROXY_GRPC_SERVICE_NAME, grpcServiceNameFromHeader);
