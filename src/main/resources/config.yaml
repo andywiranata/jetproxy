@@ -74,12 +74,6 @@ grpcServices:
     host: localhost                   # Host for gRPC server
     port: 50051                       # Port for gRPC server
 
-
-#  - name: userV2Api
-#    host: localhost                   # Host for gRPC server
-#    port: 30001                       # Port for gRPC server
-#    basePath: /v2                    # Version base path for this service
-
 users:
   - username: admin
     password: admin
