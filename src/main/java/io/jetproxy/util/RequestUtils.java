@@ -3,8 +3,11 @@ package io.jetproxy.util;
 
 import io.jetproxy.context.AppConfig;
 import io.jetproxy.context.AppContext;
+import io.jetproxy.service.holder.BaseProxyRequestHandler;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
+import java.io.IOException;
 import java.util.Optional;
 
 public class RequestUtils {
@@ -101,6 +104,28 @@ public class RequestUtils {
         return request.getAttribute(Constants.REQUEST_ATTRIBUTE_JETPROXY_GRPC_SERVICE_NAME) != null &&
                 request.getAttribute(Constants.REQUEST_ATTRIBUTE_JETPROXY_GRPC_METHOD_NAME) != null;
     }
+    public static void sendErrorResponse(HttpServletResponse response, int status, String error, String type) throws IOException {
+        response.setStatus(status);
+        response.setHeader(Constants.HEADER_X_PROXY_ERROR, error);
+        response.setHeader(Constants.HEADER_X_PROXY_TYPE, type);
+        response.flushBuffer();
+    }
 
-
+    public static void sendErrorServiceUnavailableResponse(HttpServletResponse response, int retryAfter, String errorMessage, String errorType) {
+        response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
+        response.setHeader(Constants.HEADER_RETRY_AFTER, String.valueOf(retryAfter));
+        response.setHeader(Constants.HEADER_X_PROXY_ERROR, errorMessage);
+        response.setHeader(Constants.HEADER_X_PROXY_TYPE, errorType);
+    }
+    public static void sendErrorTooManyRequestsResponse(HttpServletResponse response, int retryAfter, String errorMessage, String errorType) {
+        response.setStatus(429);
+        response.setHeader(Constants.HEADER_RETRY_AFTER, String.valueOf(retryAfter));
+        response.setHeader(Constants.HEADER_X_PROXY_ERROR, errorMessage);
+        response.setHeader(Constants.HEADER_X_PROXY_TYPE, errorType);
+    }
+    public static void sendErrorRateLimiterResponse(HttpServletResponse response, String errorMessage) {
+        response.setStatus(429);
+        response.setHeader(Constants.HEADER_X_PROXY_ERROR, errorMessage);
+        response.setHeader(Constants.HEADER_X_PROXY_TYPE, Constants.TYPE_RATE_LIMITER);
+    }
 }

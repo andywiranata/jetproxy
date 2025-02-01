@@ -101,6 +101,9 @@ proxies:
     ttl: 10000
 
 services:
+  - path: /v2/grpc
+    service: userGrpcApi
+    ttl: 10000
   - name: tasksApi
     url: http://localhost:5173/template/1on1-meeting-agenda/tasks.json
     methods: ['GET', 'POST', 'PUT']
@@ -136,6 +139,11 @@ users:
   - username: userB
     password: passwordB
     role: roleB
+
+grpcServices:
+  - name: userGrpcApi
+    host: localhost                   # Host for gRPC server
+    port: 50051                       # Port for gRPC server
 
 jwtAuthSource:
   headerName: "Authorization"

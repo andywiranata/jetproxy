@@ -4,6 +4,7 @@ import io.jetproxy.exception.ResilienceCircuitBreakerException;
 import io.jetproxy.exception.ResilienceRateLimitException;
 import io.jetproxy.middleware.resilience.ResilienceFactory;
 import io.jetproxy.middleware.handler.MiddlewareChain;
+import io.jetproxy.util.Constants;
 import io.jetproxy.util.RequestUtils;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -79,11 +80,14 @@ public class ProxyRequestHandler extends BaseProxyRequestHandler {
         } catch (Exception e) {
             logger.error("Error Occurred to process request {}", e.getMessage());
             if (e instanceof ResilienceRateLimitException) {
-                sendRateLimiterResponse(response, e.getMessage());
+                RequestUtils.sendErrorRateLimiterResponse(response, e.getMessage());
             } else if (e instanceof ResilienceCircuitBreakerException) {
                 AppConfig.CircuitBreaker circuitBreakerConfig = proxyRule.getMiddleware().getCircuitBreaker();
-                sendServiceUnavailableResponse(response, circuitBreakerConfig.getRetryAfterSeconds(),
-                        e.getMessage(), TYPE_CIRCUIT_BREAKER);
+                RequestUtils.sendErrorServiceUnavailableResponse(
+                        response,
+                        circuitBreakerConfig.getRetryAfterSeconds(),
+                        e.getMessage(), Constants.TYPE_CIRCUIT_BREAKER
+                );
             } else {
                 response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
             }
