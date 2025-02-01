@@ -123,6 +123,9 @@ public class ConfigLoader {
      */
     public static void createGrpcServiceMap(List<AppConfig.GrpcService> grpcServices) {
         grpcServiceMap = new HashMap<>();
+        if (grpcServices == null) {
+            return;
+        }
         for (AppConfig.GrpcService service : grpcServices) {
             grpcServiceMap.put(service.getName(), service);
         }
