@@ -15,6 +15,7 @@ import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.servlet.ServletMapping;
+import org.eclipse.jetty.util.StringUtil;
 import org.eclipse.jetty.util.security.Constraint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,19 +63,29 @@ public class ProxyConfigurationManager {
         List<AppConfig.Proxy> proxies = config.getProxies();
 
         for (AppConfig.Proxy proxyRule : proxies) {
+            String targetServiceUrl = null;
+            List<String> httpMethods = null;
             AppConfig.Service service = ConfigLoader.getServiceMap().get(proxyRule.getService());
+            AppConfig.GrpcService grpcService = ConfigLoader.getGrpcServiceMap().get(proxyRule.getService());
 
             // Skip invalid or missing services
-            if (service == null) {
+            if (service == null && grpcService == null) {
                 logger.warn("Service not found for proxy: {}", proxyRule.getService());
                 continue;
             }
 
             // Add the proxy servlet
-            String targetServiceUrl = service.getUrl();
+            if (service != null) {
+                targetServiceUrl = service.getUrl();
+                httpMethods = service.getMethods();
+            } else {
+                targetServiceUrl = grpcService.getUrl();
+                httpMethods = grpcService.getMethods();
+            }
+
             String whitelistPath = proxyRule.getPath() + "/*";
             List<Authenticator> authenticators = new ArrayList<>();
-            ServletHolder proxyServlet = createServletHolder(proxyRule, targetServiceUrl, service);
+            ServletHolder proxyServlet = createServletHolder(proxyRule, targetServiceUrl, httpMethods);
             context.addServlet(proxyServlet, whitelistPath);
 
             // Set up authentication if needed
@@ -137,7 +148,8 @@ public class ProxyConfigurationManager {
      */
     public synchronized void addOrUpdateProxy(AppConfig.Proxy newProxy) {
 
-        ConfigValidator.validateProxies(List.of(newProxy), config.getServices());
+        ConfigValidator.validateProxies(List.of(newProxy),
+                config.getServices(), config.getGrpcServices());
         ConfigValidator.validateMiddleware(newProxy);
 
         String pathSpec = newProxy.getPath() + "/*";
@@ -157,7 +169,7 @@ public class ProxyConfigurationManager {
         }
 
         // Add the new proxy
-        ServletHolder proxyServlet = createServletHolder(newProxy, service.getUrl(), service);
+        ServletHolder proxyServlet = createServletHolder(newProxy, service.getUrl(), service.getMethods());
         try {
             context.addServlet(proxyServlet, pathSpec);
             dynamicProxies.put(pathSpec, proxyServlet);
@@ -281,6 +293,7 @@ public class ProxyConfigurationManager {
      * @param role     The role associated with the constraint.
      * @return A ConstraintMapping object.
      */
+    @Deprecated
     public ConstraintMapping createForwardAuthConstraintMapping(String pathSpec, String role) {
         Constraint constraint = new Constraint();
         constraint.setName("forwardAuth");
@@ -297,19 +310,25 @@ public class ProxyConfigurationManager {
     /**
      * Helper method to create a servlet holder for a proxy.
      */
-    private ServletHolder createServletHolder(AppConfig.Proxy proxyRule, String targetServiceUrl, AppConfig.Service service) {
+    private ServletHolder createServletHolder(AppConfig.Proxy proxyRule,
+                                              String targetServiceUrl,
+                                              List<String> httpMethods) {
+        AppContext ctx = AppContext.get();
         String proxyTo = targetServiceUrl + proxyRule.getPath();
         String prefix = proxyRule.getPath();
         String timeout = String.valueOf(config.getDefaultTimeout());
 
         MiddlewareChain middlewareChain = new MiddlewareChain(List.of(
-                new RuleValidatorHandler(service, proxyRule),
+                new RuleValidatorHandler(httpMethods, proxyRule),
                 new HttpCacheHandler(),
                 new MatchServiceHandler(proxyRule),
-                new MirroringHandler(proxyRule)
+                new MirroringHandler(proxyRule),
+                new GrpcRequestHandler(proxyRule, ctx)
         ));
-        ServletHolder proxyServlet = new ServletHolder(new ProxyRequestHandler(
-                service, proxyRule, middlewareChain));
+        ServletHolder proxyServlet = new ServletHolder(
+                new ProxyRequestHandler(
+                 proxyRule, middlewareChain));
+
         proxyServlet.setInitParameter(PROXY_TO, proxyTo);
         proxyServlet.setInitParameter(PREFIX, prefix);
         proxyServlet.setInitParameter(TIMEOUT, timeout);

@@ -20,10 +20,45 @@ public class ConfigValidator {
         if (config.getDefaultTimeout() <= 0) {
             throw new JetProxyValidationException("Default timeout must be greater than 0");
         }
-        ConfigValidator.validateProxies(config.getProxies(), config.getServices());
-        ConfigValidator.validateServices(config.getServices());
-    }
+        // Check if at least one service type is available
+        boolean hasHttpServices = config.getServices() != null && !config.getServices().isEmpty();
+        boolean hasGrpcServices = config.getGrpcServices() != null && !config.getGrpcServices().isEmpty();
 
+        ConfigValidator.validateProxies(config.getProxies(), config.getServices(), config.getGrpcServices());
+
+        if (hasHttpServices) {
+            ConfigValidator.validateServices(config.getServices());
+        } else {
+            ConfigValidator.validateGrpServices(config.getGrpcServices());
+        }
+    }
+    public static void validateGrpServices(List<AppConfig.GrpcService> services) {
+        if (services == null || services.isEmpty()) {
+           return;
+        }
+        // Ensure service names are unique
+        Set<String> uniqueServiceNames = new HashSet<>();
+
+        for (AppConfig.GrpcService grpcService : services) {
+            if (grpcService.getName() == null || grpcService.getName().isEmpty()) {
+                throw new JetProxyValidationException("GrpcService name cannot be null or empty");
+            }
+
+            if (!uniqueServiceNames.add(grpcService.getName())) {
+                throw new JetProxyValidationException("Duplicate GrpcService name found: " + grpcService.getName());
+            }
+
+            // Validate service URL
+            if (grpcService.getHost() == null || grpcService.getHost().isEmpty()) {
+                throw new JetProxyValidationException("GrpcService Host cannot be null or empty for service: " + grpcService.getHost());
+            }
+            if (grpcService.getPort() == null) {
+                throw new JetProxyValidationException("GrpcService Port cannot be null or empty for service: " + grpcService.getPort());
+            }
+
+
+        }
+    }
     /**
      * Validates the list of services for correctness and uniqueness.
      *
@@ -88,20 +123,25 @@ public class ConfigValidator {
         };
     }
     /**
-     * Validates the list of proxies and ensures they reference valid services.
+     * Validates the list of proxies and ensures they reference valid HTTP or gRPC services.
      */
-    public static void validateProxies(List<AppConfig.Proxy> proxies, List<AppConfig.Service> services) {
+    public static void validateProxies(List<AppConfig.Proxy> proxies, List<AppConfig.Service> services, List<AppConfig.GrpcService> grpcServices) {
         if (proxies == null || proxies.isEmpty()) {
             throw new JetProxyValidationException("No proxies configured");
         }
 
-        if (services == null || services.isEmpty()) {
-            throw new JetProxyValidationException("No services configured, but proxies depend on them.");
+        if ((services == null || services.isEmpty()) && (grpcServices == null || grpcServices.isEmpty())) {
+            throw new JetProxyValidationException("No services configured (HTTP or gRPC), but proxies depend on them.");
         }
 
-        Set<String> registeredServiceNames = services.stream()
-                .map(AppConfig.Service::getName)
-                .collect(Collectors.toSet());
+        // Collect registered HTTP and gRPC service names
+        Set<String> registeredServiceNames = new HashSet<>();
+        if (services != null) {
+            registeredServiceNames.addAll(services.stream().map(AppConfig.Service::getName).collect(Collectors.toSet()));
+        }
+        if (grpcServices != null) {
+            registeredServiceNames.addAll(grpcServices.stream().map(AppConfig.GrpcService::getName).collect(Collectors.toSet()));
+        }
 
         for (AppConfig.Proxy proxy : proxies) {
             if (proxy.getPath() == null || proxy.getPath().isEmpty()) {
@@ -119,6 +159,7 @@ public class ConfigValidator {
             }
         }
     }
+
 
     public static void validateMiddleware(AppConfig.Proxy proxy) {
         AppConfig.Middleware middleware = proxy.getMiddleware();

@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import io.jetproxy.middleware.cache.Cache;
 import io.jetproxy.middleware.cache.CacheFactory;
 import io.jetproxy.middleware.cache.RedisPoolManager;
+import io.jetproxy.middleware.grpc.GrpcChannelManager;
 import io.jetproxy.middleware.log.LogbackConfigurator;
 import io.jetproxy.service.AppShutdownListener;
 import io.jetproxy.service.holder.ProxyConfigurationManager;
@@ -42,10 +43,12 @@ public class AppContext {
 
     private AppContext(Builder builder) {
         this.config = ConfigLoader.getConfig(builder.pathConfigYaml);
+
         LogbackConfigurator.configureLogging(this.config.getLogging());
         RedisPoolManager.initializePool(this.config.getStorage().getRedis());
+        GrpcChannelManager.configureGrpcChannel(this.config.getGrpcServices());
+
         this.cache = CacheFactory.createCache(this.config);
-        // this.metricsListener = MetricsListenerFactory.createMetricsListener(this.config);
         this.debugMode = this.config.isAccessLog();
         this.gson = GsonFactory.createGson();
         this.contextHandler = new ServletContextHandler(ServletContextHandler.SESSIONS);
@@ -82,6 +85,13 @@ public class AppContext {
         return ConfigLoader.getServiceMap();
     }
 
+    public Map<String, AppConfig.GrpcService> getGrpcServiceMap() {
+        return ConfigLoader.getGrpcServiceMap();
+    }
+
+    public boolean isUseGrpcService(String serviceName) {
+        return ConfigLoader.getGrpcServiceMap().get(serviceName) != null;
+    }
     public void preventGracefullyShutdown() {
         gracefullyShutdownAllowed = false;
     }

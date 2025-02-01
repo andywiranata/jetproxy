@@ -14,7 +14,7 @@ logging:
       className: "ch.qos.logback.core.ConsoleAppender"
       encoder:
         pattern: "%d{yyyy-MM-dd HH:mm:ss} %-1level %logger{36} - %msg%n"
-  loggers:
+#  loggers:
 #    - name: "io.jetproxy"
 #      level: INFO
 #    - name: "org.eclipse.jetty"
@@ -45,6 +45,9 @@ storage:
     size: 10000
 
 proxies:
+  - path: /v2/grpc
+    service: userGrpcApi
+    ttl: 10000
   - path: /user
     service: userApi
     matches:
@@ -54,10 +57,10 @@ proxies:
         service: userApi
     middleware:
       mirroring:
-        enabled: false
+        enabled: true
         mirrorService: userV2Api
         mirrorPercentage: 100
-    ttl: -1
+    ttl: 1000
 services:
   - name: userApi
     url: http://localhost:30001
@@ -65,6 +68,17 @@ services:
   - name: userV2Api
     url: http://localhost:30001/v2
     methods: [ 'GET', 'POST']
+
+grpcServices:
+  - name: userGrpcApi
+    host: localhost                   # Host for gRPC server
+    port: 50051                       # Port for gRPC server
+
+
+#  - name: userV2Api
+#    host: localhost                   # Host for gRPC server
+#    port: 30001                       # Port for gRPC server
+#    basePath: /v2                    # Version base path for this service
 
 users:
   - username: admin

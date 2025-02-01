@@ -23,7 +23,10 @@ public class ConfigLoader {
      *  Retrieves the current map of services.
      */
     @Getter
-    private static Map<String, AppConfig.Service> serviceMap;
+    private static Map<String, AppConfig.Service> serviceMap = new HashMap<>();
+
+    @Getter
+    private static Map<String, AppConfig.GrpcService> grpcServiceMap = new HashMap<>();
 
     private ConfigLoader() {}
 
@@ -75,6 +78,7 @@ public class ConfigLoader {
             // Validate and create service map
             ConfigValidator.validateConfig(config);
             createServiceMap(config.getServices());
+            createGrpcServiceMap(config.getGrpcServices());
         } catch (Exception e) {
             logger.error("Failed to load and parse config.yaml: {}", e.getMessage(), e);
             throw new RuntimeException("Failed to load and parse config.yaml", e);
@@ -114,8 +118,18 @@ public class ConfigLoader {
             serviceMap.put(service.getName(), service);
         }
     }
-
-
+    /**
+     * Creates a map of services by their name for quick lookup.
+     */
+    public static void createGrpcServiceMap(List<AppConfig.GrpcService> grpcServices) {
+        grpcServiceMap = new HashMap<>();
+        if (grpcServices == null) {
+            return;
+        }
+        for (AppConfig.GrpcService service : grpcServices) {
+            grpcServiceMap.put(service.getName(), service);
+        }
+    }
 
     /**
      * Updates the service map dynamically.
@@ -128,7 +142,7 @@ public class ConfigLoader {
         logger.info("Adding or updating proxies: {}", updatedProxies);
 
         // Validate the incoming proxies
-        ConfigValidator.validateProxies(config.getProxies(), config.getServices());
+        ConfigValidator.validateProxies(config.getProxies(), config.getServices(), config.getGrpcServices());
 
         // Get the current list of proxies
         List<AppConfig.Proxy> existingProxies = config.getProxies();
@@ -157,7 +171,7 @@ public class ConfigLoader {
             }
         }
         // Ensure the updated proxy list is valid
-        ConfigValidator.validateProxies(existingProxies, config.getServices());
+        ConfigValidator.validateProxies(existingProxies, config.getServices(), config.getGrpcServices());
         // Log the updated proxies for confirmation
         logger.info("Updated proxies: {}", existingProxies);
     }

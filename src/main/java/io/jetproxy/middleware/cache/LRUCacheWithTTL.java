@@ -80,7 +80,7 @@ public class LRUCacheWithTTL implements Cache {
                 logger.warn("Memory limit exceeded. Performing cleanup.");
                 cleanup(newEntrySize); // Clean up to free memory if limit exceeded
             }
-            logger.info("new key {} {} {}", key, value, ttl);
+            logger.debug("new key {} {} {}", key, value, ttl);
             cache.put(key, newEntry);
             currentMemoryUsage += newEntrySize;
         } finally {
@@ -96,7 +96,7 @@ public class LRUCacheWithTTL implements Cache {
         // Remove the least recently used entries until memory is below the threshold
         while (isMemoryExceeded(additionalSize) && !cache.isEmpty()) {
             String eldestKey = cache.entrySet().iterator().next().getKey();
-            logger.info("Removing entry {} due to memory cleanup", eldestKey);
+            logger.debug("Removing entry {} due to memory cleanup", eldestKey);
             CacheEntry eldestEntry = cache.remove(eldestKey);
             currentMemoryUsage -= eldestEntry.getSize();
         }

@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package grpc.reflection.v1alpha;
+
+service ServerReflection {
+  rpc ServerReflectionInfo (stream ServerReflectionRequest) returns (stream ServerReflectionResponse);
+}
+
+message ServerReflectionRequest {
+  oneof message_request {
+    string file_by_filename = 1;
+    string file_containing_symbol = 2;
+    string file_containing_extension = 3;
+  }
+}
+
+message ServerReflectionResponse {
+  oneof message_response {
+    FileDescriptorResponse file_descriptor_response = 1;
+  }
+}
+
+message FileDescriptorResponse {
+  repeated bytes file_descriptor_proto = 1;
+}

@@ -16,13 +16,13 @@ public class RuleValidatorHandler implements MiddlewareHandler {
     protected RuleContext ruleContext;
     protected List<String > allowedMethods;
 
-    public RuleValidatorHandler(AppConfig.Service configService,
+    public RuleValidatorHandler(List<String> httpMethods,
                                 AppConfig.Proxy proxyRule) {
         this.ruleContext = Optional.ofNullable(proxyRule.getMiddleware())
                 .map(AppConfig.Middleware::getRule)
                 .map(RuleFactory::createRulesFromString)
                 .orElse(null);
-        this.allowedMethods = configService.getMethods();
+        this.allowedMethods = httpMethods;
     }
 
 

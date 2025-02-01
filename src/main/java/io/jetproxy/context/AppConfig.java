@@ -20,6 +20,7 @@ public class AppConfig {
     private Storage storage;
     private List<Proxy> proxies;
     private List<Service> services;
+    private List<GrpcService> grpcServices;
     private List<User> users;
     private CorsFilter corsFilter = new CorsFilter(); // Default values if missing
     private JwtAuthSource jwtAuthSource;
@@ -65,7 +66,6 @@ public class AppConfig {
         private Root root;
         private List<Appender> appenders;
         private List<Logger> loggers;
-
     }
     @Getter
     @Setter
@@ -253,22 +253,55 @@ public class AppConfig {
         private boolean enabled = false;
         private int maxConcurrentCalls = 10; // Default: 10 concurrent calls
         private long maxWaitDuration = 500; // Default: 500 ms
-
-        public int getRetryAfterSeconds() {
-            return (int) Math.ceil(maxWaitDuration / 1000.0); // Convert ms to seconds
-        }
     }
 
+    @Getter
+    @Setter
+    @ToString
+    public static class GrpcService {
+        private String name;
+        private String host;
+        private Integer port = 80;
+        private String healthcheck;
+        public List<String> getMethods() {
+            return List.of("GET",
+                    "POST",
+                    "PUT",
+                    "DELETE",
+                    "HEAD",
+                    "OPTIONS",
+                    "PATCH",
+                    "TRACE",
+                    "CONNECT");
+        }
+        // dummy http request, to bypass URI validation
+        public String getUrl() {
+            return "http://" + host + ":" + port;
+        }
+    }
     @Getter
     @Setter
     @ToString
     public static class Service {
         private String name;
         private String url;
-        private List<String> methods;
+        private List<String> methods = List.of("*");
         private String role;
         private String healthcheck;
-
+        public List<String> getMethods() {
+            if (methods.contains("*")) {
+                return List.of("GET",
+                        "POST",
+                        "PUT",
+                        "DELETE",
+                        "HEAD",
+                        "OPTIONS",
+                        "PATCH",
+                        "TRACE",
+                        "CONNECT");
+            }
+            return methods;
+        }
         public String getUuid() {
             return Base64.getUrlEncoder()
                     .withoutPadding()
