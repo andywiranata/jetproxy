@@ -17,6 +17,9 @@ public class MatchServiceHandler implements MiddlewareHandler {
     protected List<RuleContext> ruleContextList = new ArrayList<>();
     protected List<AppConfig.Match> matches = new ArrayList<>();
     public MatchServiceHandler(AppConfig.Proxy proxyRule) {
+        if (!proxyRule.hasMatchRules()) {
+            return;
+        }
         this.matches = proxyRule.getMatches();
         for (AppConfig.Match match : proxyRule.getMatches()) {
             RuleContext ruleContext = Optional

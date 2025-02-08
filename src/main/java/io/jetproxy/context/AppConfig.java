@@ -12,8 +12,8 @@ import java.util.*;
 public class AppConfig {
     private String uuid = UUID.randomUUID().toString();
     private String appName;
-    private int port;
-    private int defaultTimeout;
+    private int port = 80;
+    private int defaultTimeout = 10000;
     private boolean dashboard;
     private boolean accessLog = false;
     private String rootPath;
@@ -26,6 +26,12 @@ public class AppConfig {
     private JwtAuthSource jwtAuthSource;
     private Logging logging; // Added logging configuration
 
+    public boolean hasEnableRedisStorage() {
+        return storage != null && storage.redis != null && storage.redis.enabled;
+    }
+    public boolean hasEnableInMemoryStorage() {
+        return storage != null && storage.inMemory != null && storage.inMemory.enabled;
+    }
     @Getter
     @Setter
     @ToString
@@ -114,7 +120,7 @@ public class AppConfig {
         }
 
         public boolean hasMatchRules() {
-            return matches.isEmpty();
+            return matches != null && !matches.isEmpty();
         }
 
         public String getUuid() {
@@ -314,17 +320,16 @@ public class AppConfig {
     @ToString
     public static class Storage {
         private RedisConfig redis;
-        private StatsdConfig statsd;
         private InMemoryConfig inMemory;
 
         @Getter
         @Setter
         @ToString
         public static class RedisConfig {
-            private boolean enabled;
-            private String host;
-            private int port;
-            private int database;
+            private boolean enabled = false;
+            private String host = "localhost";
+            private int port = 6379;
+            private int database = 1;
             private int maxTotal = 128;
             private int maxIdle = 64;
             private int minIdle = 16;
@@ -333,18 +338,8 @@ public class AppConfig {
         @Getter
         @Setter
         @ToString
-        public static class StatsdConfig {
-            private boolean enabled;
-            private String host;
-            private int port;
-            private String prefix;
-        }
-
-        @Getter
-        @Setter
-        @ToString
         public static class InMemoryConfig {
-            private boolean enabled;
+            private boolean enabled = false;
             private long maxMemory = 50;
             private int size = 10000;
         }

@@ -93,12 +93,33 @@ public class MultiLayerAuthenticator implements Authenticator {
         return false;
     }
 
-    // Method to retrieve the list of authenticators for a given path
+    /*
+        Method to retrieve the list of authenticators for a given path
+        | **Pattern (`list`)** | **Path (`path`)** | **Match?** |
+        |----------------------|------------------|------------|
+        | "/user/*"            | "/user"          | ✅ Yes     |
+        | "/user/*"            | "/user/123"      | ✅ Yes     |
+        | "/user/*"            | "/user/profile"  | ✅ Yes     |
+        | "/user/*"            | "/admin"         | ❌ No      |
+        | "/user"              | "/user"          | ✅ Yes     |
+        | "/user"              | "/user/123"      | ❌ No      |
+    */
     private List<Authenticator> getAuthenticatorsForPath(String path) {
         return pathAuthenticatorMap.entrySet().stream()
-                .filter(entry -> path.matches(entry.getKey())) // Match path to pattern
+                .filter(entry -> isPathMatching(entry.getKey(), path)) // Custom matching function
                 .map(Map.Entry::getValue)
                 .findFirst()
                 .orElse(new ArrayList<>());
     }
+
+    private boolean isPathMatching(String pattern, String path) {
+        if (pattern.endsWith("/*")) {
+            String basePattern = pattern.substring(0, pattern.length() - 2); // Remove "/*"
+            boolean isMatch = path.equals(basePattern) || path.startsWith(basePattern + "/");
+            return isMatch;
+        }
+        return path.equals(pattern); // Exact match for non-wildcard paths
+    }
+
+
 }

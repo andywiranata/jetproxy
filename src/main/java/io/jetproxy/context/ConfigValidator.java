@@ -1,6 +1,7 @@
 package io.jetproxy.context;
 
 import io.jetproxy.exception.JetProxyValidationException;
+import org.eclipse.jetty.util.StringUtil;
 
 import java.util.HashSet;
 import java.util.List;
@@ -14,15 +15,21 @@ public class ConfigValidator {
      * Validates the entire configuration.
      */
     public static void validateConfig(AppConfig config) {
+        if (StringUtil.isEmpty(config.getAppName())) {
+            throw new JetProxyValidationException("appName cannot be null");
+        }
         if (config.getPort() <= 0 || config.getPort() > 65535) {
             throw new JetProxyValidationException("Invalid port number: " + config.getPort());
         }
         if (config.getDefaultTimeout() <= 0) {
             throw new JetProxyValidationException("Default timeout must be greater than 0");
         }
+        if (StringUtil.isEmpty(config.getRootPath()) || !config.getRootPath().startsWith("/")) {
+            throw new JetProxyValidationException("rootPath must start with '/'");
+        }
+
         // Check if at least one service type is available
         boolean hasHttpServices = config.getServices() != null && !config.getServices().isEmpty();
-        boolean hasGrpcServices = config.getGrpcServices() != null && !config.getGrpcServices().isEmpty();
 
         ConfigValidator.validateProxies(config.getProxies(), config.getServices(), config.getGrpcServices());
 
@@ -157,9 +164,31 @@ public class ConfigValidator {
             if (!proxy.getPath().startsWith("/")) {
                 throw new JetProxyValidationException("Proxy path must start with '/': " + proxy.getPath());
             }
+            validateMatches(proxy, registeredServiceNames);
         }
     }
 
+    /**
+     * Validates the matches list inside proxies.
+     */
+    public static void validateMatches(AppConfig.Proxy proxy, Set<String> registeredServiceNames) {
+        if (proxy.getMatches() == null || proxy.getMatches().isEmpty()) {
+            return; // No matches to validate
+        }
+
+        for (AppConfig.Match match : proxy.getMatches()) {
+            if (match.getRule() == null || match.getRule().isEmpty()) {
+                throw new JetProxyValidationException("Match rule cannot be null or empty in proxy: " + proxy.getPath());
+            }
+            if (match.getService() == null || match.getService().isEmpty()) {
+                throw new JetProxyValidationException("Match service cannot be null or empty in proxy: " + proxy.getPath());
+            }
+            if (!registeredServiceNames.contains(match.getService())) {
+                throw new JetProxyValidationException("Match references an unregistered service: " + match.getService()
+                        + " in proxy: " + proxy.getPath());
+            }
+        }
+    }
 
     public static void validateMiddleware(AppConfig.Proxy proxy) {
         AppConfig.Middleware middleware = proxy.getMiddleware();
