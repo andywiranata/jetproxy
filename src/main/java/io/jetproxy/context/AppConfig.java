@@ -25,7 +25,9 @@ public class AppConfig {
     private CorsFilter corsFilter = new CorsFilter(); // Default values if missing
     private JwtAuthSource jwtAuthSource;
     private Logging logging; // Added logging configuration
-
+    public boolean hasCorsFilter() {
+        return corsFilter != null;
+    }
     public boolean hasEnableRedisStorage() {
         return storage != null && storage.redis != null && storage.redis.enabled;
     }
@@ -50,7 +52,8 @@ public class AppConfig {
         private List<String> accessControlAllowOriginList = List.of("*");
 
         public List<String> getAccessControlAllowMethods() {
-            if (accessControlAllowMethods.contains("*")) {
+            if (accessControlAllowMethods == null ||
+                    accessControlAllowMethods.contains("*")) {
                 return List.of("GET",
                         "POST",
                         "PUT",

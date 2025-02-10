@@ -38,6 +38,20 @@ public class ConfigValidator {
         } else {
             ConfigValidator.validateGrpServices(config.getGrpcServices());
         }
+
+        if (!config.hasCorsFilter()) {
+            throw new JetProxyValidationException("Cors Filter cannot be null");
+        } else {
+            if (config.getCorsFilter().getAccessControlAllowMethods() == null) {
+                throw new JetProxyValidationException("Access Control Allow Methods cannot be null");
+            }
+            if (config.getCorsFilter().getAccessControlAllowOriginList() == null) {
+                throw new JetProxyValidationException("Access Control Origin List cannot be null");
+            }
+            if (config.getCorsFilter().getAccessControlAllowHeaders() == null) {
+                throw new JetProxyValidationException("Access Control Headers cannot be null");
+            }
+        }
     }
     public static void validateGrpServices(List<AppConfig.GrpcService> services) {
         if (services == null || services.isEmpty()) {

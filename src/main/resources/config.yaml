@@ -3,7 +3,7 @@ port: ${JET_PORT:8080}
 defaultTimeout: ${JET_DEFAULT_TIMEOUT:10000}
 dashboard: ${JET_DASHBOARD:true}
 rootPath: ${JET_DASHBOARD:/}
-accessLog: ${JET_DEBUG_MODE:false}
+accessLog: ${JET_DEBUG_MODE:true}
 
 logging:
   root:
@@ -22,11 +22,7 @@ logging:
 
 corsFilter:
   accessControlAllowMethods:
-    - "*"
-  accessControlAllowHeaders:
-    - "*"
-  accessControlAllowOriginList:
-    - "*"
+
 
 storage:
   redis:
@@ -43,6 +39,10 @@ storage:
 #    size: 10000
 
 proxies:
+  - path: /upload
+    service: fileUploadService
+    middleware:
+      rule: "HeaderPrefix('Content-Type', 'multipart/form-data')"
   - path: /v2/grpc
     service: userGrpcApi
     ttl: 10000
@@ -74,7 +74,10 @@ services:
     methods: [ 'GET', 'POST']
   - name: authApi
     url: http://localhost:30001
-    methods: [ 'POST' ]
+    methods: ['POST']
+  - name: fileUploadService
+    url: http://localhost:30001
+    methods: ['POST']
 
 grpcServices:
   - name: userGrpcApi
