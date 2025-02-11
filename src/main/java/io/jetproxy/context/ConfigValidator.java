@@ -179,6 +179,7 @@ public class ConfigValidator {
                 throw new JetProxyValidationException("Proxy path must start with '/': " + proxy.getPath());
             }
             validateMatches(proxy, registeredServiceNames);
+            validateMiddleware(proxy, registeredServiceNames);
         }
     }
 
@@ -204,7 +205,7 @@ public class ConfigValidator {
         }
     }
 
-    public static void validateMiddleware(AppConfig.Proxy proxy) {
+    public static void validateMiddleware(AppConfig.Proxy proxy,  Set<String> registeredServiceNames) {
         AppConfig.Middleware middleware = proxy.getMiddleware();
 
         if (middleware == null) {
@@ -224,6 +225,10 @@ public class ConfigValidator {
             }
             if (forwardAuth.getService() == null || forwardAuth.getService().isEmpty()) {
                 throw new JetProxyValidationException("ForwardAuth middleware is enabled but service is missing.");
+            }
+            if (registeredServiceNames != null && !registeredServiceNames.contains(forwardAuth.getService())) {
+                throw new JetProxyValidationException("ForwardAuth middleware is enabled, but the specified service ('"
+                        + forwardAuth.getService() + "') is not registered in the service list.");
             }
             if (forwardAuth.getRequestHeaders() == null || forwardAuth.getRequestHeaders().isEmpty()) {
                 throw new JetProxyValidationException("ForwardAuth middleware is enabled but requestHeaders are missing.");
