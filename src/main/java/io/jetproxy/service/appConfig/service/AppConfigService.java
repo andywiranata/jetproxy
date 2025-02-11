@@ -14,7 +14,9 @@ import io.jetproxy.service.holder.ProxyConfigurationManager;
 import java.util.List;
 
 public class AppConfigService {
-
+    public AppConfig getConfig() {
+        return AppContext.get().getConfig();
+    }
     public List<ProxyVO> getProxies() {
         return AppConfigTransformer.toProxyVOList(AppContext.get().getConfig().getProxies());
     }
