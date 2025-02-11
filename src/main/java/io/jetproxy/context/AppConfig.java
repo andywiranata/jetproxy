@@ -25,6 +25,7 @@ public class AppConfig {
     private CorsFilter corsFilter = new CorsFilter(); // Default values if missing
     private JwtAuthSource jwtAuthSource;
     private Logging logging; // Added logging configuration
+
     public boolean hasCorsFilter() {
         return corsFilter != null;
     }

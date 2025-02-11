@@ -52,6 +52,23 @@ public class ConfigValidator {
                 throw new JetProxyValidationException("Access Control Headers cannot be null");
             }
         }
+        if (config.getUsers() != null) {
+            for (AppConfig.User user : config.getUsers()) {
+                // Validate username
+                if (StringUtil.isEmpty(user.getUsername())) {
+                    throw new JetProxyValidationException("Username cannot be null or empty for user: " + user.getUsername());
+                }
+                // Validate password
+                if (StringUtil.isEmpty(user.getPassword())) {
+                    throw new JetProxyValidationException("Password cannot be null or empty for user: " + user.getUsername());
+                }
+                // Validate role
+                if (StringUtil.isEmpty(user.getRole())) {
+                    throw new JetProxyValidationException("Role cannot be null or empty for user: " + user.getUsername());
+                }
+            }
+        }
+
     }
     public static void validateGrpServices(List<AppConfig.GrpcService> services) {
         if (services == null || services.isEmpty()) {

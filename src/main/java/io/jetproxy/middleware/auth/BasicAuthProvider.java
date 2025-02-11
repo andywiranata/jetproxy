@@ -19,13 +19,14 @@ public class BasicAuthProvider implements AuthProvider {
         UserStore userStore = new UserStore();
 
         List<AppConfig.User> users = config.getUsers();
-        for (AppConfig.User user : users) {
-            String username = user.getUsername();
-            String password = user.getPassword();
-            String role = user.getRole();
-            userStore.addUser(username, Credential.getCredential(password), new String[]{role});
+        if (users != null) {
+            for (AppConfig.User user : users) {
+                String username = user.getUsername();
+                String password = user.getPassword();
+                String role = user.getRole();
+                userStore.addUser(username, Credential.getCredential(password), new String[]{role});
+            }
         }
-
         loginService.setUserStore(userStore);
         securityHandler.setLoginService(loginService);
         return securityHandler;
