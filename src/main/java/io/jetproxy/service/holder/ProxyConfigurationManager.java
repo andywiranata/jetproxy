@@ -150,7 +150,7 @@ public class ProxyConfigurationManager {
 
         ConfigValidator.validateProxies(List.of(newProxy),
                 config.getServices(), config.getGrpcServices());
-        ConfigValidator.validateMiddleware(newProxy);
+        ConfigValidator.validateMiddleware(newProxy, null);
 
         String pathSpec = newProxy.getPath() + "/*";
         List<Authenticator> authenticators = new ArrayList<>();

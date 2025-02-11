@@ -45,7 +45,6 @@ public class AppContext {
         this.config = ConfigLoader.getConfig(builder.pathConfigYaml);
 
         LogbackConfigurator.configureLogging(this.config.getLogging());
-        RedisPoolManager.initializePool(this.config.getStorage().getRedis());
         GrpcChannelManager.configureGrpcChannel(this.config.getGrpcServices());
 
         this.cache = CacheFactory.createCache(this.config);
@@ -127,7 +126,7 @@ public class AppContext {
      * Start a Redis subscription to listen for configuration change events.
      */
     private void startRedisSubscription() {
-        if (!this.getConfig().getStorage().hasRedisServer()) {
+        if (!this.getConfig().hasEnableRedisStorage()) {
             logger.warn("Cannot start Redis subscription: Redis server is not enabled or configured in the application settings.");
             return;
         }

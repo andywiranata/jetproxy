@@ -80,7 +80,7 @@ public class ConfigLoader {
             createServiceMap(config.getServices());
             createGrpcServiceMap(config.getGrpcServices());
         } catch (Exception e) {
-            logger.error("Failed to load and parse config.yaml: {}", e.getMessage(), e);
+            logger.error("Failed to load and parse config.yaml: {}", e.getMessage());
             throw new RuntimeException("Failed to load and parse config.yaml", e);
         }
     }

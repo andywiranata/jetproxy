@@ -3,7 +3,6 @@ port: ${JET_PORT:8080}
 defaultTimeout: ${JET_DEFAULT_TIMEOUT:10000}
 dashboard: ${JET_DASHBOARD:true}
 rootPath: ${JET_DASHBOARD:/}
-#debugLog: ${JET_DEBUG_LOG_MODE:true}
 accessLog: ${JET_DEBUG_MODE:true}
 
 logging:
@@ -23,28 +22,27 @@ logging:
 
 corsFilter:
   accessControlAllowMethods:
-    - "*"
-  accessControlAllowHeaders:
-    - "*"
-  accessControlAllowOriginList:
-    - "*"
+
 
 storage:
   redis:
-    enabled: false
-    host: localhost
+    enabled: true
     port: 6379
     database: 1
     maxTotal: 128
     maxIdle: 64
     minIdle: 16
-
-  inMemory:
-    enabled: true
-    maxMemory: 50 # MB
-    size: 10000
+#
+#  inMemory:
+#    enabled: true
+#    maxMemory: 50 # MB
+#    size: 10000
 
 proxies:
+  - path: /upload
+    service: fileUploadService
+    middleware:
+      rule: "HeaderPrefix('Content-Type', 'multipart/form-data')"
   - path: /v2/grpc
     service: userGrpcApi
     ttl: 10000
@@ -58,8 +56,14 @@ proxies:
     middleware:
       mirroring:
         enabled: true
-        mirrorService: userV2Api
+        mirrorService: userV2xApi
         mirrorPercentage: 100
+      forwardAuth:
+        enabled: true
+        path: /verify
+        service: authApi
+        requestHeaders: "Forward(X-Custom-*);Forward(Authorization);"
+        responseHeaders: "Remove(X-Powered-By)"
     ttl: 1000
 services:
   - name: userApi
@@ -68,6 +72,12 @@ services:
   - name: userV2Api
     url: http://localhost:30001/v2
     methods: [ 'GET', 'POST']
+  - name: authApi
+    url: http://localhost:30001
+    methods: ['POST']
+  - name: fileUploadService
+    url: http://localhost:30001
+    methods: ['POST']
 
 grpcServices:
   - name: userGrpcApi

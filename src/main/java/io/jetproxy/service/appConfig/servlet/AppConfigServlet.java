@@ -11,7 +11,8 @@ import com.google.gson.JsonSyntaxException;
 
 import java.io.IOException;
 
-public class AppConfigServlet extends AbstractJsonServlet<Object> {
+public class
+AppConfigServlet extends AbstractJsonServlet<Object> {
     private final AppConfigService appConfigService;
 
     public AppConfigServlet(AppConfigService appConfigService) {
@@ -21,7 +22,7 @@ public class AppConfigServlet extends AbstractJsonServlet<Object> {
     @Override
     public void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String path = req.getPathInfo();
-        if (path == null || path.equals("/")) {
+        if (path == null) {
             sendJsonResponse(resp, new ApiResponse<>(false,
                             "Please use /config/proxies, /config/services, or /config/users.", null),
                     HttpServletResponse.SC_BAD_REQUEST);
@@ -30,6 +31,7 @@ public class AppConfigServlet extends AbstractJsonServlet<Object> {
 
         try {
             Object data = switch (path) {
+                case "/" -> appConfigService.getConfig();
                 case "/proxies" -> appConfigService.getProxies();
                 case "/services" -> appConfigService.getServices();
                 case "/users" -> appConfigService.getUsers();
