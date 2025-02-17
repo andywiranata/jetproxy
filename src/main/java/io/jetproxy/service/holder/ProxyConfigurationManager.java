@@ -3,6 +3,7 @@ package io.jetproxy.service.holder;
 import io.jetproxy.context.*;
 import io.jetproxy.exception.JetProxyValidationException;
 import io.jetproxy.middleware.auth.*;
+import io.jetproxy.middleware.cors.CorsHandlerWrapper;
 import io.jetproxy.middleware.handler.*;
 import io.jetproxy.middleware.log.AccessLog;
 import org.eclipse.jetty.security.*;
@@ -11,11 +12,7 @@ import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.HandlerCollection;
 import org.eclipse.jetty.server.handler.RequestLogHandler;
-import org.eclipse.jetty.servlet.ServletContextHandler;
-import org.eclipse.jetty.servlet.ServletHandler;
-import org.eclipse.jetty.servlet.ServletHolder;
-import org.eclipse.jetty.servlet.ServletMapping;
-import org.eclipse.jetty.util.StringUtil;
+import org.eclipse.jetty.servlet.*;
 import org.eclipse.jetty.util.security.Constraint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,9 +54,9 @@ public class ProxyConfigurationManager {
      * Sets up initial proxies defined in the application configuration.
      *
      * @param server The Jetty server instance.
-     * @param context The servlet context handler.
+     * @param proxyContext The servlet proxyContext handler.
      */
-    public void setupProxiesAndAdminApi(Server server, ServletContextHandler context) {
+    public void setupProxiesAndAdminApi(Server server, ServletContextHandler proxyContext) {
         List<AppConfig.Proxy> proxies = config.getProxies();
 
         for (AppConfig.Proxy proxyRule : proxies) {
@@ -73,7 +70,6 @@ public class ProxyConfigurationManager {
                 logger.warn("Service not found for proxy: {}", proxyRule.getService());
                 continue;
             }
-
             // Add the proxy servlet
             if (service != null) {
                 targetServiceUrl = service.getUrl();
@@ -85,8 +81,9 @@ public class ProxyConfigurationManager {
 
             String whitelistPath = proxyRule.getPath() + "/*";
             List<Authenticator> authenticators = new ArrayList<>();
+
             ServletHolder proxyServlet = createServletHolder(proxyRule, targetServiceUrl, httpMethods);
-            context.addServlet(proxyServlet, whitelistPath);
+            proxyContext.addServlet(proxyServlet, whitelistPath);
 
             // Set up authentication if needed
             if (basicAuthProvider.shouldEnableAuth(proxyRule)) {
@@ -109,36 +106,23 @@ public class ProxyConfigurationManager {
         }
 
         this.proxyAndsecurityHandler.setAuthenticator(multiLayerAuthenticator);
-        this.proxyAndsecurityHandler.setHandler(context);
-
-        addAdminSecurityHandler(context);
+        this.proxyAndsecurityHandler.setHandler(proxyContext);
 
         // Add handlers for security and logging
         RequestLogHandler requestLogHandler = new RequestLogHandler();
         requestLogHandler.setRequestLog(new AccessLog());
 
+        CorsFilterHolderHandler corsFilterHolderHandler = new CorsFilterHolderHandler(this.config);
+
+        CorsHandlerWrapper corsHandler = new CorsHandlerWrapper(corsFilterHolderHandler.createCorsFilter());
+        corsHandler.setHandler(this.proxyAndsecurityHandler);
+
         handlers.setHandlers(new Handler[]{
-                this.proxyAndsecurityHandler,
+                corsHandler,
                 requestLogHandler
         });
 
         server.setHandler(handlers);
-    }
-    /**
-     * Add a dedicated Basic Authentication security handler for /admin/*.
-     */
-    private void addAdminSecurityHandler(ServletContextHandler context) {
-        String adminPath = "/admin/*";
-
-        // Create and configure a security handler for /admin/*
-        ConstraintSecurityHandler adminSecurityHandler = basicAuthProvider.createSecurityHandler(config);
-        adminSecurityHandler.addConstraintMapping(basicAuthProvider
-                .createConstraintMapping(adminPath,"administrator"));
-;
-        adminSecurityHandler.setAuthenticator(new BasicAuthenticator());
-
-        // Add the admin security handler to the context
-        context.setSecurityHandler(adminSecurityHandler);
     }
 
     /**

@@ -60,7 +60,7 @@ public class ProxyRequestHandler extends BaseProxyRequestHandler {
     }
 
     @Override
-    protected void service(HttpServletRequest request, HttpServletResponse response) {
+    protected void service(HttpServletRequest request, HttpServletResponse response) throws IOException {
         try {
             if (middlewareChain != null) {
                 middlewareChain.process(request, response);

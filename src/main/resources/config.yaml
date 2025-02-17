@@ -18,11 +18,15 @@ logging:
 #      level: INFO
 #    - name: "org.eclipse.jetty"
 #      level: INFO
-
-
 corsFilter:
   accessControlAllowMethods:
-
+    - "*"
+  accessControlAllowHeaders:
+    - "*"
+  accessControlAllowOriginList:
+    - "*"
+  maxAge: 3600
+  
 
 storage:
   redis:
@@ -54,12 +58,13 @@ proxies:
       - rule: "Header('x-header-hello', 'x-header-hello')"
         service: userApi
     middleware:
+      basicAuth: 'basicAuth:administrator'
       mirroring:
         enabled: true
         mirrorService: userV2xApi
         mirrorPercentage: 100
       forwardAuth:
-        enabled: true
+        enabled: false
         path: /verify
         service: authApi
         requestHeaders: "Forward(X-Custom-*);Forward(Authorization);"

@@ -36,14 +36,6 @@ public class MainProxy {
         Server server = new Server(appConfig.getPort());
         server.addBean(Executors.newVirtualThreadPerTaskExecutor());
         appContext.initializeServer(server);
-        // Add servlets for health check and statistics
-        context.addServlet(HealthCheckServlet.class, "/healthcheck");
-        context.addServlet(StatisticServlet.class, "/stats");
-
-        ServletHolder configServletHolder = new ServletHolder(
-                new AppConfigServlet(
-                        new AppConfigService()));
-        context.addServlet(configServletHolder, "/admin/config/*");
 
         // Start the server
         server.start();

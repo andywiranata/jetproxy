@@ -1,25 +1,31 @@
 package io.jetproxy.context;
 
 import com.google.gson.Gson;
+import io.jetproxy.middleware.auth.AuthProviderFactory;
+import io.jetproxy.middleware.auth.BasicAuthProvider;
 import io.jetproxy.middleware.cache.Cache;
 import io.jetproxy.middleware.cache.CacheFactory;
 import io.jetproxy.middleware.cache.RedisPoolManager;
 import io.jetproxy.middleware.grpc.GrpcChannelManager;
 import io.jetproxy.middleware.log.LogbackConfigurator;
 import io.jetproxy.service.AppShutdownListener;
+import io.jetproxy.service.HealthCheckServlet;
+import io.jetproxy.service.appConfig.service.AppConfigService;
+import io.jetproxy.service.appConfig.servlet.AppConfigServlet;
 import io.jetproxy.service.holder.ProxyConfigurationManager;
 import io.jetproxy.middleware.handler.CorsFilterHolderHandler;
 import io.jetproxy.util.GsonFactory;
-import jakarta.servlet.DispatcherType;
 import lombok.Getter;
+import org.eclipse.jetty.security.ConstraintSecurityHandler;
+import org.eclipse.jetty.security.authentication.BasicAuthenticator;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlet.ServletContextHandler;
+import org.eclipse.jetty.servlet.ServletHolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.JedisPubSub;
 
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -67,18 +73,33 @@ public class AppContext {
     }
 
     public void initializeServer(Server server) {
-        // Initialize and configure the CORS filter
-        CorsFilterHolderHandler corsFilterSetup = new CorsFilterHolderHandler(this.config);
-        FilterHolder cors = corsFilterSetup.createCorsFilter();
-
         this.contextHandler.setContextPath(this.config.getRootPath());
         this.contextHandler.addEventListener(new AppShutdownListener());
-        this.contextHandler.addFilter(cors, "/*", EnumSet.of(DispatcherType.REQUEST));
+        ServletHolder configServletHolder = new ServletHolder(
+                new AppConfigServlet(
+                        new AppConfigService()));
+
+        // this.contextHandler.addFilter(corsFilter, "/admin/*", EnumSet.of(DispatcherType.REQUEST));
+        this.contextHandler.addServlet(configServletHolder, "/admin/*");
+        this.contextHandler.addServlet(HealthCheckServlet.class, "/healthcheck");
+        addAdminSecurityHandler(this.contextHandler);
         this.proxyConfigurationManager.setupProxiesAndAdminApi(server, this.contextHandler);
 
         startRedisSubscription();
 
     }
+    private void addAdminSecurityHandler(ServletContextHandler context) {
+        String adminPath = "/admin/*";
+        BasicAuthProvider basicAuthProvider = null;
+        basicAuthProvider = (BasicAuthProvider) AuthProviderFactory.getAuthProvider("basicAuth");;
+        ConstraintSecurityHandler adminSecurityHandler = basicAuthProvider.createSecurityHandler(config);
+        adminSecurityHandler.addConstraintMapping(basicAuthProvider
+                .createConstraintMapping(adminPath,"administrator"));
+        ;
+        adminSecurityHandler.setAuthenticator(new BasicAuthenticator());
+        context.setSecurityHandler(adminSecurityHandler);
+    }
+
 
     public Map<String, AppConfig.Service> getServiceMap() {
         return ConfigLoader.getServiceMap();
