@@ -31,10 +31,10 @@ AppConfigServlet extends AbstractJsonServlet<Object> {
 
         try {
             Object data = switch (path) {
-                case "/" -> appConfigService.getConfig();
-                case "/proxies" -> appConfigService.getProxies();
-                case "/services" -> appConfigService.getServices();
-                case "/users" -> appConfigService.getUsers();
+                case "/config" -> appConfigService.getConfig();
+                case "/config/proxies" -> appConfigService.getProxies();
+                case "/config/services" -> appConfigService.getServices();
+                case "/config/users" -> appConfigService.getUsers();
                 default -> throw new IllegalArgumentException("Invalid path: " + path);
             };
 

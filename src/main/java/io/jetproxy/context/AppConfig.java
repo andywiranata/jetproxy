@@ -51,7 +51,7 @@ public class AppConfig {
                 "CONNECT");
         private List<String> accessControlAllowHeaders = List.of("*");
         private List<String> accessControlAllowOriginList = List.of("*");
-
+        private String maxAge = String.valueOf(3600);
         public List<String> getAccessControlAllowMethods() {
             if (accessControlAllowMethods == null ||
                     accessControlAllowMethods.contains("*")) {

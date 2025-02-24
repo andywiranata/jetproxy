@@ -1,10 +1,12 @@
 package io.jetproxy.middleware.handler;
 
-import org.eclipse.jetty.servlet.FilterHolder;
-import org.eclipse.jetty.servlets.CrossOriginFilter;
+import io.jetproxy.middleware.cors.CorsProcessor;
 import io.jetproxy.context.AppConfig;
 
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class CorsFilterHolderHandler {
     private final AppConfig appConfig;
@@ -23,32 +25,40 @@ public class CorsFilterHolderHandler {
      *
      * @return A configured FilterHolder instance for CORS.
      */
-    public FilterHolder createCorsFilter() {
+    public CorsProcessor createCorsFilter() {
         // Retrieve CORS settings from AppConfig
         List<String> allowMethods = appConfig.getCorsFilter().getAccessControlAllowMethods();
         List<String> allowHeaders = appConfig.getCorsFilter().getAccessControlAllowHeaders();
         List<String> allowOrigins = appConfig.getCorsFilter().getAccessControlAllowOriginList();
+        String maxAge = appConfig.getCorsFilter().getMaxAge();
 
-        // Configure the CORS filter
-        FilterHolder cors = new FilterHolder(CrossOriginFilter.class);
-        cors.setInitParameter(CrossOriginFilter.ALLOWED_ORIGINS_PARAM, joinWithComma(allowOrigins));
-        cors.setInitParameter(CrossOriginFilter.ALLOWED_METHODS_PARAM, joinWithComma(allowMethods));
-        cors.setInitParameter(CrossOriginFilter.ALLOWED_HEADERS_PARAM, joinWithComma(allowHeaders));
-        cors.setInitParameter(CrossOriginFilter.ALLOW_CREDENTIALS_PARAM, "true"); // Allow credentials
+        Set<String> methodSet = handleWildcard(allowMethods, "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS");
+        Set<String> headerSet = handleWildcard(allowHeaders, "*"); // "*" means all headers
+        Set<String> originSet = handleWildcard(allowOrigins, "*");
 
-        return cors;
+        // Create and return CorsProcessor
+        return new CorsProcessor(
+                originSet,
+                methodSet,
+                headerSet,
+                Set.of("*"),
+                true,
+                maxAge
+        );
     }
 
+
     /**
-     * Joins a list of strings with a comma, handling single-element lists without extra formatting.
-     *
-     * @param list The list to process.
-     * @return A string with the elements joined by a comma or the single element if the list has only one value.
+     * Helper method to handle "*" (all) values.
+     * If "*" is in the list, return a wildcard set or a default set based on the type.
      */
-    private String joinWithComma(List<String> list) {
-        if (list.size() == 1) {
-            return list.get(0); // Return the single value directly
+    private Set<String> handleWildcard(List<String> values, String... defaults) {
+        if (values == null || values.isEmpty()) {
+            return new HashSet<>();
         }
-        return String.join(", ", list); // Join multiple values with a comma and space
+        if (values.contains("*")) {
+            return defaults.length > 0 ? new HashSet<>(List.of(defaults)) : Collections.singleton("*");
+        }
+        return new HashSet<>(values);
     }
 }
