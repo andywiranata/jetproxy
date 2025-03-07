@@ -4,6 +4,14 @@ defaultTimeout: ${JET_DEFAULT_TIMEOUT:10000}
 dashboard: ${JET_DASHBOARD:true}
 rootPath: ${JET_DASHBOARD:/}
 debugMode: ${JET_DEBUG_MODE:true}
+logging:
+  root:
+    level: INFO
+  appenders:
+    - name: STDOUT
+      className: "ch.qos.logback.core.ConsoleAppender"
+      encoder:
+        pattern: "%d{yyyy-MM-dd HH:mm:ss} %-1level %logger{36} - %msg%n"
 corsFilter:
   accessControlAllowMethods:
     - "*"
@@ -11,6 +19,7 @@ corsFilter:
     - "*"
   accessControlAllowOriginList:
     - "*"
+  maxAge: 3600
 
 storage:
   redis:
@@ -32,6 +41,13 @@ storage:
     size: 10000
 
 proxies:
+  - path: /v2/grpc
+    service: userGrpcApi
+    ttl: 10000
+  - path: /upload
+    service: fileUploadService
+    middleware:
+        rule: "HeaderPrefix('Content-Type', 'multipart/form-data')"
   - path: /user
     service: userApi
     middleware:
@@ -101,9 +117,6 @@ proxies:
     ttl: 10000
 
 services:
-  - path: /v2/grpc
-    service: userGrpcApi
-    ttl: 10000
   - name: tasksApi
     url: http://localhost:5173/template/1on1-meeting-agenda/tasks.json
     methods: ['GET', 'POST', 'PUT']
@@ -128,6 +141,9 @@ services:
   - name: userApi
     url: http://localhost:30001
     methods: ['GET']
+  - name: fileUploadService
+    url: http://localhost:30001
+    methods: [ 'POST' ]
 
 users:
   - username: admin
