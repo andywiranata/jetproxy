@@ -3,6 +3,8 @@
 
 JetProxy is a lightweight, high-performance HTTP proxy library built with **Jetty**. It is designed for developers seeking a flexible and efficient solution for routing, caching, and managing HTTP requests.
 
+[Documentation](https://jetproxy.andywiranata.me/docs/intro)
+
 ### Key Features
 - **Dynamic Routing**  
   Advanced routing rules based on headers, query parameters, paths, and more, allowing precise traffic management without complex scripts.
