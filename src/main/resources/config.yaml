@@ -5,19 +5,6 @@ dashboard: ${JET_DASHBOARD:true}
 rootPath: ${JET_DASHBOARD:/}
 accessLog: ${JET_DEBUG_MODE:true}
 
-logging:
-  root:
-    level: INFO
-  appenders:
-    - name: STDOUT
-      className: "ch.qos.logback.core.ConsoleAppender"
-      encoder:
-        pattern: "%d{yyyy-MM-dd HH:mm:ss} %-1level %logger{36} - %msg%n"
-#  loggers:
-#    - name: "io.jetproxy"
-#      level: INFO
-#    - name: "org.eclipse.jetty"
-#      level: INFO
 corsFilter:
   accessControlAllowMethods:
     - "*"
@@ -26,21 +13,13 @@ corsFilter:
   accessControlAllowOriginList:
     - "*"
   maxAge: 3600
-  
+
 
 storage:
-  redis:
+  inMemory:
     enabled: true
-    port: 6379
-    database: 1
-    maxTotal: 128
-    maxIdle: 64
-    minIdle: 16
-#
-#  inMemory:
-#    enabled: true
-#    maxMemory: 50 # MB
-#    size: 10000
+    maxMemory: 50 # MB
+    size: 10000
 
 proxies:
   - path: /upload
