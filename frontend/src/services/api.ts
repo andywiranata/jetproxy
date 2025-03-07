@@ -130,13 +130,31 @@ const initialConfig: Config = {
   }
 };
   
-export async function fetchConfig(): Promise<Config> {
-  // const response = await fetch(`${API_URL}/config`);
-  // if (!response.ok) {
-  //   throw new Error('Failed to fetch configuration');
-  // }
-  // return response.json();
-  return initialConfig;
+export async function fetchConfig(sessionToken: string) {
+  const headers = new Headers({
+    'Authorization': `Basic YWRtaW46YWRtaW4=`,
+  });
+
+  try {
+    console.log('headers', headers, sessionToken);
+    const response2 = await fetch(`http://localhost:8080/user`, {
+      method: 'GET',
+      headers: headers
+    });
+    console.log(`${API_URL}/admin/config`);
+    const response = await fetch(`${API_URL}/admin/config`, {
+      method: 'GET',
+      headers: headers
+    });
+  
+    if (!response.ok) {
+      throw new Error('Failed to fetch configuration');
+    }
+    return response.json();
+  } catch(e) {
+    console.error('Failed to fetch configuration', e);
+  }
+
 }
 
 export async function updateConfig(config: Config): Promise<Config> {
