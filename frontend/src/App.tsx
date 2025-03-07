@@ -11,6 +11,8 @@ import { UsersPage } from './pages/UsersPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { YamlEditorPage } from './pages/YamlEditorPage';
 import { DataFreshnessIndicator } from './components/DataFreshnessIndicator';
+import { Config } from './types/proxy';
+import { updateConfig } from './services/api';
 
 function App() {
   const { config, setConfig, session, setSession } = useApp();

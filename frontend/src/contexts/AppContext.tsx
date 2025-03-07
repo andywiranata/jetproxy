@@ -17,7 +17,7 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [config, setConfig] = useState<Config | null>(null);
   const [session, setSession] = useState<Session | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -27,9 +27,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         const existingSession = getSession();
         if (existingSession) {
           setSession(existingSession);
-          // Fetch initial config
-          const initialConfig = await fetchConfig();
-          setConfig(initialConfig);
         }
       } catch (err) {
         setError('Failed to initialize application');
@@ -37,9 +34,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setIsLoading(false);
       }
     };
-
     initializeApp();
   }, []);
+
+  useEffect(() => {
+    const fetchAndSetConfig = async () => {
+      if (session) {
+        const initialConfig = await fetchConfig(session.token);
+        console.log('initial config', initialConfig);
+        setConfig(initialConfig);
+      }
+    };
+
+    fetchAndSetConfig();
+  }, [session]);
 
   const value = {
     config,

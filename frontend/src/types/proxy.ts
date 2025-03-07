@@ -41,7 +41,7 @@ export interface Middleware {
     enabled?: boolean;
     path: string;
     service: string;
-    requestHeaders: string;
+    requestHeaders?: string;
     responseHeaders?: string;
   };
   rateLimiter?: {

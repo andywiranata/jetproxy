@@ -20,8 +20,8 @@ export function validateCredentials(username: string, password: string): boolean
   return username === DUMMY_CREDENTIALS.username && password === DUMMY_CREDENTIALS.password;
 }
 
-export function createSession(): Session {
-  const token = encodeCredentials(DUMMY_CREDENTIALS.username, DUMMY_CREDENTIALS.password);
+export function createSession(username: string, password: string): Session {
+  const token = encodeCredentials(username, password);
   const expiresAt = Date.now() + SESSION_TTL;
   
   const session: Session = { token, expiresAt };
