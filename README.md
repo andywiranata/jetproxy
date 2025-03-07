@@ -28,7 +28,82 @@ JetProxy eliminates the need for constant manual updates by offering straightfor
 ## Step 1: Download Latest Jar
 Download latest [jar](https://github.com/andywiranata/jetproxy/releases) 
 ## Step 2: Create the Configuration File
+Create file **config.yaml**
 ```
+appName: ${JET_APP_NAME:API-PROXY}
+port: ${JET_PORT:8080}
+defaultTimeout: ${JET_DEFAULT_TIMEOUT:10000}
+dashboard: ${JET_DASHBOARD:true}
+rootPath: ${JET_DASHBOARD:/}
+accessLog: ${JET_DEBUG_MODE:true}
+
+corsFilter:
+  accessControlAllowMethods:
+    - "*"
+  accessControlAllowHeaders:
+    - "*"
+  accessControlAllowOriginList:
+    - "*"
+  maxAge: 3600
+
+storage:
+  inMemory:
+    enabled: true
+    maxMemory: 50 # MB
+    size: 10000
+
+proxies:
+  - path: /upload
+    service: fileUploadService
+    middleware:
+      rule: "HeaderPrefix('Content-Type', 'multipart/form-data')"
+  - path: /v2/grpc
+    service: userGrpcApi
+    ttl: 10000
+  - path: /user
+    service: userApi
+    matches:
+      - rule: "Header('Content-Type', 'application/json')"
+        service: userApi
+      - rule: "Header('x-header-hello', 'x-header-hello')"
+        service: userApi
+    middleware:
+      basicAuth: 'basicAuth:administrator'
+      mirroring:
+        enabled: true
+        mirrorService: userV2xApi
+        mirrorPercentage: 100
+      forwardAuth:
+        enabled: false
+        path: /verify
+        service: authApi
+        requestHeaders: "Forward(X-Custom-*);Forward(Authorization);"
+        responseHeaders: "Remove(X-Powered-By)"
+    ttl: 1000
+services:
+  - name: userApi
+    url: http://localhost:30001
+    methods: ['GET', 'POST']
+  - name: userV2Api
+    url: http://localhost:30001/v2
+    methods: [ 'GET', 'POST']
+  - name: authApi
+    url: http://localhost:30001
+    methods: ['POST']
+  - name: fileUploadService
+    url: http://localhost:30001
+    methods: ['POST']
+
+grpcServices:
+  - name: userGrpcApi
+    host: localhost
+    port: 50051
+
+users:
+  - username: admin
+    password: admin
+    role: administrator
+
 ```
 ## Step 3: Run
 ```
