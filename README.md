@@ -1,3 +1,4 @@
+JetProxy 
 
 # Overview
 
@@ -16,10 +17,19 @@ JetProxy is a lightweight, high-performance HTTP proxy library built with **Jett
   - **Rate Limiter**: Controls traffic flow to prevent overloading backend services, handling spikes gracefully and maintaining optimal performance.
   - **HTTP Caching**: Reduces response times and backend load by caching frequently accessed resources using in-memory or Redis-based caching.
 
-## Enhanced Security
+### Enhanced Security
 JetProxy ensures your API is secure with robust authentication capabilities, including support for external authentication services. The `ForwardAuth` middleware allows seamless integration with external authentication mechanisms, enabling token validation and role-based access without tying security to a single system. This flexibility helps meet diverse security needs.
 
-## Simplicity and Efficiency
+### Simplicity and Efficiency
 JetProxy eliminates the need for constant manual updates by offering straightforward YAML configuration and real-time adjustments. Its intuitive design reduces operational complexity, enabling teams to focus on service development rather than maintaining intricate proxy configurations.
 
-# Run
+# How to Run
+## Step 1: Download Latest Jar
+Download latest [jar](https://github.com/andywiranata/jetproxy/releases) 
+## Step 2: Create the Configuration File
+```
+```
+## Step 3: Run
+```
+java -jar jetproxy-latest.jar --config=config.yaml
+```
