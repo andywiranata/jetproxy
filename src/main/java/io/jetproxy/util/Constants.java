@@ -1,6 +1,45 @@
 package io.jetproxy.util;
 
+import java.time.Duration;
+import java.util.List;
+
 public class Constants {
+    // Default Configurations
+    public static final int DEFAULT_PORT = 80;
+    public static final int DEFAULT_TIMEOUT = 10000;
+    public static final int DEFAULT_MAX_AGE = 3600;
+    public static final String DEFAULT_LOG_LEVEL = "INFO";
+    public static final String UUID_PREFIX = "User";
+
+    // CORS Defaults
+    public static final List<String> DEFAULT_ALLOWED_METHODS = List.of(
+            "GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS", "PATCH", "TRACE", "CONNECT"
+    );
+    public static final List<String> DEFAULT_ALLOWED_HEADERS = List.of("*");
+    public static final List<String> DEFAULT_ALLOWED_ORIGINS = List.of("*");
+
+    // Circuit Breaker Defaults
+    public static final boolean DEFAULT_CIRCUIT_BREAKER_ENABLED = false;
+    public static final int DEFAULT_FAILURE_THRESHOLD = 50;
+    public static final int DEFAULT_SLOW_CALL_THRESHOLD = 50;
+    public static final int DEFAULT_SLOW_CALL_DURATION = 2000;
+    public static final int DEFAULT_OPEN_STATE_DURATION = 10;
+    public static final int DEFAULT_WAIT_DURATION_OPEN_STATE = 1000;
+    public static final int DEFAULT_PERMITTED_CALLS_HALF_OPEN = 10;
+    public static final int DEFAULT_MINIMUM_CALLS = 5;
+    // Rate Limiter Defaults
+    public static final boolean DEFAULT_RATE_LIMITER_ENABLED = false;
+    public static final long DEFAULT_RATE_LIMIT_REFRESH_PERIOD = 1000;  // 1 second
+    public static final int DEFAULT_RATE_LIMIT_FOR_PERIOD = 10;         // 10 requests per period
+    public static final Duration DEFAULT_RATE_LIMIT_TIMEOUT = Duration.ZERO;
+    public static final int DEFAULT_RATE_LIMIT_MAX_BURST_CAPACITY = 20; // Burst capacity of 20
+
+    // gRPC Defaults
+    public static final int DEFAULT_GRPC_PORT = 80;
+    public static final List<String> DEFAULT_GRPC_METHODS = List.of(
+            "GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS", "PATCH", "TRACE", "CONNECT"
+    );
+
     public static final String HEADER_RETRY_AFTER = "Retry-After";
     public static final String HEADER_X_PROXY_ERROR = "X-Proxy-Error";
     public static final String HEADER_X_PROXY_TYPE = "X-Proxy-Type";

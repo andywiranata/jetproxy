@@ -138,7 +138,7 @@ public class ForwardAuthAuthenticator implements Authenticator {
     }
 
 
-    private HttpURLConnection performForwardAuthRequest(String authUrl, Map<String, String> headers) throws IOException {
+    protected HttpURLConnection performForwardAuthRequest(String authUrl, Map<String, String> headers) throws IOException {
         URL url = new URL(authUrl);
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setRequestMethod(this.requestMethod);
