@@ -1,5 +1,6 @@
 package io.jetproxy.context;
 
+import io.jetproxy.util.Constants;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -12,8 +13,8 @@ import java.util.*;
 public class AppConfig {
     private String uuid = UUID.randomUUID().toString();
     private String appName;
-    private int port = 80;
-    private int defaultTimeout = 10000;
+    private int port = Constants.DEFAULT_PORT;
+    private int defaultTimeout = Constants.DEFAULT_TIMEOUT;
     private boolean dashboard;
     private boolean accessLog = false;
     private String rootPath;
@@ -22,9 +23,9 @@ public class AppConfig {
     private List<Service> services;
     private List<GrpcService> grpcServices;
     private List<User> users;
-    private CorsFilter corsFilter = new CorsFilter(); // Default values if missing
+    private CorsFilter corsFilter = new CorsFilter();
     private JwtAuthSource jwtAuthSource;
-    private Logging logging; // Added logging configuration
+    private Logging logging;
 
     public boolean hasCorsFilter() {
         return corsFilter != null;
@@ -39,31 +40,15 @@ public class AppConfig {
     @Setter
     @ToString
     public static class CorsFilter {
-        private List<String> accessControlAllowMethods = List.of(
-                "GET",
-                "POST",
-                "PUT",
-                "DELETE",
-                "HEAD",
-                "OPTIONS",
-                "PATCH",
-                "TRACE",
-                "CONNECT");
-        private List<String> accessControlAllowHeaders = List.of("*");
-        private List<String> accessControlAllowOriginList = List.of("*");
-        private String maxAge = String.valueOf(3600);
+        private List<String> accessControlAllowMethods = Constants.DEFAULT_ALLOWED_METHODS;
+        private List<String> accessControlAllowHeaders = Constants.DEFAULT_ALLOWED_HEADERS;
+        private List<String> accessControlAllowOriginList = Constants.DEFAULT_ALLOWED_ORIGINS;
+        private String maxAge = String.valueOf(Constants.DEFAULT_MAX_AGE);
+
         public List<String> getAccessControlAllowMethods() {
             if (accessControlAllowMethods == null ||
                     accessControlAllowMethods.contains("*")) {
-                return List.of("GET",
-                        "POST",
-                        "PUT",
-                        "DELETE",
-                        "HEAD",
-                        "OPTIONS",
-                        "PATCH",
-                        "TRACE",
-                        "CONNECT");
+                return Constants.DEFAULT_ALLOWED_METHODS;
             }
             return accessControlAllowMethods;
         }
@@ -225,14 +210,14 @@ public class AppConfig {
     @Setter
     @ToString
     public static class CircuitBreaker {
-        private boolean enabled = false;
-        private int failureThreshold = 50;
-        private int slowCallThreshold = 50;
-        private int slowCallDuration = 2000;
-        private int openStateDuration = 10;
-        private int waitDurationInOpenState = 1000;
-        private int permittedNumberOfCallsInHalfOpenState = 10;
-        private int minimumNumberOfCalls = 5;
+        private boolean enabled = Constants.DEFAULT_CIRCUIT_BREAKER_ENABLED;
+        private int failureThreshold = Constants.DEFAULT_FAILURE_THRESHOLD;
+        private int slowCallThreshold = Constants.DEFAULT_SLOW_CALL_THRESHOLD;
+        private int slowCallDuration = Constants.DEFAULT_SLOW_CALL_DURATION;
+        private int openStateDuration = Constants.DEFAULT_OPEN_STATE_DURATION;
+        private int waitDurationInOpenState = Constants.DEFAULT_WAIT_DURATION_OPEN_STATE;
+        private int permittedNumberOfCallsInHalfOpenState = Constants.DEFAULT_PERMITTED_CALLS_HALF_OPEN;
+        private int minimumNumberOfCalls = Constants.DEFAULT_MINIMUM_CALLS;
 
         public int getRetryAfterSeconds() {
             return (int) Math.ceil(waitDurationInOpenState / 1000.0); // Convert ms to seconds
@@ -242,11 +227,11 @@ public class AppConfig {
     @Getter
     @Setter
     public static class RateLimiter {
-        private boolean enabled = false;              // Feature disabled by default
-        private long limitRefreshPeriod = 1000;       // Default 1 second
-        private int limitForPeriod = 10;              // Default 10 requests per period
-        private Duration timeoutDuration = Duration.ZERO; // No waiting by default
-        private int maxBurstCapacity = 20;           // Default burst capacity of 20
+        private boolean enabled = Constants.DEFAULT_RATE_LIMITER_ENABLED;
+        private long limitRefreshPeriod = Constants.DEFAULT_RATE_LIMIT_REFRESH_PERIOD;
+        private int limitForPeriod = Constants.DEFAULT_RATE_LIMIT_FOR_PERIOD;
+        private Duration timeoutDuration = Constants.DEFAULT_RATE_LIMIT_TIMEOUT;
+        private int maxBurstCapacity = Constants.DEFAULT_RATE_LIMIT_MAX_BURST_CAPACITY;
     }
 
     @Getter
@@ -271,24 +256,18 @@ public class AppConfig {
     public static class GrpcService {
         private String name;
         private String host;
-        private Integer port = 80;
+        private Integer port = Constants.DEFAULT_GRPC_PORT;
         private String healthcheck;
+
         public List<String> getMethods() {
-            return List.of("GET",
-                    "POST",
-                    "PUT",
-                    "DELETE",
-                    "HEAD",
-                    "OPTIONS",
-                    "PATCH",
-                    "TRACE",
-                    "CONNECT");
+            return Constants.DEFAULT_GRPC_METHODS;
         }
-        // dummy http request, to bypass URI validation
+        // Dummy HTTP request to bypass URI validation
         public String getUrl() {
             return "http://" + host + ":" + port;
         }
     }
+
     @Getter
     @Setter
     @ToString
@@ -300,15 +279,7 @@ public class AppConfig {
         private String healthcheck;
         public List<String> getMethods() {
             if (methods.contains("*")) {
-                return List.of("GET",
-                        "POST",
-                        "PUT",
-                        "DELETE",
-                        "HEAD",
-                        "OPTIONS",
-                        "PATCH",
-                        "TRACE",
-                        "CONNECT");
+                return Constants.DEFAULT_ALLOWED_METHODS;
             }
             return methods;
         }
@@ -374,14 +345,6 @@ public class AppConfig {
     public static class Headers {
         private String requestHeaders;
         private String responseHeaders;
-
-        public boolean hasRequestHeaders() {
-            return requestHeaders != null;
-        }
-
-        public boolean hasResponseHeaders() {
-            return responseHeaders != null;
-        }
     }
 
     @Getter
