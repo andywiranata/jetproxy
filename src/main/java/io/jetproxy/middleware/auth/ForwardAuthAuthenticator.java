@@ -100,7 +100,7 @@ public class ForwardAuthAuthenticator implements Authenticator {
             } catch (IOException ignored) {
                 logger.error("Failed to send error response: {}", ignored.getMessage());
             }
-            return Authentication.UNAUTHENTICATED;
+            return Authentication.SEND_FAILURE;
         } finally {
             logger.logAuth((Request) request, authUrl, responseCode, startTime, responseStatus);
         }

@@ -39,7 +39,7 @@ class ForwardAuthAuthenticatorTest {
     @Mock
     private ServletResponse servletResponse;
 
-    private ForwardAuthAuthenticator authenticator;
+    private TestForwardAuthAuthenticator authenticator;
 
     @BeforeEach
     void setUp() throws IOException {
@@ -71,7 +71,6 @@ class ForwardAuthAuthenticatorTest {
 
 
         when(mockResponse.getStatus()).thenReturn(HttpURLConnection.HTTP_OK);
-
         // Mock forward auth request
         Map<String, String> mockHeaders = Map.of("Authorization", "Bearer abc123");
         when(request.getHeaderNames()).thenReturn(Collections.enumeration(mockHeaders.keySet()));
@@ -117,10 +116,11 @@ class ForwardAuthAuthenticatorTest {
         when(request.getAttribute(Request.class.getName())).thenReturn(request);
         when(request.getHeaderNames()).thenReturn(Collections.enumeration(headers.keySet()));
         doThrow(new IOException("Connection failed")).when(mockConnection).connect();
-
+        // Trigger the IOException in the override
+        authenticator.setThrowException(true);
         Authentication result = authenticator.validateRequest(request, mockResponse, true);
 
-        assertEquals(Authentication.UNAUTHENTICATED, result);
+        assertEquals(Authentication.SEND_FAILURE, result);
         verify(mockResponse).sendError(HttpURLConnection.HTTP_UNAVAILABLE, "Service Unavailable");
     }
 }
