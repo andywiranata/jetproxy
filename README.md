@@ -111,5 +111,6 @@ users:
 ```
 ## Step 3: Run
 ```
-java -jar jetproxy-latest.jar --config=config.yaml
+export APP_CONFIG_PATH=/path/to/config.yaml
+java -jar jetproxy-latest.jar
 ```
