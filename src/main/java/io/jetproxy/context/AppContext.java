@@ -49,6 +49,7 @@ public class AppContext {
 
     private AppContext(Builder builder) {
         this.config = ConfigLoader.getConfig(builder.pathConfigYaml);
+        this.instanceId = this.config.getUuid();
 
         LogbackConfigurator.configureLogging(this.config.getLogging());
         GrpcChannelManager.configureGrpcChannel(this.config.getGrpcServices());
@@ -58,7 +59,6 @@ public class AppContext {
         this.gson = GsonFactory.createGson();
         this.contextHandler = new ServletContextHandler(ServletContextHandler.SESSIONS);
         this.proxyConfigurationManager = new ProxyConfigurationManager(this.config, this.contextHandler);
-        this.instanceId = this.config.getUuid();
     }
 
     public static AppContext get() {

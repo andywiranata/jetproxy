@@ -23,9 +23,4 @@ public class GrpcMetadataCredentials extends CallCredentials {
             }
         });
     }
-
-    @Override
-    public void thisUsesUnstableApi() {
-        // No-op
-    }
 }

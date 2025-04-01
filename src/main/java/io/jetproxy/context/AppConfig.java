@@ -141,6 +141,7 @@ public class AppConfig {
         private Bulkhead bulkhead;
         private Retry retry;
         private Mirroring mirroring;
+        private Idempotency idempotency;
 
         public boolean hasBasicAuth() {
             return basicAuth != null;
@@ -177,6 +178,9 @@ public class AppConfig {
         public boolean hasMirroring() {
             return mirroring != null && mirroring.enabled;
         }
+        public boolean hasIdempotency() {
+            return  idempotency != null && idempotency.enabled;
+        }
     }
 
     @Getter
@@ -186,6 +190,15 @@ public class AppConfig {
         private boolean enabled;
         private String mirrorService;
         private int mirrorPercentage;
+    }
+
+    @Getter
+    @Setter
+    @ToString
+    public static class Idempotency {
+        private boolean enabled;
+        private String headerName = Constants.DEFAULT_IDEMPOTENCY_KEY_HEADER_NAME;
+        private long ttl = Constants.DEFAULT_IDEMPOTENCY_TTL;
     }
 
     @Getter

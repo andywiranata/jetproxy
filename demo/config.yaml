@@ -24,6 +24,10 @@ proxies:
   - path: /upload
     service: fileUploadService
     middleware:
+      idempotency:
+        enabled: true
+        headerName: Idempotency-Key
+        ttl: 300000
       rule: "HeaderPrefix('Content-Type', 'multipart/form-data')"
   - path: /v2/grpc
     service: userGrpcApi
