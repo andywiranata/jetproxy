@@ -75,7 +75,7 @@ proxies:
       basicAuth: 'basicAuth:administrator'
       mirroring:
         enabled: true
-        mirrorService: userV2xApi
+        mirrorService: userV2Api
         mirrorPercentage: 100
       forwardAuth:
         enabled: false
