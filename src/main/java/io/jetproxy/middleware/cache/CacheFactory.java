@@ -9,8 +9,10 @@ import java.util.Optional;
 public class CacheFactory {
     private static final Logger logger = LoggerFactory.getLogger(CacheFactory.class);
 
-    public static final String HTTP_REQUEST_CACHE_KEY = "http_request::%s_%s";
+    public static final String HTTP_REQUEST_CACHE_KEY = "http_request::%s:%s:%s";
     public static final String HTTP_JWT_AUTH_SOURCE_CACHE_KEY = "http_jwt_auth_source::%s::%s";
+    public static final String HTTP_IDEMPOTENCY_KEY = "idempotency:%s:%s:%s"; // method:path:key
+
 
     private static final int DEFAULT_SIZE = 10000;
     private static final long DEFAULT_MAX_MEMORY = 50 * 1024 * 1024; // Convert MB to bytes

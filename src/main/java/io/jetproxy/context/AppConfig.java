@@ -99,8 +99,8 @@ public class AppConfig {
     public static class Proxy {
         private String path;
         private String service;
-        private Middleware middleware = null;
-        private long ttl;
+        private Middleware middleware = new Middleware();
+        private long ttl = -1;
         private String uuid;
         private List<Match> matches = new ArrayList<>(); // Added rules list
 
@@ -110,6 +110,10 @@ public class AppConfig {
 
         public boolean hasMatchRules() {
             return matches != null && !matches.isEmpty();
+        }
+
+        public boolean hasHttpCache() {
+            return ttl > 0;
         }
 
         public String getUuid() {

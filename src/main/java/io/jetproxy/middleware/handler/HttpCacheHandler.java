@@ -9,9 +9,12 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 
 public class HttpCacheHandler  implements MiddlewareHandler {
+
+    public static final List<String> SUPPORTED_METHODS = List.of("GET");
 
     @Override
     public void handle(HttpServletRequest request, HttpServletResponse response)  {

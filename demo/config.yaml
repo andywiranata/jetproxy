@@ -21,6 +21,8 @@ storage:
     size: 10000
 
 proxies:
+#  - path: /upload
+#    service: fileUploadService
   - path: /upload
     service: fileUploadService
     middleware:
