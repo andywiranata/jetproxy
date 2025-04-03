@@ -59,6 +59,7 @@ proxies:
         requestHeaders: "Forward(X-Custom-*);Forward(Authorization);"
         responseHeaders: "Remove(X-Powered-By)"
     ttl: 50000
+
 services:
   - name: userApi
     url: http://localhost:30001
