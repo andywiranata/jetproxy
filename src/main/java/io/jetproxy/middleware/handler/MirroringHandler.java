@@ -4,6 +4,7 @@ import io.jetproxy.context.AppConfig;
 import io.jetproxy.util.Constants;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 
 import java.util.Objects;
 
@@ -28,9 +29,10 @@ public class MirroringHandler implements MiddlewareHandler{
 
     private boolean shouldMirrorRequest(HttpServletRequest request, int mirrorPercentage) {
         String identifier = request.getHeader(REQUEST_HEADER_USER_ID); // Preferred
+        HttpSession session = request.getSession();
 
         if (identifier == null) {
-            identifier = request.getSession().getId();
+            identifier = session.getId();
         }
         // Ensure sessionId is not null for hashing
         String hashKey = Objects.requireNonNullElse(identifier, "default-session");
