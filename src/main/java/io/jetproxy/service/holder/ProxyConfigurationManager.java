@@ -304,7 +304,7 @@ public class ProxyConfigurationManager {
 
         MiddlewareChain middlewareChain = new MiddlewareChain(List.of(
                 new RuleValidatorHandler(httpMethods, proxyRule),
-                new HttpCacheHandler(),
+                new HttpCacheHandler(ctx),
                 new MatchServiceHandler(proxyRule),
                 new MirroringHandler(proxyRule),
                 new GrpcRequestHandler(proxyRule, ctx),

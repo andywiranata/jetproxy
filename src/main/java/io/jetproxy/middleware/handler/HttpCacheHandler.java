@@ -12,36 +12,49 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-public class HttpCacheHandler  implements MiddlewareHandler {
+public class HttpCacheHandler implements MiddlewareHandler {
 
     public static final List<String> SUPPORTED_METHODS = List.of("GET");
 
+    private final AppContext ctx;
+
+    public HttpCacheHandler(AppContext ctx) {
+        this.ctx = ctx;
+    }
+
     @Override
-    public void handle(HttpServletRequest request, HttpServletResponse response)  {
+    public void handle(HttpServletRequest request, HttpServletResponse response) {
         ResponseCacheEntry cachedResponse = getCachedResponse(request);
         if (cachedResponse == null) {
             return;
         }
+
         try {
             for (Map.Entry<String, String> header : cachedResponse.getHeaders().entrySet()) {
                 response.setHeader(header.getKey(), header.getValue());
             }
             response.setHeader(Constants.HEADER_X_JETPROXY_CACHE, "true");
+            response.setStatus(200);
             response.getWriter().write(cachedResponse.getBody());
             response.getWriter().flush();
             response.flushBuffer();
         } catch (IOException ignored) {}
-
     }
+
     protected ResponseCacheEntry getCachedResponse(HttpServletRequest request) {
-        if (!request.getMethod().equalsIgnoreCase("GET")) {
+        if (!SUPPORTED_METHODS.contains(request.getMethod().toUpperCase())) {
             return null;
         }
-        AppContext ctx = AppContext.get();
+
         String path = RequestUtils.getFullPath(request);
         String method = request.getMethod();
-        String responseBody = ctx.getCache().get(String.format(CacheFactory.HTTP_REQUEST_CACHE_KEY, method, path, ""));
+        String cacheKey = String.format(CacheFactory.HTTP_REQUEST_CACHE_KEY, method, path, "");
 
-        return ctx.gson.fromJson(responseBody, ResponseCacheEntry.class);
+        String responseBody = ctx.getCache().get(cacheKey);
+        if (responseBody == null) {
+            return null;
+        }
+
+        return ctx.getGson().fromJson(responseBody, ResponseCacheEntry.class);
     }
 }
