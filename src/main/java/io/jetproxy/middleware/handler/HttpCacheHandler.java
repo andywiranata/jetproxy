@@ -9,9 +9,12 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 
 public class HttpCacheHandler  implements MiddlewareHandler {
+
+    public static final List<String> SUPPORTED_METHODS = List.of("GET");
 
     @Override
     public void handle(HttpServletRequest request, HttpServletResponse response)  {
@@ -37,7 +40,7 @@ public class HttpCacheHandler  implements MiddlewareHandler {
         AppContext ctx = AppContext.get();
         String path = RequestUtils.getFullPath(request);
         String method = request.getMethod();
-        String responseBody = ctx.getCache().get(String.format(CacheFactory.HTTP_REQUEST_CACHE_KEY, method, path));
+        String responseBody = ctx.getCache().get(String.format(CacheFactory.HTTP_REQUEST_CACHE_KEY, method, path, ""));
 
         return ctx.gson.fromJson(responseBody, ResponseCacheEntry.class);
     }

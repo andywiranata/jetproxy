@@ -2,6 +2,9 @@ package io.jetproxy.service.holder;
 
 import io.jetproxy.exception.ResilienceCircuitBreakerException;
 import io.jetproxy.exception.ResilienceRateLimitException;
+import io.jetproxy.middleware.cache.CacheFactory;
+import io.jetproxy.middleware.handler.HttpCacheHandler;
+import io.jetproxy.middleware.handler.IdempotencyKeyHandler;
 import io.jetproxy.middleware.resilience.ResilienceFactory;
 import io.jetproxy.middleware.handler.MiddlewareChain;
 import io.jetproxy.util.Constants;
@@ -14,6 +17,7 @@ import lombok.SneakyThrows;
 import org.eclipse.jetty.client.api.Request;
 import org.eclipse.jetty.client.api.Response;
 import org.eclipse.jetty.http.HttpHeader;
+import org.eclipse.jetty.http.HttpStatus;
 import org.eclipse.jetty.util.Callback;
 import io.jetproxy.context.AppConfig;
 import io.jetproxy.context.AppContext;
@@ -78,6 +82,7 @@ public class ProxyRequestHandler extends BaseProxyRequestHandler {
             });
 
         } catch (Exception e) {
+            e.printStackTrace();
             logger.error("Error Occurred to process request {}", e.getMessage());
             if (e instanceof ResilienceRateLimitException) {
                 RequestUtils.sendErrorRateLimiterResponse(response, e.getMessage());
@@ -142,16 +147,40 @@ public class ProxyRequestHandler extends BaseProxyRequestHandler {
                                      int offset,
                                      int length, Callback callback) {
         super.onResponseContent(request, response, proxyResponse, buffer, offset, length, callback);
-        if (isCacheActive()) {
-            String contentType = proxyResponse.getHeaders().get(HttpHeader.CONTENT_TYPE);
-            String contentEncoding = proxyResponse.getHeaders().get(HttpHeader.CONTENT_ENCODING);
-            try (InputStream decodedStream = decodeContentStream(new ByteArrayInputStream(buffer, offset, length), contentEncoding)) {
-                if (RequestUtils.isJsonContent(contentType)) {
-                    String bodyContent = readStreamAsString(decodedStream, contentType);
-                    cacheResponseContent(request, bodyContent);
+        String contentType = proxyResponse.getHeaders().get(HttpHeader.CONTENT_TYPE);
+        String contentEncoding = proxyResponse.getHeaders().get(HttpHeader.CONTENT_ENCODING);
+
+        boolean isJson = RequestUtils.isJsonContent(contentType);
+        boolean httpCacheEnabled = proxyRule.hasHttpCache() &&
+                HttpCacheHandler.SUPPORTED_METHODS.contains(request.getMethod());
+        boolean idempotencyEnabled = proxyRule.hasMiddleware() && proxyRule.getMiddleware().hasIdempotency() &&
+                IdempotencyKeyHandler.SUPPORTED_METHODS.contains(request.getMethod());
+
+        if ((httpCacheEnabled || idempotencyEnabled) && isJson) {
+            try (InputStream decodedStream = decodeContentStream(
+                    new ByteArrayInputStream(buffer, offset, length), contentEncoding)) {
+
+                String bodyContent = readStreamAsString(decodedStream, contentType);
+                if (httpCacheEnabled) {
+                    cacheResponseContent(request,
+                            bodyContent,
+                            "",
+                            proxyRule.getTtl()
+                            ,CacheFactory.HTTP_REQUEST_CACHE_KEY);
                 }
+
+                if (idempotencyEnabled) {
+                    String idempotencyKey = request.getHeader(
+                            proxyRule.getMiddleware().getIdempotency().getHeaderName());
+                    cacheResponseContent(request,
+                            bodyContent,
+                            idempotencyKey,
+                            proxyRule.getMiddleware().getIdempotency().getTtl(),
+                            CacheFactory.HTTP_IDEMPOTENCY_KEY);
+                }
+
             } catch (Exception e) {
-                logger.error("Error decode response content {}", e.getMessage());
+                logger.error("Error decoding response content {}", e.getMessage());
             }
         }
     }

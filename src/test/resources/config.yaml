@@ -26,17 +26,16 @@ corsFilter:
 
 storage:
   redis:
-    enabled: true
+    enabled: false
     port: 6379
     database: 1
     maxTotal: 128
     maxIdle: 64
     minIdle: 16
-#
-#  inMemory:
-#    enabled: true
-#    maxMemory: 50 # MB
-#    size: 10000
+  inMemory:
+    enabled: true
+    maxMemory: 50 # MB
+    size: 10000
 
 proxies:
   - path: /upload

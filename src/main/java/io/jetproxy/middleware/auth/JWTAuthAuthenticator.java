@@ -1,17 +1,13 @@
 package io.jetproxy.middleware.auth;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import io.jetproxy.context.AppContext;
-import io.jetproxy.middleware.auth.jwk.validator.BaseJwtValidator;
 import io.jetproxy.middleware.auth.jwk.validator.JwtValidator;
 import io.jsonwebtoken.*;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.Getter;
 import org.eclipse.jetty.security.Authenticator;
 import org.eclipse.jetty.security.UserAuthentication;
 import org.eclipse.jetty.server.Authentication;
@@ -20,24 +16,18 @@ import io.jsonwebtoken.security.Keys;
 import io.jetproxy.context.AppConfig;
 
 import javax.security.auth.Subject;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.math.BigInteger;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.security.Key;
-import java.security.KeyFactory;
 import java.security.Principal;
-import java.security.interfaces.RSAPublicKey;
-import java.security.spec.RSAPublicKeySpec;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static io.jetproxy.util.Constants.REQUEST_ATTRIBUTE_JETPROXY_JWT_CLAIMS;
 
 public class JWTAuthAuthenticator implements Authenticator {
+    @Getter
     private final AppConfig.JwtAuthSource jwtAuthSource;
+    @Getter
     private final Key secretKey;
+    @Getter
     private JwtValidator jwtValidator;
 
     public JWTAuthAuthenticator() {

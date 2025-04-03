@@ -40,10 +40,15 @@ public class Constants {
             "GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS", "PATCH", "TRACE", "CONNECT"
     );
 
+    // Middleware Idempotency Key
+    public static final String DEFAULT_IDEMPOTENCY_KEY_HEADER_NAME = "Idempotency-Key";
+    public static final long DEFAULT_IDEMPOTENCY_TTL = 5000;
+
     public static final String HEADER_RETRY_AFTER = "Retry-After";
     public static final String HEADER_X_PROXY_ERROR = "X-Proxy-Error";
     public static final String HEADER_X_PROXY_TYPE = "X-Proxy-Type";
     public static final String HEADER_X_JETPROXY_CACHE = "X-JetProxy-Cache";
+    public static final String HEADER_X_JETPROXY_IDEMPOTENCY_CACHE = "X-JetProxy-Idempotency-Cache";
     public static final String HEADER_X_RATE_LIMIT_LIMIT = "X-RateLimit-Limit";
     public static final String HEADER_X_RATE_LIMIT_REMAINING = "X-RateLimit-Remaining";
     public static final String HEADER_X_RATE_LIMIT_RESET = "X-RateLimit-Reset";

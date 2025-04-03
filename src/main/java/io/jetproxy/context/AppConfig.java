@@ -99,8 +99,8 @@ public class AppConfig {
     public static class Proxy {
         private String path;
         private String service;
-        private Middleware middleware = null;
-        private long ttl;
+        private Middleware middleware = new Middleware();
+        private long ttl = -1;
         private String uuid;
         private List<Match> matches = new ArrayList<>(); // Added rules list
 
@@ -110,6 +110,10 @@ public class AppConfig {
 
         public boolean hasMatchRules() {
             return matches != null && !matches.isEmpty();
+        }
+
+        public boolean hasHttpCache() {
+            return ttl > 0;
         }
 
         public String getUuid() {
@@ -141,6 +145,7 @@ public class AppConfig {
         private Bulkhead bulkhead;
         private Retry retry;
         private Mirroring mirroring;
+        private Idempotency idempotency;
 
         public boolean hasBasicAuth() {
             return basicAuth != null;
@@ -177,6 +182,9 @@ public class AppConfig {
         public boolean hasMirroring() {
             return mirroring != null && mirroring.enabled;
         }
+        public boolean hasIdempotency() {
+            return  idempotency != null && idempotency.enabled;
+        }
     }
 
     @Getter
@@ -186,6 +194,15 @@ public class AppConfig {
         private boolean enabled;
         private String mirrorService;
         private int mirrorPercentage;
+    }
+
+    @Getter
+    @Setter
+    @ToString
+    public static class Idempotency {
+        private boolean enabled;
+        private String headerName = Constants.DEFAULT_IDEMPOTENCY_KEY_HEADER_NAME;
+        private long ttl = Constants.DEFAULT_IDEMPOTENCY_TTL;
     }
 
     @Getter

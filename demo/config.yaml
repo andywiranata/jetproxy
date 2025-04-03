@@ -15,8 +15,15 @@ corsFilter:
   maxAge: 3600
 
 storage:
-  inMemory:
+  redis:
     enabled: true
+    port: 6379
+    database: 1
+    maxTotal: 128
+    maxIdle: 64
+    minIdle: 16
+  inMemory:
+    enabled: false
     maxMemory: 50 # MB
     size: 10000
 
@@ -24,6 +31,10 @@ proxies:
   - path: /upload
     service: fileUploadService
     middleware:
+      idempotency:
+        enabled: true
+        headerName: Idempotency-Key
+        ttl: 300000
       rule: "HeaderPrefix('Content-Type', 'multipart/form-data')"
   - path: /v2/grpc
     service: userGrpcApi
@@ -39,7 +50,7 @@ proxies:
       basicAuth: 'basicAuth:administrator'
       mirroring:
         enabled: true
-        mirrorService: userV2xApi
+        mirrorService: userV2Api
         mirrorPercentage: 100
       forwardAuth:
         enabled: false
@@ -47,7 +58,8 @@ proxies:
         service: authApi
         requestHeaders: "Forward(X-Custom-*);Forward(Authorization);"
         responseHeaders: "Remove(X-Powered-By)"
-    ttl: 1000
+    ttl: 50000
+
 services:
   - name: userApi
     url: http://localhost:30001

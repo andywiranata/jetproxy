@@ -307,7 +307,8 @@ public class ProxyConfigurationManager {
                 new HttpCacheHandler(),
                 new MatchServiceHandler(proxyRule),
                 new MirroringHandler(proxyRule),
-                new GrpcRequestHandler(proxyRule, ctx)
+                new GrpcRequestHandler(proxyRule, ctx),
+                new IdempotencyKeyHandler(proxyRule, ctx)
         ));
         ServletHolder proxyServlet = new ServletHolder(
                 new ProxyRequestHandler(

@@ -51,19 +51,20 @@ public abstract class BaseProxyRequestHandler extends ProxyServlet.Transparent {
 
     // Shared logic for caching the response
     protected void cacheResponseContent(HttpServletRequest request,
-                                        String responseBody) {
-        if (!request.getMethod().equalsIgnoreCase("GET")) {
-            return;
-        }
+                                        String responseBody,
+                                        String randomKey,
+                                        long ttl,
+                                        String cacheKey) {
         AppContext ctx = AppContext.get();
         String path = RequestUtils.getFullPath(request);
         String method = request.getMethod();
         ResponseCacheEntry cacheEntry = new ResponseCacheEntry(
                 (Map<String, String>) request.getAttribute(RESPONSE_MODIFIED_HEADER), responseBody);
         ctx.getCache()
-                .put(String.format(CacheFactory.HTTP_REQUEST_CACHE_KEY, method, path),
+                .put(String.format(
+                        cacheKey, method, path, randomKey),
                         ctx.gson.toJson(cacheEntry),
-                        proxyRule.getTtl());
+                        ttl);
     }
 
     // Shared logic for decoding content streams
