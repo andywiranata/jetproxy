@@ -82,6 +82,7 @@ public class ProxyRequestHandler extends BaseProxyRequestHandler {
             });
 
         } catch (Exception e) {
+            e.printStackTrace();
             logger.error("Error Occurred to process request {}", e.getMessage());
             if (e instanceof ResilienceRateLimitException) {
                 RequestUtils.sendErrorRateLimiterResponse(response, e.getMessage());
@@ -176,7 +177,6 @@ public class ProxyRequestHandler extends BaseProxyRequestHandler {
                             idempotencyKey,
                             proxyRule.getMiddleware().getIdempotency().getTtl(),
                             CacheFactory.HTTP_IDEMPOTENCY_KEY);
-                    response.setStatus(HttpStatus.CREATED_201);
                 }
 
             } catch (Exception e) {

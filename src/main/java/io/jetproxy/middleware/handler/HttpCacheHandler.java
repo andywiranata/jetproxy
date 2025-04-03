@@ -40,7 +40,7 @@ public class HttpCacheHandler  implements MiddlewareHandler {
         AppContext ctx = AppContext.get();
         String path = RequestUtils.getFullPath(request);
         String method = request.getMethod();
-        String responseBody = ctx.getCache().get(String.format(CacheFactory.HTTP_REQUEST_CACHE_KEY, method, path));
+        String responseBody = ctx.getCache().get(String.format(CacheFactory.HTTP_REQUEST_CACHE_KEY, method, path, ""));
 
         return ctx.gson.fromJson(responseBody, ResponseCacheEntry.class);
     }

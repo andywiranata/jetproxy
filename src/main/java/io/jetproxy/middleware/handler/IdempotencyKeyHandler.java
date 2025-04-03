@@ -16,14 +16,12 @@ import java.util.Map;
 public class IdempotencyKeyHandler implements MiddlewareHandler {
 
     public static final List<String> SUPPORTED_METHODS = List.of("POST", "PUT", "PATCH", "DELETE");
-
     private final AppConfig.Idempotency idempotency;
     private final boolean isActiveIdempotency;
     private final AppContext ctx;
 
     public IdempotencyKeyHandler(AppConfig.Proxy proxyRule, AppContext ctx) {
         this.ctx = ctx;
-
         if (proxyRule.hasMiddleware() && proxyRule.getMiddleware().hasIdempotency()) {
             this.idempotency = proxyRule.getMiddleware().getIdempotency();
             this.isActiveIdempotency = true;
