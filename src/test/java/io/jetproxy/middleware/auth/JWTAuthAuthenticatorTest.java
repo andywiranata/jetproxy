@@ -1,6 +1,8 @@
 package io.jetproxy.middleware.auth;
 
 
+import com.google.gson.Gson;
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jetproxy.context.AppConfig;
@@ -18,6 +20,7 @@ import java.security.Key;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 import static io.jetproxy.util.Constants.REQUEST_ATTRIBUTE_JETPROXY_JWT_CLAIMS;
 import static org.junit.jupiter.api.Assertions.*;
@@ -74,23 +77,33 @@ public class JWTAuthAuthenticatorTest {
                 .signWith(secretKey, SignatureAlgorithm.HS256)
                 .compact();
     }
-    // TODO: WIP, UNCOMMENT AND FIX IT ASAP
-    /*
     @Test
     void testValidJwtAuthentication() throws Exception {
         HttpServletRequest request = mock(HttpServletRequest.class);
         HttpServletResponse response = mock(HttpServletResponse.class);
 
+        // Generate a sample JWT
         String jwt = generateJwt(Map.of("role", "admin"), 60000);
         when(request.getHeader(HEADER_NAME)).thenReturn(PREFIX + jwt);
 
-        Authentication auth = authenticator.validateRequest(request, response, true);
+        // Mock AppContext.get().gson.toJson(...)
+        try (MockedStatic<AppContext> appContextMock = mockStatic(AppContext.class)) {
+            AppContext mockAppContext = mock(AppContext.class);
+            Gson mockGson = mock(Gson.class);
 
-        assertNotNull(auth);
-        assertTrue(auth instanceof Authentication.User);
-        verify(request).setAttribute(eq(REQUEST_ATTRIBUTE_JETPROXY_JWT_CLAIMS), anyString());
+            appContextMock.when(AppContext::get).thenReturn(mockAppContext);
+            when(mockAppContext.getGson()).thenReturn(mockGson);
+            when(mockAppContext.getGson().toJson(any(Claims.class))).thenReturn("{\"role\":\"admin\"}");
+
+            // Run authentication
+            Authentication auth = authenticator.validateRequest(request, response, true);
+
+            // Assertions
+            assertNotNull(auth);
+            assertTrue(auth instanceof Authentication.User);
+            verify(request).setAttribute(eq(REQUEST_ATTRIBUTE_JETPROXY_JWT_CLAIMS), eq("{\"role\":\"admin\"}"));
+        }
     }
-
     @Test
     void testMissingToken() throws Exception {
         HttpServletRequest request = mock(HttpServletRequest.class);
@@ -151,5 +164,5 @@ public class JWTAuthAuthenticatorTest {
         assertEquals(Authentication.UNAUTHENTICATED, auth);
         verify(response).sendError(eq(HttpServletResponse.SC_BAD_REQUEST), contains("Claim validation"));
     }
-    */
+
 }

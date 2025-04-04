@@ -40,7 +40,7 @@ public class AppContext {
     private final Cache cache;
     // private final MetricsListener metricsListener;
     private final boolean debugMode;
-    public final Gson gson;
+    private final Gson gson;
     private final ServletContextHandler contextHandler;
     private final ProxyConfigurationManager proxyConfigurationManager;
     private static boolean gracefullyShutdownAllowed = true;
