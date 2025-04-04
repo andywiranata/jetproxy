@@ -148,7 +148,10 @@ public class JWTAuthAuthenticator implements Authenticator {
         return true;
     }
     private void forwardClaimsToHeader(Claims claims, HttpServletRequest response) {
-        String claimsJson = AppContext.get().gson.toJson(claims); // Convert claims to JSON string
+        System.out.println("AppContext.get() = " + AppContext.get());
+        System.out.println("AppContext.get().getGson() = " + AppContext.get().getGson());
+
+        String claimsJson = AppContext.get().getGson().toJson(claims); // Convert claims to JSON string
         response.setAttribute(REQUEST_ATTRIBUTE_JETPROXY_JWT_CLAIMS, claimsJson);
     }
 

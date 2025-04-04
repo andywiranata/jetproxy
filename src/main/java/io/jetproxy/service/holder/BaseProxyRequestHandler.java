@@ -63,7 +63,7 @@ public abstract class BaseProxyRequestHandler extends ProxyServlet.Transparent {
         ctx.getCache()
                 .put(String.format(
                         cacheKey, method, path, randomKey),
-                        ctx.gson.toJson(cacheEntry),
+                        ctx.getGson().toJson(cacheEntry),
                         ttl);
     }
 
