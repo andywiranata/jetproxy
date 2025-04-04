@@ -48,7 +48,7 @@ public class BaseJwkSource implements JwkSource {
         return parseJwks(jwksResponse);
     }
 
-    private String fetchJwks() throws Exception {
+    protected String fetchJwks() throws Exception {
         HttpURLConnection connection = null;
         try {
             URL url = new URL(jwksUri);
