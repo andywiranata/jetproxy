@@ -112,7 +112,7 @@ export interface Config {
   defaultTimeout: string;
   dashboard: string;
   rootPath: string;
-  debugMode: string;
+  accessLog: string;
   corsFilter: CorsFilter;
   storage: Storage;
   proxies: Proxy[];

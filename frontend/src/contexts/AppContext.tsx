@@ -41,8 +41,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const fetchAndSetConfig = async () => {
       if (session) {
         const initialConfig = await fetchConfig(session.token);
-        console.log('initial config', initialConfig);
-        setConfig(initialConfig);
+        setTimeout(()=> {
+          setConfig(initialConfig);
+        }, 1000)
       }
     };
 

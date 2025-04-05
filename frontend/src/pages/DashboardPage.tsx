@@ -9,6 +9,10 @@ import {
   Server, RefreshCw, Calendar, ChevronDown, ChevronUp
 } from 'lucide-react';
 import type { Config } from '../types/proxy';
+import type { HealthStatus } from '../services/api';
+import { fetchHealthStatus } from '../services/api';
+import { ServerHealthSection } from '../components/ServerHealthSection';
+
 
 interface DashboardPageProps {
   config: Config;
@@ -89,9 +93,15 @@ export function DashboardPage({ config }: DashboardPageProps) {
   const [sortConfig, setSortConfig] = useState({ key: 'responseTime', direction: 'asc' });
   const [expandedService, setExpandedService] = useState<string | null>(null);
 
+  const [healthStatus, setHealthStatus] = useState<HealthStatus | null>(null);
+  const [healthError, setHealthError] = useState<string | null>(null);
+  const [isHealthLoading, setIsHealthLoading] = useState(false);
+
+
   // Simulate real-time updates
   useEffect(() => {
     const interval = setInterval(() => {
+      fetchHealth();
       setPerformanceData(prev => {
         const newData = [...prev.slice(1), {
           time: new Date().getHours().toString().padStart(2, '0') + ':00',
@@ -102,10 +112,26 @@ export function DashboardPage({ config }: DashboardPageProps) {
         }];
         return newData;
       });
+      fetchHealth();
     }, 5000);
+        fetchHealth();
+
 
     return () => clearInterval(interval);
   }, []);
+
+  const fetchHealth = async () => {
+    try {
+      setIsHealthLoading(true);
+      setHealthError(null);
+      const status = await fetchHealthStatus();
+      setHealthStatus(status);
+    } catch (error) {
+      setHealthError('Failed to fetch health status');
+    } finally {
+      setIsHealthLoading(false);
+    }
+  };
 
   const handleTimeRangeChange = async (range: string) => {
     setLoading(true);
@@ -153,6 +179,17 @@ export function DashboardPage({ config }: DashboardPageProps) {
           ))}
         </div>
       </div>
+
+       {/* Server Health Section */}
+       <div className="bg-white rounded-lg shadow p-6">
+        <ServerHealthSection
+          health={healthStatus}
+          isLoading={isHealthLoading}
+          error={healthError}
+          onRefresh={fetchHealth}
+        />
+      </div>
+
 
       {/* Stats Overview */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
