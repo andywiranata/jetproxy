@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useApp } from './contexts/AppContext';
 import { Sidebar } from './components/Sidebar';
@@ -12,7 +12,7 @@ import { SettingsPage } from './pages/SettingsPage';
 import { YamlEditorPage } from './pages/YamlEditorPage';
 import { DataFreshnessIndicator } from './components/DataFreshnessIndicator';
 import { Config } from './types/proxy';
-import { updateConfig } from './services/api';
+import { updateConfig, fetchConfig } from './services/api';
 
 function App() {
   const { config, setConfig, session, setSession } = useApp();
@@ -24,7 +24,7 @@ function App() {
 
   const handleLogin = async (username: string, password: string) => {
     // In a real app, validate credentials with the server
-    const newSession = createSession();
+    const newSession = createSession(username, password);
     setSession(newSession);
   };
 
@@ -46,6 +46,7 @@ function App() {
       setIsLoading(false);
     }
   };
+  
   console.log('session::', session, config)
   if (!session) {
     return <LoginPage onLogin={handleLogin} />;
@@ -61,6 +62,7 @@ function App() {
       </div>
     );
   }
+  console.log('session:', session);
 
   return (
     <BrowserRouter>
@@ -82,7 +84,7 @@ function App() {
                   onRefresh={async () => {
                     try {
                       setIsLoading(true);
-                      const newConfig = await fetchConfig();
+                      const newConfig = await fetchConfig(session.token);
                       setConfig(newConfig);
                       setLastUpdated(new Date());
                       setError(null);
