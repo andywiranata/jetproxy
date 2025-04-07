@@ -41,7 +41,7 @@ export interface Middleware {
     enabled?: boolean;
     path: string;
     service: string;
-    requestHeaders?: string;
+    requestHeaders: string;
     responseHeaders?: string;
   };
   rateLimiter?: {
@@ -66,6 +66,26 @@ export interface Middleware {
   };
   basicAuth?: string;
   rule?: string;
+  bulkhead?: {
+    enabled: boolean;
+    maxConcurrentCalls?: number;
+    maxWaitDuration?: number;
+  };
+  retry?: {
+    enabled: boolean;
+    maxAttempts?: number;
+    waitDuration?: number;
+  };
+  mirroring?: {
+    enabled: boolean;
+    percentage?: number;
+    service?: string;
+  };
+  idempotency?: {
+    enabled: boolean;
+    headerName?: string;
+    ttl?: number;
+  };
 }
 
 export interface Rule {

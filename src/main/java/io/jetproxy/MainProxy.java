@@ -13,7 +13,6 @@ import java.util.concurrent.Executors;
 
 public class MainProxy {
     private static final Logger logger = LoggerFactory.getLogger(MainProxy.class);
-
     public void start(String[] args) throws Exception {
 
         // Load the configuration file path from the environment

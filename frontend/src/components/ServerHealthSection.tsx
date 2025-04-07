@@ -71,12 +71,12 @@ export function ServerHealthSection({ health, isLoading, error, onRefresh }: Ser
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-medium text-gray-900">Server Health</h3>
-        <button
+        {/* <button
           onClick={onRefresh}
           className="inline-flex items-center px-3 py-1.5 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-copper"
         >
           Refresh Status
-        </button>
+        </button> */}
       </div>
 
       <div className="grid grid-cols-1 gap-4">

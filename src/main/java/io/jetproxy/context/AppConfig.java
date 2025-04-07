@@ -275,7 +275,6 @@ public class AppConfig {
         private String host;
         private Integer port = Constants.DEFAULT_GRPC_PORT;
         private String healthcheck;
-
         public List<String> getMethods() {
             return Constants.DEFAULT_GRPC_METHODS;
         }

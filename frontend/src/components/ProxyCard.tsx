@@ -1,6 +1,5 @@
-import React from 'react';
-import { Settings, Server, Shield, Clock } from 'lucide-react';
-import type { Proxy } from '../types/proxy';
+import { Settings, Server, Shield, Clock, Check, X } from 'lucide-react';
+import type { Proxy, Middleware } from '../types/proxy';
 
 interface ProxyCardProps {
   proxy: Proxy;
@@ -8,7 +7,40 @@ interface ProxyCardProps {
   onDelete: (path: string) => void;
 }
 
+const MiddlewareStatus = ({ enabled }: { enabled: boolean }) => (
+  enabled ? 
+    <Check className="w-4 h-4 text-green-500" /> : 
+    <X className="w-4 h-4 text-gray-300" />
+);
+
+const getMiddlewareStatus = (middleware: Middleware, key: string): boolean => {
+  const value: any = middleware[key as keyof Middleware];
+  if (typeof value === 'string') {
+    return !!value;
+  }
+  if (typeof value === 'object' && value !== null) {
+    return value.enabled || false;
+  }
+  return false;
+};
+
+const formatMiddlewareLabel = (key: string): string => {
+  // Convert camelCase to Title Case with spaces
+  return key
+    .replace(/([A-Z])/g, ' $1')
+    .replace(/^./, str => str.toUpperCase())
+    .trim();
+};
+
 export function ProxyCard({ proxy, onEdit, onDelete }: ProxyCardProps) {
+  const middlewareList = Object.keys(proxy.middleware).map(key => ({
+    key,
+    label: formatMiddlewareLabel(key),
+    enabled: getMiddlewareStatus(proxy.middleware, key)
+  }));
+
+  const enabledCount = middlewareList.filter(m => m.enabled).length;
+
   return (
     <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
       <div className="flex justify-between items-start mb-4">
@@ -34,7 +66,7 @@ export function ProxyCard({ proxy, onEdit, onDelete }: ProxyCardProps) {
         </div>
       </div>
       
-      <div className="space-y-3">
+      <div className="space-y-4">
         <div className="flex items-center space-x-2 text-sm text-gray-600">
           <Server className="w-4 h-4" />
           <span>Service: {proxy.service}</span>
@@ -43,31 +75,32 @@ export function ProxyCard({ proxy, onEdit, onDelete }: ProxyCardProps) {
         <div className="flex items-center space-x-2 text-sm text-gray-600">
           <Shield className="w-4 h-4" />
           <span>
-            Middleware: {Object.keys(proxy.middleware).length} enabled
+            Middleware: {enabledCount} enabled
           </span>
         </div>
         
         <div className="flex items-center space-x-2 text-sm text-gray-600">
           <Clock className="w-4 h-4" />
-          <span>TTL: {proxy.ttl === -1 ? 'Infinite' : `${proxy.ttl}ms`}</span>
+          <span>TTL: {proxy.ttl === -1 ? 'Inactive' : `${proxy.ttl}ms`}</span>
+        </div>
+
+        <div className="border-t pt-4 mt-4">
+          <h4 className="text-sm font-medium text-gray-900 mb-3">Middleware Status</h4>
+          <div className="grid grid-cols-2 gap-2">
+            {middlewareList.map(({ key, label, enabled }) => (
+              <div 
+                key={key}
+                className={`flex items-center justify-between p-2 rounded ${
+                  enabled ? 'bg-green-50' : 'bg-gray-50'
+                }`}
+              >
+                <span className="text-sm font-medium text-gray-700">{label}</span>
+                <MiddlewareStatus enabled={enabled} />
+              </div>
+            ))}
+          </div>
         </div>
       </div>
-      
-      {proxy.middleware.jwtAuth?.enabled && (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 mt-3 mr-2">
-          JWT Auth
-        </span>
-      )}
-      {proxy.middleware.circuitBreaker?.enabled && (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 mt-3 mr-2">
-          Circuit Breaker
-        </span>
-      )}
-      {proxy.middleware.rateLimiter?.enabled && (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 mt-3">
-          Rate Limiter
-        </span>
-      )}
     </div>
   );
 }
