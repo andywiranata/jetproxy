@@ -1,10 +1,10 @@
-import React from 'react';
+import { useState } from 'react';
 import type { Config } from '../types/proxy';
-import { Info } from 'lucide-react';
+import { Info, Save } from 'lucide-react';
+import { getApiUrl, setApiUrl } from '../services/api';
 
 interface SettingsPageProps {
   config: Config;
-  onConfigUpdate: (config: Config) => void;
 }
 
 interface SettingItemProps {
@@ -35,6 +35,14 @@ function SettingItem({ label, value, description }: SettingItemProps) {
 }
 
 export function SettingsPage({ config }: SettingsPageProps) {
+  const [apiUrl, setApiUrlState] = useState(getApiUrl());
+  const [isEditing, setIsEditing] = useState(false);
+
+  const handleSaveUrl = () => {
+    setApiUrl(apiUrl);
+    setIsEditing(false);
+  };
+
   const settings = [
     {
       label: "App Name",
@@ -53,7 +61,7 @@ export function SettingsPage({ config }: SettingsPageProps) {
     },
     {
       label: "Dashboard",
-      value: config.dashboard,
+      value: config.dashboard ? 'enabled': 'disabled',
       description: "Enable/disable dashboard interface"
     },
     {
@@ -62,14 +70,67 @@ export function SettingsPage({ config }: SettingsPageProps) {
       description: "Base path for the application"
     },
     {
-      label: "Debug Mode",
-      value: config.debugMode,
-      description: "Enable/disable debug logging"
+      label: "Access Log",
+      value: config.accessLog ? 'enabled': 'disabled',
+      description: "Enable/disable access logging"
     }
   ];
-
   return (
     <div className="space-y-6">
+      <div className="bg-white rounded-lg shadow-md p-6">
+        <h2 className="text-xl font-semibold mb-6">API Settings</h2>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-900">API URL</label>
+            <p className="mt-1 text-sm text-gray-500 flex items-center mb-2">
+              <Info className="w-4 h-4 mr-1 inline" />
+              The base URL for API requests
+            </p>
+            <div className="flex space-x-2">
+              {isEditing ? (
+                <>
+                  <input
+                    type="url"
+                    value={apiUrl}
+                    onChange={(e) => setApiUrlState(e.target.value)}
+                    className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    placeholder="Enter API URL"
+                  />
+                  <button
+                    onClick={handleSaveUrl}
+                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  >
+                    <Save className="w-4 h-4 mr-2" />
+                    Save
+                  </button>
+                  <button
+                    onClick={() => {
+                      setApiUrlState(getApiUrl());
+                      setIsEditing(false);
+                    }}
+                    className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  >
+                    Cancel
+                  </button>
+                </>
+              ) : (
+                <>
+                  <code className="flex-1 px-3 py-2 text-sm font-mono bg-gray-100 rounded-md">
+                    {apiUrl}
+                  </code>
+                  <button
+                    onClick={() => setIsEditing(true)}
+                    className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  >
+                    Edit
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="bg-white rounded-lg shadow-md p-6">
         <h2 className="text-xl font-semibold mb-6">Application Settings</h2>
         <div className="space-y-6">

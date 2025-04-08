@@ -1,6 +1,11 @@
-import React from 'react';
+
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Shield, Server, Users, Settings, FileJson, ChevronLeft, ChevronRight } from 'lucide-react';
+import { 
+  LayoutDashboard, Shield, Server, Users, Settings, 
+  FileJson, ChevronLeft, ChevronRight, LogOut 
+} from 'lucide-react';
+import { useApp } from '../contexts/AppContext';
+import { clearSession } from '../utils/auth';
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -17,9 +22,17 @@ const menuItems = [
 ];
 
 export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
+  const { setSession } = useApp();
+
+  const handleSignOut = () => {
+    clearSession();
+    setSession(null);
+    location.href = '/';
+  };
+
   return (
     <div 
-      className={`h-screen bg-white border-r border-gray-200 fixed left-0 top-0 transition-all duration-300 ease-in-out ${
+      className={`h-screen bg-white border-r border-gray-200 fixed left-0 top-0 transition-all duration-300 ease-in-out flex flex-col ${
         isCollapsed ? 'w-20' : 'w-64'
       }`}
     >
@@ -47,7 +60,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
         )}
       </button>
 
-      <nav className="mt-6">
+      <nav className="mt-6 flex-1">
         {menuItems.map(({ id, icon: Icon, label, path }) => (
           <NavLink
             key={id}
@@ -74,6 +87,27 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
           </NavLink>
         ))}
       </nav>
+
+      <div className="border-t border-gray-200 p-4">
+        <button
+          onClick={handleSignOut}
+          className={`w-full flex items-center px-2 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-md transition-colors relative group ${
+            isCollapsed ? 'justify-center' : 'justify-start'
+          }`}
+        >
+          <LogOut className="w-5 h-5" />
+          <span className={`ml-3 transition-all duration-300 ${
+            isCollapsed ? 'opacity-0 absolute' : 'opacity-100'
+          }`}>
+            Sign Out
+          </span>
+          {isCollapsed && (
+            <div className="absolute left-16 bg-gray-900 text-white px-2 py-1 rounded text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
+              Sign Out
+            </div>
+          )}
+        </button>
+      </div>
     </div>
   );
 }

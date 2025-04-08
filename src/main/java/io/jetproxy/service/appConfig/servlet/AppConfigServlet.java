@@ -11,8 +11,7 @@ import com.google.gson.JsonSyntaxException;
 
 import java.io.IOException;
 
-public class
-AppConfigServlet extends AbstractJsonServlet<Object> {
+public class AppConfigServlet extends AbstractJsonServlet<Object> {
     private final AppConfigService appConfigService;
 
     public AppConfigServlet(AppConfigService appConfigService) {
@@ -59,8 +58,8 @@ AppConfigServlet extends AbstractJsonServlet<Object> {
 
         try {
             switch (path) {
-                case "/proxies" -> handleUpdateProxies(req, resp);
-                case "/services" -> handleUpdateServices(req, resp);
+                case "/config/proxies" -> handleUpdateProxies(req, resp);
+                case "/config/services" -> handleUpdateServices(req, resp);
                 default -> sendJsonResponse(resp, new ApiResponse<>(false,
                         "Invalid path: " + path, null), HttpServletResponse.SC_NOT_FOUND);
             }

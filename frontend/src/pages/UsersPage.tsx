@@ -28,19 +28,14 @@ export function UsersPage({ config, onConfigUpdate }: UsersPageProps) {
     const user = config.users.find(u => u.username === username);
     if (user?.role === 'administrator') return;
 
-    onConfigUpdate({
-      ...config,
-      users: config.users.filter(u => u.username !== username)
-    });
+    // onConfigUpdate({
+    //   ...config,
+    //   users: config.users.filter(u => u.username !== username)
+    // });
   };
 
   const handleUserSave = (user: UserType) => {
-    onConfigUpdate({
-      ...config,
-      users: selectedUser
-        ? config.users.map(u => u.username === selectedUser.username ? user : u)
-        : [...config.users, user]
-    });
+    
     setSelectedUser(null);
     setShowUserEditor(false);
   };
@@ -49,13 +44,13 @@ export function UsersPage({ config, onConfigUpdate }: UsersPageProps) {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-semibold">Users</h2>
-        <button
+        {/* <button
           onClick={() => setShowUserEditor(true)}
           className="flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
         >
           <Plus className="w-4 h-4 mr-2" />
           Add User
-        </button>
+        </button> */}
       </div>
 
       <div className="bg-white shadow-md rounded-lg overflow-hidden">
@@ -64,7 +59,7 @@ export function UsersPage({ config, onConfigUpdate }: UsersPageProps) {
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+              {/* <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th> */}
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
@@ -85,7 +80,7 @@ export function UsersPage({ config, onConfigUpdate }: UsersPageProps) {
                     {user.role}
                   </span>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                {/* <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <button
                     onClick={() => handleEditUser(user)}
                     disabled={user.role === 'administrator'}
@@ -104,14 +99,14 @@ export function UsersPage({ config, onConfigUpdate }: UsersPageProps) {
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
-                </td>
+                </td> */}
               </tr>
             ))}
           </tbody>
         </table>
       </div>
 
-      {showUserEditor && (
+      {/* {showUserEditor && (
         <YamlPopupEditor
           title={selectedUser ? "Edit User" : "Add User"}
           initialValue={selectedUser}
@@ -122,7 +117,7 @@ export function UsersPage({ config, onConfigUpdate }: UsersPageProps) {
             setSelectedUser(null);
           }}
         />
-      )}
+      )} */}
     </div>
   );
 }

@@ -193,7 +193,7 @@ public class AppConfig {
     public static class Mirroring {
         private boolean enabled;
         private String mirrorService;
-        private int mirrorPercentage;
+        private int mirrorPercentage = 100;
     }
 
     @Getter
@@ -275,7 +275,6 @@ public class AppConfig {
         private String host;
         private Integer port = Constants.DEFAULT_GRPC_PORT;
         private String healthcheck;
-
         public List<String> getMethods() {
             return Constants.DEFAULT_GRPC_METHODS;
         }

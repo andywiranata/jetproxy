@@ -64,9 +64,11 @@ services:
   - name: userApi
     url: http://localhost:30001
     methods: ['GET', 'POST']
+    healthcheck: /ping
   - name: userV2Api
     url: http://localhost:30001/v2
     methods: [ 'GET', 'POST']
+    healthcheck: /ping
   - name: authApi
     url: http://localhost:30001
     methods: ['POST']

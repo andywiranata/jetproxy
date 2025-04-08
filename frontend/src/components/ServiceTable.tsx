@@ -39,12 +39,12 @@ export function ServiceTable({ services, onEdit, onDelete }: ServiceTableProps) 
                 >
                   <Pencil className="w-4 h-4" />
                 </button>
-                <button
+                {/* <button
                   onClick={() => onDelete(service.name)}
                   className="text-red-600 hover:text-red-900"
                 >
                   <Trash2 className="w-4 h-4" />
-                </button>
+                </button> */}
               </td>
             </tr>
           ))}

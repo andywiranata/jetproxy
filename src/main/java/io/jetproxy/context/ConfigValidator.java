@@ -306,5 +306,19 @@ public class ConfigValidator {
             }
         }
 
+        // Validate Idempotency Middleware
+        AppConfig.Idempotency idempotency = middleware.getIdempotency();
+        if (idempotency != null) {
+            if (idempotency.getHeaderName() == null || idempotency.getHeaderName().isEmpty()) {
+                throw new JetProxyValidationException("Idempotency middleware is enabled but header name are missing.");
+            }
+        }
+
+        AppConfig.Mirroring mirroring = middleware.getMirroring();
+        if (mirroring != null) {
+            if (mirroring.getMirrorService() == null || mirroring.getMirrorService().isEmpty()) {
+                throw new JetProxyValidationException("Mirroring middleware is enabled but Service are missing.");
+            }
+        }
     }
 }

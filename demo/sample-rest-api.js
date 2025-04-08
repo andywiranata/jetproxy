@@ -97,6 +97,14 @@ app.get('/user', (req, res) =>{
     });
 });
 
+
+app.get('/ping', (req, res) => {
+    res.status(200).json({
+        ping: 'pong'
+    });
+
+});
+
 // Health check endpoint
 app.get('/health', (req, res) => {
     res.status(200).send('Forward Auth Server is running');

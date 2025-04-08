@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import type { Config, Service } from '../types/proxy';
 import { ServiceTable } from '../components/ServiceTable';
@@ -6,7 +6,7 @@ import { YamlPopupEditor } from '../components/YamlPopupEditor';
 
 interface ServicesPageProps {
   config: Config;
-  onConfigUpdate: (config: Config) => void;
+  onConfigUpdate: (service: Service) => void;
 }
 
 const serviceTemplate = {
@@ -26,19 +26,14 @@ export function ServicesPage({ config, onConfigUpdate }: ServicesPageProps) {
   };
 
   const handleDeleteService = (name: string) => {
-    onConfigUpdate({
-      ...config,
-      services: config.services.filter(s => s.name !== name)
-    });
+    // onConfigUpdate({
+    //   ...config,
+    //   services: config.services.filter(s => s.name !== name)
+    // });
   };
 
   const handleServiceSave = (service: Service) => {
-    onConfigUpdate({
-      ...config,
-      services: selectedService
-        ? config.services.map(s => s.name === selectedService.name ? service : s)
-        : [...config.services, service]
-    });
+    onConfigUpdate(service);
     setSelectedService(null);
     setShowServiceEditor(false);
   };

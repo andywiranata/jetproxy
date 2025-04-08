@@ -80,8 +80,8 @@ public class AppContext {
                         new AppConfigService()));
 
         // this.contextHandler.addFilter(corsFilter, "/admin/*", EnumSet.of(DispatcherType.REQUEST));
-        this.contextHandler.addServlet(configServletHolder, "/admin/*");
-        this.contextHandler.addServlet(HealthCheckServlet.class, "/healthcheck");
+        this.contextHandler.addServlet(configServletHolder, "/_jetproxy/admin/*");
+        this.contextHandler.addServlet(HealthCheckServlet.class, "/_jetproxy/healthcheck");
         addAdminSecurityHandler(this.contextHandler);
         this.proxyConfigurationManager.setupProxiesAndAdminApi(server, this.contextHandler);
 
@@ -89,7 +89,7 @@ public class AppContext {
 
     }
     private void addAdminSecurityHandler(ServletContextHandler context) {
-        String adminPath = "/admin/*";
+        String adminPath = "/_jetproxy/admin/*";
         BasicAuthProvider basicAuthProvider = null;
         basicAuthProvider = (BasicAuthProvider) AuthProviderFactory.getAuthProvider("basicAuth");;
         ConstraintSecurityHandler adminSecurityHandler = basicAuthProvider.createSecurityHandler(config);
