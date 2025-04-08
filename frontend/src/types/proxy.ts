@@ -66,16 +66,16 @@ export interface Middleware {
   };
   basicAuth?: string;
   rule?: string;
-  bulkhead?: {
-    enabled: boolean;
-    maxConcurrentCalls?: number;
-    maxWaitDuration?: number;
-  };
-  retry?: {
-    enabled: boolean;
-    maxAttempts?: number;
-    waitDuration?: number;
-  };
+  // bulkhead?: {
+  //   enabled: boolean;
+  //   maxConcurrentCalls?: number;
+  //   maxWaitDuration?: number;
+  // };
+  // retry?: {
+  //   enabled: boolean;
+  //   maxAttempts?: number;
+  //   waitDuration?: number;
+  // };
   mirroring?: {
     enabled: boolean;
     percentage?: number;

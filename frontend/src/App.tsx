@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useApp } from './contexts/AppContext';
+import { useToast } from './contexts/ToastContext';
 import { Sidebar } from './components/Sidebar';
 import { LoginPage } from './components/LoginPage';
 import { createSession } from './utils/auth';
@@ -10,17 +11,13 @@ import { ServicesPage } from './pages/ServicesPage';
 import { UsersPage } from './pages/UsersPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { YamlEditorPage } from './pages/YamlEditorPage';
-import { DataFreshnessIndicator } from './components/DataFreshnessIndicator';
-import { Config } from './types/proxy';
-import { updateConfig, fetchConfig } from './services/api';
+import { upsertProxy, upsertService} from './services/api';
+import { Proxy, Service } from './types/proxy';
 
 function App() {
-  const { config, setConfig, session, setSession } = useApp();
+  const toast = useToast();
+  const { config, session, setSession, fetchAndSetConfig } = useApp();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [canEdit, setCanEdit] = useState(true);
 
   const handleLogin = async (username: string, password: string) => {
     // In a real app, validate credentials with the server
@@ -28,26 +25,26 @@ function App() {
     setSession(newSession);
   };
 
-  const handleConfigUpdate = async (newConfig: Config) => {
-    if (!canEdit) {
-      setError('Cannot update configuration while data is stale. Please refresh first.');
-      return;
+  const handleUpdateProxy = async (proxy: Proxy)=> {
+    try {
+      await upsertProxy(proxy, session!.token);
+      toast.showSuccess(`Success, Add or Update Proxy ${proxy.path}`);
+      fetchAndSetConfig();
+    } catch(e) {
+      toast.showError(`Error, Add or Update Proxy ${proxy.path}`);
     }
 
+  }
+  const handleUpdateService = async (serivce: Service)=> {
     try {
-      setIsLoading(true);
-      const updatedConfig = await updateConfig(newConfig);
-      setConfig(updatedConfig);
-      setLastUpdated(new Date());
-      setError(null);
-    } catch (err) {
-      setError('Failed to update configuration');
-    } finally {
-      setIsLoading(false);
+      await upsertService(serivce, session!.token);
+      toast.showSuccess(`Success, Add or Update Service ${serivce.name}`);
+      fetchAndSetConfig();
+    } catch(e) {
+      toast.showError(`Error, Add or Update Service ${serivce.name}`);
     }
-  };
+  }
   
-  console.log('session::', session, config)
   if (!session) {
     return <LoginPage onLogin={handleLogin} />;
   }
@@ -62,8 +59,6 @@ function App() {
       </div>
     );
   }
-  console.log('session:', session);
-
   return (
     <BrowserRouter>
       <div className="flex h-screen overflow-hidden bg-gray-50">
@@ -76,28 +71,6 @@ function App() {
         }`}>
           <main className="flex-1 overflow-y-auto">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-              <div className="mb-6 bg-white shadow rounded-lg p-4">
-                <DataFreshnessIndicator
-                  lastUpdated={lastUpdated}
-                  isLoading={isLoading}
-                  error={error}
-                  onRefresh={async () => {
-                    try {
-                      setIsLoading(true);
-                      const newConfig = await fetchConfig(session.token);
-                      setConfig(newConfig);
-                      setLastUpdated(new Date());
-                      setError(null);
-                      setCanEdit(true);
-                    } catch (err) {
-                      setError('Failed to refresh configuration');
-                      setCanEdit(false);
-                    } finally {
-                      setIsLoading(false);
-                    }
-                  }}
-                />
-              </div>
               <Routes>
                 <Route path="/" element={<Navigate to="/dashboard" replace />} />
                 <Route path="/dashboard" element={<DashboardPage config={config} />} />
@@ -105,10 +78,8 @@ function App() {
                   path="/proxies" 
                   element={
                     <ProxiesPage 
-                      config={config} 
-                      onConfigUpdate={handleConfigUpdate}
-                      canEdit={canEdit}
-                    />
+                      config={config}
+                      onConfigUpdate={handleUpdateProxy} />
                   } 
                 />
                 <Route 
@@ -116,7 +87,7 @@ function App() {
                   element={
                     <ServicesPage 
                       config={config} 
-                      onConfigUpdate={handleConfigUpdate}
+                      onConfigUpdate={handleUpdateService}
                     />
                   } 
                 />
@@ -125,7 +96,7 @@ function App() {
                   element={
                     <UsersPage 
                       config={config} 
-                      onConfigUpdate={handleConfigUpdate}
+                      onConfigUpdate={()=>{}}
                     />
                   } 
                 />
@@ -135,8 +106,7 @@ function App() {
                   element={
                     <YamlEditorPage 
                       config={config} 
-                      onConfigUpdate={handleConfigUpdate}
-                      canEdit={canEdit}
+                      onConfigUpdate={()=>{}}
                     />
                   } 
                 />

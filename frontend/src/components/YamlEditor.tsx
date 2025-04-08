@@ -6,63 +6,8 @@ import type { Config } from '../types/proxy';
 
 interface YamlEditorProps {
   config: Config;
-  onSave: (config: Config) => void;
 }
-
-const yamlCompletions = {
-  proxies: {
-    path: '/path',
-    service: 'serviceName',
-    middleware: {
-      jwtAuth: {
-        enabled: true
-      },
-      forwardAuth: {
-        enabled: false,
-        path: '/verify',
-        service: 'authApi',
-        requestHeaders: 'Forward(X-Custom-*)',
-        responseHeaders: 'Remove(X-Powered-By)'
-      },
-      rateLimiter: {
-        enabled: false,
-        limitRefreshPeriod: 200000,
-        limitForPeriod: 5,
-        maxBurstCapacity: 6
-      },
-      circuitBreaker: {
-        enabled: false,
-        failureThreshold: 30,
-        slowCallThreshold: 50,
-        slowCallDuration: 500,
-        openStateDuration: 5,
-        waitDurationInOpenState: 10000,
-        permittedNumberOfCallsInHalfOpenState: 2,
-        minimumNumberOfCalls: 4
-      }
-    },
-    ttl: -1
-  },
-  services: {
-    name: 'serviceName',
-    url: 'http://example.com',
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
-    role: 'roleA',
-    healthcheck: '/health'
-  },
-  users: {
-    username: 'user',
-    password: 'password',
-    role: 'user'
-  },
-  corsFilter: {
-    accessControlAllowMethods: ['*'],
-    accessControlAllowHeaders: ['*'],
-    accessControlAllowOriginList: ['*']
-  }
-};
-
-export function YamlEditor({ config, onSave }: YamlEditorProps) {
+export function YamlEditor({ config }: YamlEditorProps) {
   const [yamlContent, setYamlContent] = useState('');
   const [error, setError] = useState<string | null>(null);
 
@@ -117,7 +62,6 @@ export function YamlEditor({ config, onSave }: YamlEditorProps) {
   };
 
   const handleEditorWillMount = (monaco: Monaco) => {
-    // Register YAML language completion provider
     monaco.languages.registerCompletionItemProvider('yaml', {
       provideCompletionItems: (model, position) => {
         const word = model.getWordUntilPosition(position);
@@ -127,61 +71,74 @@ export function YamlEditor({ config, onSave }: YamlEditorProps) {
           startColumn: word.startColumn,
           endColumn: word.endColumn,
         };
-
-        const line = model.getLineContent(position.lineNumber);
+  
+        const line = model.getLineContent(position.lineNumber).trim();
         const suggestions: any[] = [];
-
-        // Helper function to create completion items
-        const createCompletionItem = (label: string, insertText: string, kind: number = monaco.languages.CompletionItemKind.Property) => ({
+  
+        const createCompletionItem = (label: string, insertText: string, kind = monaco.languages.CompletionItemKind.Property, documentation?: string) => ({
           label,
           kind,
           insertText,
           range,
-          documentation: `Add ${label} configuration`,
+          documentation: documentation || `Add ${label} configuration`,
         });
-
-        // Root level completions
-        if (line.trim().length === 0 || line.trim().startsWith('#')) {
+  
+        // Root-level completions
+        if (line === '' || line.startsWith('#')) {
           suggestions.push(
-            createCompletionItem('proxies', 'proxies:\n  - path: '),
-            createCompletionItem('services', 'services:\n  - name: '),
-            createCompletionItem('users', 'users:\n  - username: '),
-            createCompletionItem('corsFilter', 'corsFilter:\n  accessControlAllowMethods:\n    - \'*\'')
+            createCompletionItem('appName', 'appName: API-PROXY'),
+            createCompletionItem('port', 'port: 8080'),
+            createCompletionItem('defaultTimeout', 'defaultTimeout: 10000'),
+            createCompletionItem('rootPath', 'rootPath: /'),
+            createCompletionItem('dashboard', 'dashboard: /'),
+            createCompletionItem('accessLog', 'accessLog: true'),
+            createCompletionItem('corsFilter', 'corsFilter:\n  accessControlAllowMethods:\n    - "*"\n  accessControlAllowHeaders:\n    - "*"\n  accessControlAllowOriginList:\n    - "*"'),
+            createCompletionItem('storage', 'storage:\n  redis:\n    enabled: true\n    host: localhost\n    port: 6379\n    database: 0\n    maxTotal: 128\n    maxIdle: 64\n    minIdle: 8\n  inMemory:\n    enabled: true\n    maxMemory: 100\n    size: 100\n  statsd:\n    enabled: false\n    host: localhost\n    port: 8125\n    prefix: jetproxy'),
+            createCompletionItem('jwtAuthSource', 'jwtAuthSource:\n  headerName: Authorization\n  tokenPrefix: Bearer\n  jwksUri: https://example.com/.well-known/jwks.json\n  jwksTtl: 60000\n  jwksType: RSA'),
+            createCompletionItem('services', 'services:\n  - name: apiService\n    url: https://example.com\n    methods:\n      - GET\n      - POST'),
+            createCompletionItem('proxies', 'proxies:\n  - path: /api\n    service: apiService\n    ttl: 1000'),
+            createCompletionItem('users', 'users:\n  - username: user\n    password: pass\n    role: admin')
           );
         }
-
-        // Proxy completions
-        if (line.includes('proxies:') || line.trim().startsWith('-')) {
+  
+        if (line.startsWith('-') || line.includes('proxies:')) {
           suggestions.push(
-            createCompletionItem('middleware', 'middleware:\n    jwtAuth:\n      enabled: true'),
-            createCompletionItem('path', 'path: /'),
-            createCompletionItem('service', 'service: serviceName'),
-            createCompletionItem('ttl', 'ttl: -1')
+            createCompletionItem('path', 'path: /example'),
+            createCompletionItem('service', 'service: exampleService'),
+            createCompletionItem('ttl', 'ttl: 1000'),
+            createCompletionItem('middleware', 'middleware:\n    basicAuth: basicAuth:admin\n    rule: Header("Content-Type", "application/json")\n    rateLimiter:\n      enabled: true\n      limitRefreshPeriod: 2000\n      limitForPeriod: 5\n      maxBurstCapacity: 10\n    circuitBreaker:\n      enabled: true\n      failureThreshold: 50\n      slowCallThreshold: 50\n      slowCallDuration: 2000\n      openStateDuration: 10\n      waitDurationInOpenState: 10000\n      permittedNumberOfCallsInHalfOpenState: 3\n      minimumNumberOfCalls: 5\n    header:\n      requestHeaders: Remove(Authorization)\n      responseHeaders: Add(X-Powered-By, jetproxy)')
           );
         }
-
-        // Service completions
+  
         if (line.includes('services:')) {
           suggestions.push(
             createCompletionItem('name', 'name: serviceName'),
-            createCompletionItem('url', 'url: http://'),
-            createCompletionItem('methods', 'methods:\n    - GET\n    - POST'),
-            createCompletionItem('role', 'role: userRole'),
+            createCompletionItem('url', 'url: https://example.com'),
+            createCompletionItem('methods', 'methods:\n  - GET\n  - POST'),
+            createCompletionItem('role', 'role: roleName'),
             createCompletionItem('healthcheck', 'healthcheck: /health')
           );
         }
-
-        // HTTP methods completions
+  
+        if (line.includes('users:')) {
+          suggestions.push(
+            createCompletionItem('username', 'username: user'),
+            createCompletionItem('password', 'password: pass'),
+            createCompletionItem('role', 'role: admin')
+          );
+        }
+  
         if (line.includes('methods:')) {
           ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'].forEach(method => {
-            suggestions.push(createCompletionItem(method, method, monaco.languages.CompletionItemKind.Enum));
+            suggestions.push(createCompletionItem(method, `- ${method}`, monaco.languages.CompletionItemKind.Enum));
           });
         }
-
+  
         return { suggestions };
       }
     });
   };
+  
 
   return (
     <div className="space-y-4">
@@ -195,13 +152,13 @@ export function YamlEditor({ config, onSave }: YamlEditorProps) {
             <Download className="w-4 h-4 mr-2" />
             Download YAML
           </button>
-          <button
+          {/* <button
             onClick={handleSave}
             className="flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
           >
             <Save className="w-4 h-4 mr-2" />
             Save Changes
-          </button>
+          </button> */}
         </div>
       </div>
 

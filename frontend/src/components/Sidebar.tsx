@@ -1,5 +1,5 @@
 
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import { 
   LayoutDashboard, Shield, Server, Users, Settings, 
   FileJson, ChevronLeft, ChevronRight, LogOut 
@@ -22,13 +22,12 @@ const menuItems = [
 ];
 
 export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
-  const navigate = useNavigate();
   const { setSession } = useApp();
 
   const handleSignOut = () => {
     clearSession();
     setSession(null);
-    navigate('/');
+    location.href = '/';
   };
 
   return (

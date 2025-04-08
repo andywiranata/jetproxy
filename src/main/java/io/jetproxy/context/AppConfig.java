@@ -193,7 +193,7 @@ public class AppConfig {
     public static class Mirroring {
         private boolean enabled;
         private String mirrorService;
-        private int mirrorPercentage;
+        private int mirrorPercentage = 100;
     }
 
     @Getter

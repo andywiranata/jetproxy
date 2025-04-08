@@ -1,4 +1,4 @@
-import type { Config } from '../types/proxy';
+import type { Config, Proxy, Service } from '../types/proxy';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -47,6 +47,36 @@ export async function updateConfig(config: Config): Promise<Config> {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(config),
+  });
+  if (!response.ok) {
+    throw new Error('Failed to update configuration');
+  }
+  return response.json();
+}
+
+export async function upsertProxy(proxy: Proxy, sessionToken: string): Promise<Proxy> {
+    const response = await fetch(`${API_URL}/admin/config/proxies`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Basic ${sessionToken}`,
+      },
+      body: JSON.stringify(proxy),
+    });
+    if (!response.ok) {
+      throw new Error('Failed to update configuration');
+    }
+    return response.json();
+}
+
+export async function upsertService(service: Service, sessionToken: string): Promise<Service> {
+  const response = await fetch(`${API_URL}/admin/config/services`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Basic ${sessionToken}`,
+    },
+    body: JSON.stringify(service),
   });
   if (!response.ok) {
     throw new Error('Failed to update configuration');

@@ -8,5 +8,5 @@ interface YamlEditorPageProps {
 }
 
 export function YamlEditorPage({ config, onConfigUpdate }: YamlEditorPageProps) {
-  return <YamlEditor config={config} onSave={onConfigUpdate} />;
+  return <YamlEditor config={config} />;
 }
