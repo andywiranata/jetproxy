@@ -34,16 +34,20 @@ proxies:
 
 ## Available HTTP Middlewares
 
-| Middleware         | Description                                        | Link                                             |
-|---------------------|----------------------------------------------------|-------------------------------------------------|
-| **BasicAuth**       | Handles basic authentication.                      | [Documentation](/docs/middleware/basic-auth)    |
-| **ForwardAuth**     | Forwards authentication to an external service.    | [Documentation](/docs/middleware/forward-auth)  |
-| **JWT Auth**        | Validates and processes JSON Web Tokens (JWT).     | [Documentation](/docs/middleware/jwt-auth)      |
-| **Rules**           | Defines routing and matching rules.                | [Documentation](/docs/middleware/rules)         |
-| **Headers**         | Manages request and response headers.              | [Documentation](/docs/middleware/headers)       |
-| **Cache**           | Configures caching for responses.                  | [Documentation](/docs/middleware/cache)         |
-| **Circuit Breaker** | Implements circuit breaker logic for fault tolerance. | [Documentation](/docs/middleware/circuit-breaker) |
-| **CORS Headers**    | Handles Cross-Origin Resource Sharing (CORS) headers. | [Documentation](/docs/middleware/cors)  |
-| **Rate Limiter**    | Limits the rate of incoming requests.              | [Documentation](/docs/middleware/rate-limiter)  |
+| Middleware           | Description                                                         | Link                                                  |
+|----------------------|---------------------------------------------------------------------|-------------------------------------------------------|
+| **BasicAuth**        | Handles basic authentication.                                       | [Documentation](/docs/middleware/basic-auth)          |
+| **ForwardAuth**      | Forwards authentication to an external service.                     | [Documentation](/docs/middleware/forward-auth)        |
+| **JWT Auth**         | Validates and processes JSON Web Tokens (JWT).                      | [Documentation](/docs/middleware/jwt-auth)            |
+| **Rules**            | Defines routing and matching rules.                                 | [Documentation](/docs/middleware/rules)               |
+| **Headers**          | Manages request and response headers.                               | [Documentation](/docs/middleware/headers)             |
+| **Cache**            | Configures caching for responses.                                   | [Documentation](/docs/middleware/cache)               |
+| **Circuit Breaker**  | Implements circuit breaker logic for fault tolerance.               | [Documentation](/docs/middleware/circuit-breaker)     |
+| **CORS Headers**     | Handles Cross-Origin Resource Sharing (CORS) headers.               | [Documentation](/docs/middleware/cors)                |
+| **Rate Limiter**     | Limits the rate of incoming requests.                               | [Documentation](/docs/middleware/rate-limiter)        |
+| **Mirroring Request**| Forwards a copy of the incoming request to another service for testing or shadowing. | [Documentation](/docs/middleware/mirroring-request) |
+| **Rest To Grpc**     | Converts incoming REST requests to gRPC protocol calls.             | [Documentation](/docs/middleware/rest-to-grpc)        |
+| **Idempotency Request** | Ensures safe retries by returning the same response for repeated requests with the same key. | [Documentation](/docs/middleware/idempotency-request) |
+
 
 
