@@ -115,4 +115,130 @@ public class FatalValidationHints {
                         .build()
         );
     }
+    public static void noServicesConfigured() {
+        JetProxyExit.fatal(
+                JetProxyErrorBuilder.error("No services configured.")
+                        .hint("You must define at least one HTTP service.")
+                        .example("""
+                                services:
+                                  - name: userApi
+                                    url: http://localhost:30001
+                                    methods: ['GET', 'POST']
+                                    healthcheck: /ping
+                                """)
+                .doc("routing/services")
+                .build()
+        );
+    }
+
+    public static void missingServiceName() {
+        JetProxyExit.fatal(
+                JetProxyErrorBuilder.error("Service name is missing.")
+                        .hint("Each service must have a unique name.")
+                        .example("name: my-service")
+                        .doc("routing/services")
+                        .build()
+        );
+    }
+
+    public static void duplicateServiceName(String name) {
+        JetProxyExit.fatal(
+                JetProxyErrorBuilder.error("Duplicate service name found: " + name)
+                        .hint("Service names must be unique across the config.")
+                        .doc("routing/services")
+                        .build()
+        );
+    }
+
+    public static void missingServiceUrl(String name) {
+        JetProxyExit.fatal(
+                JetProxyErrorBuilder.error("Service URL is missing for service: " + name)
+                        .hint("Each service must define a valid URL.")
+                        .example("url: http://localhost:8080")
+                        .doc("routing/services")
+                        .build()
+        );
+    }
+
+    public static void invalidServiceUrl(String url) {
+        JetProxyExit.fatal(
+                JetProxyErrorBuilder.error("Service URL must start with 'http://' or 'https://': " + url)
+                        .doc("routing/services")
+                        .build()
+        );
+    }
+
+    public static void emptyHttpMethods(String name) {
+        JetProxyExit.fatal(
+                JetProxyErrorBuilder.error("HTTP methods cannot be empty for service: " + name)
+                        .hint("List the allowed HTTP methods like GET, POST, etc.")
+                        .example("methods: ['GET', 'POST']")
+                        .doc("routing/services")
+                        .build()
+        );
+    }
+
+    public static void invalidHttpMethod(String method, String serviceName) {
+        JetProxyExit.fatal(
+                JetProxyErrorBuilder.error("Invalid HTTP method '" + method + "' for service: " + serviceName)
+                        .hint("Allowed methods are GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS, TRACE, CONNECT.")
+                        .build()
+        );
+    }
+
+    public static void invalidHealthcheckPath(String path) {
+        JetProxyExit.fatal(
+                JetProxyErrorBuilder.error("Healthcheck path must start with '/': " + path)
+                        .build()
+        );
+    }
+    public static void noProxiesConfigured() {
+        JetProxyExit.fatal(
+                JetProxyErrorBuilder.error("No proxies configured.")
+                        .hint("At least one proxy route is required to forward traffic.")
+                        .example("proxies:\n  - path: /api\n    service: apiService")
+                        .doc("routing/routers")
+                        .build()
+        );
+    }
+
+    public static void noServicesForProxies() {
+        JetProxyExit.fatal(
+                JetProxyErrorBuilder.error("No services configured (HTTP or gRPC), but proxies depend on them.")
+                        .hint("Ensure that either HTTP services or gRPC services are defined.")
+                        .doc("routing/services")
+                        .build()
+        );
+    }
+    public static void proxyPathMissing() {
+        JetProxyExit.fatal(
+                JetProxyErrorBuilder.error("Proxy path cannot be null or empty.")
+                        .hint("Each proxy must define a valid route path.")
+                        .example("path: /users")
+                        .build()
+        );
+    }
+
+    public static void proxyServiceMissing(String path) {
+        JetProxyExit.fatal(
+                JetProxyErrorBuilder.error("Proxy service cannot be null or empty for path: " + path)
+                        .hint("Each proxy must link to a defined service.")
+                        .build()
+        );
+    }
+
+    public static void proxyServiceUnregistered(String service, String path) {
+        JetProxyExit.fatal(
+                JetProxyErrorBuilder.error("Proxy references an unregistered service: " + service + " for path: " + path)
+                        .hint("Ensure the service name is defined in the services or grpcServices block.")
+                        .build()
+        );
+    }
+
+    public static void proxyPathMustStartWithSlash(String path) {
+        JetProxyExit.fatal(
+                JetProxyErrorBuilder.error("Proxy path must start with '/': " + path)
+                        .build()
+        );
+    }
 }

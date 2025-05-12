@@ -1,5 +1,7 @@
 package io.jetproxy.util;
 
+import io.jetproxy.exception.JetProxyValidationException;
+
 /**
  * Utility for cleanly terminating JetProxy with helpful error messages.
  * Avoids stack traces for known validation or configuration errors.
@@ -16,6 +18,6 @@ public class JetProxyExit {
         System.err.println("\n==== JetProxy Startup Failed ====\n");
         System.err.println(message);
         System.err.println("==================================\n");
-        System.exit(1);
+        throw new JetProxyValidationException(message);
     }
 }

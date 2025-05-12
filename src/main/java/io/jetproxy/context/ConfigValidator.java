@@ -106,46 +106,44 @@ public class ConfigValidator {
      */
     public static void validateServices(List<AppConfig.Service> services) {
         if (services == null || services.isEmpty()) {
-            throw new JetProxyValidationException("No services configured");
+            FatalValidationHints.noServicesConfigured();
         }
 
-        // Ensure service names are unique
         Set<String> uniqueServiceNames = new HashSet<>();
 
         for (AppConfig.Service service : services) {
-            // Validate service name
-            if (service.getName() == null || service.getName().isEmpty()) {
-                throw new JetProxyValidationException("Service name cannot be null or empty");
-            }
-            if (!uniqueServiceNames.add(service.getName())) {
-                throw new JetProxyValidationException("Duplicate service name found: " + service.getName());
+            String name = service.getName();
+
+            if (name == null || name.isBlank()) {
+                FatalValidationHints.missingServiceName();
             }
 
-            // Validate service URL
-            if (service.getUrl() == null || service.getUrl().isEmpty()) {
-                throw new JetProxyValidationException("Service URL cannot be null or empty for service: " + service.getName());
+            if (!uniqueServiceNames.add(name)) {
+                FatalValidationHints.duplicateServiceName(name);
             }
+
+            if (service.getUrl() == null || service.getUrl().isBlank()) {
+                FatalValidationHints.missingServiceUrl(name);
+            }
+
             if (!service.getUrl().startsWith("http://") && !service.getUrl().startsWith("https://")) {
-                throw new JetProxyValidationException("Service URL must start with 'http://' or 'https://': " + service.getUrl());
+                FatalValidationHints.invalidServiceUrl(service.getUrl());
             }
 
-            // Validate HTTP methods if provided
             if (service.getMethods() != null) {
                 if (service.getMethods().isEmpty()) {
-                    throw new JetProxyValidationException("HTTP methods cannot be empty for service: " + service.getName());
+                    FatalValidationHints.emptyHttpMethods(name);
                 }
 
-                // Ensure all methods are valid HTTP methods
                 for (String method : service.getMethods()) {
                     if (!isValidHttpMethod(method)) {
-                        throw new JetProxyValidationException("Invalid HTTP method '" + method + "' for service: " + service.getName());
+                        FatalValidationHints.invalidHttpMethod(method, name);
                     }
                 }
             }
 
-            // Validate healthcheck path if provided
             if (service.getHealthcheck() != null && !service.getHealthcheck().startsWith("/")) {
-                throw new JetProxyValidationException("Healthcheck path must start with '/': " + service.getHealthcheck());
+                FatalValidationHints.invalidHealthcheckPath(service.getHealthcheck());
             }
         }
     }
@@ -167,11 +165,11 @@ public class ConfigValidator {
      */
     public static void validateProxies(List<AppConfig.Proxy> proxies, List<AppConfig.Service> services, List<AppConfig.GrpcService> grpcServices) {
         if (proxies == null || proxies.isEmpty()) {
-            throw new JetProxyValidationException("No proxies configured");
+            FatalValidationHints.noProxiesConfigured();
         }
 
         if ((services == null || services.isEmpty()) && (grpcServices == null || grpcServices.isEmpty())) {
-            throw new JetProxyValidationException("No services configured (HTTP or gRPC), but proxies depend on them.");
+            FatalValidationHints.noServicesForProxies();
         }
 
         // Collect registered HTTP and gRPC service names
@@ -185,17 +183,17 @@ public class ConfigValidator {
 
         for (AppConfig.Proxy proxy : proxies) {
             if (proxy.getPath() == null || proxy.getPath().isEmpty()) {
-                throw new JetProxyValidationException("Proxy path cannot be null or empty");
+                FatalValidationHints.proxyPathMissing();
             }
             if (proxy.getService() == null || proxy.getService().isEmpty()) {
-                throw new JetProxyValidationException("Proxy service cannot be null or empty for path: " + proxy.getPath());
+                FatalValidationHints.proxyServiceMissing(proxy.getPath());
             }
             if (!registeredServiceNames.contains(proxy.getService())) {
-                throw new JetProxyValidationException("Proxy references an unregistered service: " + proxy.getService()
-                        + " for path: " + proxy.getPath());
+                FatalValidationHints.proxyServiceUnregistered(proxy.getService(), proxy.getPath());
             }
             if (!proxy.getPath().startsWith("/")) {
-                throw new JetProxyValidationException("Proxy path must start with '/': " + proxy.getPath());
+                FatalValidationHints.proxyPathMustStartWithSlash(proxy.getPath());
+//                throw new JetProxyValidationException("Proxy path must start with '/': " + proxy.getPath());
             }
             validateMatches(proxy, registeredServiceNames);
             validateMiddleware(proxy, registeredServiceNames);
