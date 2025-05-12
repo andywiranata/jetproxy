@@ -22,7 +22,9 @@ storage:
 
 proxies:
   - path: /upload
-
+    service: fileUploadService
+    middleware:
+      rule: "HeaderPrefix('Content-Type', 'multipart/form-data')"
   - path: /v2/grpc
     service: userGrpcApi
     ttl: 10000
