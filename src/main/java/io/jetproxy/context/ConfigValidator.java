@@ -1,6 +1,7 @@
 package io.jetproxy.context;
 
 import io.jetproxy.exception.JetProxyValidationException;
+import io.jetproxy.util.FatalValidationHints;
 import org.eclipse.jetty.util.StringUtil;
 
 import java.util.HashSet;
@@ -16,16 +17,16 @@ public class ConfigValidator {
      */
     public static void validateConfig(AppConfig config) {
         if (StringUtil.isEmpty(config.getAppName())) {
-            throw new JetProxyValidationException("appName cannot be null");
+            FatalValidationHints.missingAppName();
         }
         if (config.getPort() <= 0 || config.getPort() > 65535) {
-            throw new JetProxyValidationException("Invalid port number: " + config.getPort());
+            FatalValidationHints.invalidPort(config.getPort());
         }
         if (config.getDefaultTimeout() <= 0) {
-            throw new JetProxyValidationException("Default timeout must be greater than 0");
+            FatalValidationHints.invalidTimeout(config.getDefaultTimeout());
         }
         if (StringUtil.isEmpty(config.getRootPath()) || !config.getRootPath().startsWith("/")) {
-            throw new JetProxyValidationException("rootPath must start with '/'");
+            FatalValidationHints.invalidRootPath(config.getRootPath());
         }
 
         // Check if at least one service type is available
@@ -40,31 +41,32 @@ public class ConfigValidator {
         }
 
         if (!config.hasCorsFilter()) {
-            throw new JetProxyValidationException("Cors Filter cannot be null");
+            FatalValidationHints.missingCorsFilter();
         } else {
             if (config.getCorsFilter().getAccessControlAllowMethods() == null) {
-                throw new JetProxyValidationException("Access Control Allow Methods cannot be null");
+               FatalValidationHints.missingCorsMethods();
             }
             if (config.getCorsFilter().getAccessControlAllowOriginList() == null) {
-                throw new JetProxyValidationException("Access Control Origin List cannot be null");
+                FatalValidationHints.missingCorsOrigins();
             }
             if (config.getCorsFilter().getAccessControlAllowHeaders() == null) {
-                throw new JetProxyValidationException("Access Control Headers cannot be null");
+                FatalValidationHints.missingCorsHeaders();
             }
         }
         if (config.getUsers() != null) {
             for (AppConfig.User user : config.getUsers()) {
+                String userRef = user.getUsername() != null ? "'" + user.getUsername() + "'" : "<unknown>";
                 // Validate username
                 if (StringUtil.isEmpty(user.getUsername())) {
-                    throw new JetProxyValidationException("Username cannot be null or empty for user: " + user.getUsername());
+                    FatalValidationHints.missingUsername(userRef);
                 }
                 // Validate password
                 if (StringUtil.isEmpty(user.getPassword())) {
-                    throw new JetProxyValidationException("Password cannot be null or empty for user: " + user.getUsername());
+                    FatalValidationHints.missingPassword(userRef);
                 }
                 // Validate role
                 if (StringUtil.isEmpty(user.getRole())) {
-                    throw new JetProxyValidationException("Role cannot be null or empty for user: " + user.getUsername());
+                    FatalValidationHints.missingRole(userRef);
                 }
             }
         }
