@@ -78,7 +78,6 @@ public class ConfigValidator {
         }
         // Ensure service names are unique
         Set<String> uniqueServiceNames = new HashSet<>();
-
         for (AppConfig.GrpcService grpcService : services) {
             if (grpcService.getName() == null || grpcService.getName().isEmpty()) {
                 throw new JetProxyValidationException("GrpcService name cannot be null or empty");
