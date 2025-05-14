@@ -74,14 +74,17 @@ public class ConfigLoader {
             Map<String, Object> yamlMap = yaml.load(finalInputStream);
             replaceEnvVars(yamlMap);
             config = yaml.loadAs(yaml.dump(yamlMap), AppConfig.class);
-
             // Validate and create service map
             ConfigValidator.validateConfig(config);
             createServiceMap(config.getServices());
             createGrpcServiceMap(config.getGrpcServices());
         } catch (Exception e) {
-            logger.error("Failed to load and parse config.yaml: {}", e.getMessage());
-            throw new RuntimeException("Failed to load and parse config.yaml", e);
+            if (!(e instanceof JetProxyValidationException)) {
+                logger.error("Failed to load and parse config.yaml: {}", e.getMessage());
+                throw e;
+            }
+            logger.error(e.getMessage());
+            System.exit(1);
         }
     }
 
