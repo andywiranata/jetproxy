@@ -21,51 +21,11 @@ storage:
     size: 10000
 
 proxies:
-  - path: /upload
-    service: fileUploadService
-    middleware:
-      rule: "HeaderPrefix('Content-Type', 'multipart/form-data')"
-  - path: /v2/grpc
-    service: userGrpcApi
-    ttl: 10000
-  - path: /user
-    service: userApi
-    matches:
-      - rule: "Header('Content-Type', 'application/json')"
-        service: userApi
-      - rule: "Header('x-header-hello', 'x-header-hello')"
-        service: userApi
-    middleware:
-      basicAuth: 'basicAuth:administrator'
-      mirroring:
-        enabled: true
-        mirrorService: userV2xApi
-        mirrorPercentage: 100
-      forwardAuth:
-        enabled: false
-        path: /verify
-        service: authApi
-        requestHeaders: "Forward(X-Custom-*);Forward(Authorization);"
-        responseHeaders: "Remove(X-Powered-By)"
-    ttl: 1000
+
 services:
-  - name: userApi
-    url: http://localhost:30001
-    methods: ['GET', 'POST']
-  - name: userV2Api
-    url: http://localhost:30001/v2
-    methods: [ 'GET', 'POST']
-  - name: authApi
-    url: http://localhost:30001
-    methods: ['POST']
-  - name: fileUploadService
-    url: http://localhost:30001
-    methods: ['POST']
+
 
 grpcServices:
-  - name: userGrpcApi
-    host: localhost                   # Host for gRPC server
-    port: 50051                       # Port for gRPC server
 
 users:
   - username: admin

@@ -29,7 +29,7 @@ public class JetProxyErrorBuilder {
      */
     private JetProxyErrorBuilder(String title) {
         this.message = new StringBuilder();
-        message.append("❌ ").append(title).append("\n\n");
+        message.append("❌ ").append(title).append("\n");
     }
 
     /**
@@ -49,7 +49,7 @@ public class JetProxyErrorBuilder {
      * @return the current builder instance
      */
     public JetProxyErrorBuilder hint(String hint) {
-        message.append("👉 ").append(hint).append("\n\n");
+        message.append("👉 ").append(hint).append("\n");
         return this;
     }
 

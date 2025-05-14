@@ -15,9 +15,8 @@ public class JetProxyExit {
      * @param message Full error message (formatted).
      */
     public static void fatal(String message) {
-        System.err.println("\n==== JetProxy Startup Failed ====\n");
+        System.err.println("==== JetProxy Startup Failed ====\n");
         System.err.println(message);
         System.err.println("==================================\n");
-        throw new JetProxyValidationException(message);
     }
 }

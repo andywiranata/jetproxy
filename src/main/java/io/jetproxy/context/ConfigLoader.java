@@ -74,7 +74,6 @@ public class ConfigLoader {
             Map<String, Object> yamlMap = yaml.load(finalInputStream);
             replaceEnvVars(yamlMap);
             config = yaml.loadAs(yaml.dump(yamlMap), AppConfig.class);
-
             // Validate and create service map
             ConfigValidator.validateConfig(config);
             createServiceMap(config.getServices());

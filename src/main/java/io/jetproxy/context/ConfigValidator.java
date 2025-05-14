@@ -58,7 +58,7 @@ public class ConfigValidator {
                 String userRef = user.getUsername() != null ? "'" + user.getUsername() + "'" : "<unknown>";
                 // Validate username
                 if (StringUtil.isEmpty(user.getUsername())) {
-                    FatalValidationHints.missingUsername(userRef);
+                    FatalValidationHints.missingUsername();
                 }
                 // Validate password
                 if (StringUtil.isEmpty(user.getPassword())) {
@@ -80,22 +80,19 @@ public class ConfigValidator {
         Set<String> uniqueServiceNames = new HashSet<>();
         for (AppConfig.GrpcService grpcService : services) {
             if (grpcService.getName() == null || grpcService.getName().isEmpty()) {
-                throw new JetProxyValidationException("GrpcService name cannot be null or empty");
+                FatalValidationHints.grpcServiceNameMissing();
             }
 
             if (!uniqueServiceNames.add(grpcService.getName())) {
-                throw new JetProxyValidationException("Duplicate GrpcService name found: " + grpcService.getName());
+                FatalValidationHints.duplicateGrpcServiceName(grpcService.getName());
             }
-
             // Validate service URL
             if (grpcService.getHost() == null || grpcService.getHost().isEmpty()) {
-                throw new JetProxyValidationException("GrpcService Host cannot be null or empty for service: " + grpcService.getHost());
+                FatalValidationHints.grpcServiceHostMissing(grpcService.getHost());
             }
             if (grpcService.getPort() == null) {
-                throw new JetProxyValidationException("GrpcService Port cannot be null or empty for service: " + grpcService.getPort());
+                FatalValidationHints.grpcServicePortMissing(grpcService.getName());
             }
-
-
         }
     }
     /**
@@ -192,7 +189,6 @@ public class ConfigValidator {
             }
             if (!proxy.getPath().startsWith("/")) {
                 FatalValidationHints.proxyPathMustStartWithSlash(proxy.getPath());
-//                throw new JetProxyValidationException("Proxy path must start with '/': " + proxy.getPath());
             }
             validateMatches(proxy, registeredServiceNames);
             validateMiddleware(proxy, registeredServiceNames);
@@ -209,14 +205,14 @@ public class ConfigValidator {
 
         for (AppConfig.Match match : proxy.getMatches()) {
             if (match.getRule() == null || match.getRule().isEmpty()) {
-                throw new JetProxyValidationException("Match rule cannot be null or empty in proxy: " + proxy.getPath());
+                FatalValidationHints.matchRuleMissing(proxy.getPath());
             }
             if (match.getService() == null || match.getService().isEmpty()) {
-                throw new JetProxyValidationException("Match service cannot be null or empty in proxy: " + proxy.getPath());
+                FatalValidationHints.matchServiceMissing(proxy.getPath());
             }
             if (!registeredServiceNames.contains(match.getService())) {
-                throw new JetProxyValidationException("Match references an unregistered service: " + match.getService()
-                        + " in proxy: " + proxy.getPath());
+                FatalValidationHints.matchServiceUnregistered(match.getService(), proxy.getPath());
+
             }
         }
     }
@@ -230,94 +226,89 @@ public class ConfigValidator {
 
         // Validate BasicAuth middleware
         if (middleware.getBasicAuth() != null && middleware.getBasicAuth().isEmpty()) {
-            throw new JetProxyValidationException("BasicAuth middleware is enabled but has no roles specified.");
+            FatalValidationHints.basicAuthRolesMissing();
         }
 
         // Validate ForwardAuth middleware
         AppConfig.ForwardAuth forwardAuth = middleware.getForwardAuth();
         if (forwardAuth != null) {
             if (forwardAuth.getPath() == null || forwardAuth.getPath().isEmpty()) {
-                throw new JetProxyValidationException("ForwardAuth middleware is enabled but path is missing.");
+                FatalValidationHints.forwardAuthPathMissing();
             }
             if (forwardAuth.getService() == null || forwardAuth.getService().isEmpty()) {
-                throw new JetProxyValidationException("ForwardAuth middleware is enabled but service is missing.");
+                FatalValidationHints.forwardAuthServiceMissing();
             }
             if (registeredServiceNames != null && !registeredServiceNames.contains(forwardAuth.getService())) {
-                throw new JetProxyValidationException("ForwardAuth middleware is enabled, but the specified service ('"
-                        + forwardAuth.getService() + "') is not registered in the service list.");
+                FatalValidationHints.forwardAuthServiceUnregistered(forwardAuth.getService());
             }
             if (forwardAuth.getRequestHeaders() == null || forwardAuth.getRequestHeaders().isEmpty()) {
-                throw new JetProxyValidationException("ForwardAuth middleware is enabled but requestHeaders are missing.");
+                FatalValidationHints.forwardAuthRequestHeadersMissing();
             }
             if (forwardAuth.getResponseHeaders() == null || forwardAuth.getResponseHeaders().isEmpty()) {
-                throw new JetProxyValidationException("ForwardAuth middleware is enabled but responseHeaders are missing.");
+                FatalValidationHints.forwardAuthResponseHeadersMissing();
             }
         }
-
-        // Validate RateLimiter middleware
         AppConfig.RateLimiter rateLimiter = middleware.getRateLimiter();
         if (rateLimiter != null && rateLimiter.isEnabled()) {
             if (rateLimiter.getLimitRefreshPeriod() <= 0) {
-                throw new JetProxyValidationException("RateLimiter is enabled but limitRefreshPeriod is invalid.");
+                FatalValidationHints.rateLimiterInvalidRefreshPeriod();
             }
             if (rateLimiter.getLimitForPeriod() <= 0) {
-                throw new JetProxyValidationException("RateLimiter is enabled but limitForPeriod is invalid.");
+                FatalValidationHints.rateLimiterInvalidLimitForPeriod();
             }
             if (rateLimiter.getMaxBurstCapacity() <= 0) {
-                throw new JetProxyValidationException("RateLimiter is enabled but maxBurstCapacity is invalid.");
+                FatalValidationHints.rateLimiterInvalidBurstCapacity();
             }
         }
-
-        // Validate CircuitBreaker middleware
         AppConfig.CircuitBreaker circuitBreaker = middleware.getCircuitBreaker();
         if (circuitBreaker != null && circuitBreaker.isEnabled()) {
             if (circuitBreaker.getFailureThreshold() <= 0 || circuitBreaker.getFailureThreshold() > 100) {
-                throw new JetProxyValidationException("CircuitBreaker is enabled but failureThreshold is invalid.");
+                FatalValidationHints.circuitBreakerInvalidFailureThreshold();
             }
             if (circuitBreaker.getSlowCallThreshold() <= 0 || circuitBreaker.getSlowCallThreshold() > 100) {
-                throw new JetProxyValidationException("CircuitBreaker is enabled but slowCallThreshold is invalid.");
+                FatalValidationHints.circuitBreakerInvalidSlowCallThreshold();
             }
             if (circuitBreaker.getSlowCallDuration() <= 0) {
-                throw new JetProxyValidationException("CircuitBreaker is enabled but slowCallDuration is invalid.");
+                FatalValidationHints.circuitBreakerInvalidSlowCallDuration();
             }
             if (circuitBreaker.getOpenStateDuration() <= 0) {
-                throw new JetProxyValidationException("CircuitBreaker is enabled but openStateDuration is invalid.");
+                FatalValidationHints.circuitBreakerInvalidOpenStateDuration();
             }
             if (circuitBreaker.getWaitDurationInOpenState() <= 0) {
-                throw new JetProxyValidationException("CircuitBreaker is enabled but waitDurationInOpenState is invalid.");
+                FatalValidationHints.circuitBreakerInvalidWaitDuration();
             }
             if (circuitBreaker.getPermittedNumberOfCallsInHalfOpenState() <= 0) {
-                throw new JetProxyValidationException("CircuitBreaker is enabled but permittedNumberOfCallsInHalfOpenState is invalid.");
+                FatalValidationHints.circuitBreakerInvalidHalfOpenCalls();
             }
             if (circuitBreaker.getMinimumNumberOfCalls() <= 0) {
-                throw new JetProxyValidationException("CircuitBreaker is enabled but minimumNumberOfCalls is invalid.");
+                FatalValidationHints.circuitBreakerInvalidMinimumCalls();
             }
         }
 
-        // Validate Header middleware
+
         AppConfig.Headers header = middleware.getHeader();
         if (header != null) {
             if (header.getRequestHeaders() == null || header.getRequestHeaders().isEmpty()) {
-                throw new JetProxyValidationException("Header middleware is enabled but requestHeaders are missing.");
+                FatalValidationHints.headerRequestHeadersMissing();
             }
             if (header.getResponseHeaders() == null || header.getResponseHeaders().isEmpty()) {
-                throw new JetProxyValidationException("Header middleware is enabled but responseHeaders are missing.");
+                FatalValidationHints.headerResponseHeadersMissing();
             }
         }
 
-        // Validate Idempotency Middleware
         AppConfig.Idempotency idempotency = middleware.getIdempotency();
         if (idempotency != null) {
             if (idempotency.getHeaderName() == null || idempotency.getHeaderName().isEmpty()) {
-                throw new JetProxyValidationException("Idempotency middleware is enabled but header name are missing.");
+                FatalValidationHints.idempotencyHeaderMissing();
             }
         }
 
         AppConfig.Mirroring mirroring = middleware.getMirroring();
         if (mirroring != null) {
             if (mirroring.getMirrorService() == null || mirroring.getMirrorService().isEmpty()) {
-                throw new JetProxyValidationException("Mirroring middleware is enabled but Service are missing.");
+                FatalValidationHints.mirroringServiceMissing();
             }
         }
+
     }
 }

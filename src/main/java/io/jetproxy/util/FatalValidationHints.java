@@ -104,7 +104,7 @@ public class FatalValidationHints {
         throw new JetProxyValidationException(msg);
     }
 
-    public static void missingUsername(String userRef) {
+    public static void missingUsername() {
         final String msg = "User config: username is missing.";
         JetProxyExit.fatal(
                 JetProxyErrorBuilder.error(msg)
@@ -294,4 +294,319 @@ public class FatalValidationHints {
         );
         throw new JetProxyValidationException(msg);
     }
+
+    public static void matchRuleMissing(String proxyPath) {
+        final String msg = "Match rule cannot be null or empty in proxy: " + proxyPath;
+        JetProxyExit.fatal(
+                JetProxyErrorBuilder.error("Match rule cannot be null or empty in proxy: " + proxyPath)
+                        .hint("Each match must specify a valid rule condition.")
+                        .doc("middleware/service-match")
+                        .build()
+        );
+        throw new JetProxyValidationException(msg);
+    }
+
+    public static void matchServiceMissing(String proxyPath) {
+        final String msg = "Match service cannot be null or empty in proxy: " + proxyPath;
+        JetProxyExit.fatal(
+                JetProxyErrorBuilder.error("Match service cannot be null or empty in proxy: " + proxyPath)
+                        .hint("Each match must link to a defined service.")
+                        .doc("middleware/service-match")
+                        .build()
+        );
+        throw new JetProxyValidationException(msg);
+    }
+
+    public static void matchServiceUnregistered(String matchService, String proxyPath) {
+        final String msg = "Match references an unregistered service: " + matchService + " in proxy: " + proxyPath;
+        JetProxyExit.fatal(
+                JetProxyErrorBuilder.error("Match references an unregistered service: " + matchService + " in proxy: " + proxyPath)
+                        .hint("Ensure the match service name exists in the HTTP or gRPC service definitions.")
+                        .doc("middleware/service-match")
+                        .build()
+        );
+        throw new JetProxyValidationException(msg);
+    }
+
+    public static void grpcServiceNameMissing() {
+        final String msg = "GrpcService name cannot be null or empty.";
+        JetProxyExit.fatal(
+                JetProxyErrorBuilder.error(msg)
+                        .hint("Each gRPC service must have a unique and non-empty name.")
+                        .example("name: my-grpc-service")
+                        .doc("routing/services")
+                        .build()
+        );
+        throw new JetProxyValidationException(msg);
+    }
+
+    public static void duplicateGrpcServiceName(String name) {
+        final String msg = "Duplicate GrpcService name found: " + name;
+        JetProxyExit.fatal(
+                JetProxyErrorBuilder.error(msg)
+                        .hint("Each gRPC service must have a unique name.")
+                        .build()
+        );
+        throw new JetProxyValidationException(msg);
+    }
+
+    public static void grpcServiceHostMissing(String serviceName) {
+        final String msg = "GrpcService Host cannot be null or empty for service: " + serviceName;
+        JetProxyExit.fatal(
+                JetProxyErrorBuilder.error(msg)
+                        .hint("Specify a reachable host name or IP for the gRPC service.")
+                        .example("host: localhost")
+                        .build()
+        );
+        throw new JetProxyValidationException(msg);
+    }
+
+    public static void grpcServicePortMissing(String serviceName) {
+        final String msg = "GrpcService Port cannot be null or empty for service: " + serviceName;
+        JetProxyExit.fatal(
+                JetProxyErrorBuilder.error(msg)
+                        .hint("Specify a valid port number for the gRPC service.")
+                        .example("port: 50051")
+                        .build()
+        );
+        throw new JetProxyValidationException(msg);
+    }
+
+    public static void basicAuthRolesMissing() {
+        final String msg = "BasicAuth middleware is enabled but has no roles specified.";
+        JetProxyExit.fatal(
+                JetProxyErrorBuilder.error("BasicAuth middleware is enabled but has no roles specified.")
+                        .hint("Specify at least one role when enabling BasicAuth.")
+                        .example("basicAuth: admin")
+                        .doc("middleware/basic-auth")
+                        .build()
+        );
+        throw new JetProxyValidationException(msg);
+    }
+
+    public static void forwardAuthPathMissing() {
+        final String msg = "ForwardAuth middleware is enabled but path is missing.";
+        JetProxyExit.fatal(
+                JetProxyErrorBuilder.error(msg)
+                        .hint("Specify the auth endpoint path, e.g., /auth/verify.")
+                        .example("path: /auth/verify")
+                        .doc("middleware/forward-auth")
+                        .build()
+        );
+        throw new JetProxyValidationException(msg);
+    }
+
+    public static void forwardAuthServiceMissing() {
+        final String msg = "ForwardAuth middleware is enabled but service is missing.";
+        JetProxyExit.fatal(
+                JetProxyErrorBuilder.error(msg)
+                        .hint("Specify the name of the service that handles external authentication.")
+                        .example("service: authService")
+                        .doc("middleware/forward-auth")
+                        .build()
+        );
+        throw new JetProxyValidationException(msg);
+    }
+
+    public static void forwardAuthServiceUnregistered(String serviceName) {
+        final String msg = "ForwardAuth middleware references an unregistered service: '" + serviceName + "'.";
+        JetProxyExit.fatal(
+                JetProxyErrorBuilder.error(msg)
+                        .hint("Ensure the service is declared in the `services:` block.")
+                        .doc("routing/services")
+                        .build()
+        );
+        throw new JetProxyValidationException(msg);
+    }
+
+    public static void forwardAuthRequestHeadersMissing() {
+        final String msg = "ForwardAuth middleware is enabled but requestHeaders are missing.";
+        JetProxyExit.fatal(
+                JetProxyErrorBuilder.error(msg)
+                        .hint("At least one request header must be forwarded to the auth service.")
+                        .example("authRequestHeaders: Forward(Authorization)")
+                        .doc("middleware/forward-auth")
+                        .build()
+        );
+        throw new JetProxyValidationException(msg);
+    }
+
+    public static void forwardAuthResponseHeadersMissing() {
+        final String msg = "ForwardAuth middleware is enabled but responseHeaders are missing.";
+        JetProxyExit.fatal(
+                JetProxyErrorBuilder.error(msg)
+                        .hint("Define how auth response headers should be handled.")
+                        .example("authResponseHeaders: Forward(X-Auth-*)")
+                        .doc("middleware/forward-auth")
+                        .build()
+        );
+        throw new JetProxyValidationException(msg);
+    }
+
+    public static void rateLimiterInvalidRefreshPeriod() {
+        final String msg = "RateLimiter is enabled but limitRefreshPeriod is invalid.";
+        JetProxyExit.fatal(
+                JetProxyErrorBuilder.error(msg)
+                        .hint("Specify a positive value for the token bucket refill period (in milliseconds).")
+                        .example("limitRefreshPeriod: 1000")
+                        .doc("middleware/rate-limiter")
+                        .build()
+        );
+        throw new JetProxyValidationException(msg);
+    }
+
+    public static void rateLimiterInvalidLimitForPeriod() {
+        final String msg = "RateLimiter is enabled but limitForPeriod is invalid.";
+        JetProxyExit.fatal(
+                JetProxyErrorBuilder.error(msg)
+                        .hint("Specify how many tokens to add during each refill period.")
+                        .example("limitForPeriod: 10")
+                        .doc("middleware/rate-limiter")
+                        .build()
+        );
+        throw new JetProxyValidationException(msg);
+    }
+
+    public static void rateLimiterInvalidBurstCapacity() {
+        final String msg = "RateLimiter is enabled but maxBurstCapacity is invalid.";
+        JetProxyExit.fatal(
+                JetProxyErrorBuilder.error(msg)
+                        .hint("Specify the maximum number of tokens the bucket can hold.")
+                        .example("maxBurstCapacity: 20")
+                        .doc("middleware/rate-limiter")
+                        .build()
+        );
+        throw new JetProxyValidationException(msg);
+    }
+    public static void circuitBreakerInvalidFailureThreshold() {
+        final String msg = "CircuitBreaker is enabled but failureThreshold is invalid.";
+        JetProxyExit.fatal(
+                JetProxyErrorBuilder.error(msg)
+                        .hint("Set failureThreshold between 1 and 100.")
+                        .example("failureThreshold: 50")
+                        .doc("middleware/circuit-breaker")
+                        .build()
+        );
+        throw new JetProxyValidationException(msg);
+    }
+
+    public static void circuitBreakerInvalidSlowCallThreshold() {
+        final String msg = "CircuitBreaker is enabled but slowCallThreshold is invalid.";
+        JetProxyExit.fatal(
+                JetProxyErrorBuilder.error(msg)
+                        .hint("Set slowCallThreshold between 1 and 100.")
+                        .example("slowCallThreshold: 50")
+                        .doc("middleware/circuit-breaker")
+                        .build()
+        );
+        throw new JetProxyValidationException(msg);
+    }
+
+    public static void circuitBreakerInvalidSlowCallDuration() {
+        final String msg = "CircuitBreaker is enabled but slowCallDuration is invalid.";
+        JetProxyExit.fatal(
+                JetProxyErrorBuilder.error(msg)
+                        .hint("Set a positive duration in milliseconds for slow call threshold.")
+                        .example("slowCallDuration: 2000")
+                        .doc("middleware/circuit-breaker")
+                        .build()
+        );
+        throw new JetProxyValidationException(msg);
+    }
+
+    public static void circuitBreakerInvalidOpenStateDuration() {
+        final String msg = "CircuitBreaker is enabled but openStateDuration is invalid.";
+        JetProxyExit.fatal(
+                JetProxyErrorBuilder.error(msg)
+                        .hint("Specify a positive duration the circuit remains open.")
+                        .example("openStateDuration: 10")
+                        .doc("middleware/circuit-breaker")
+                        .build()
+        );
+        throw new JetProxyValidationException(msg);
+    }
+
+    public static void circuitBreakerInvalidWaitDuration() {
+        final String msg = "CircuitBreaker is enabled but waitDurationInOpenState is invalid.";
+        JetProxyExit.fatal(
+                JetProxyErrorBuilder.error(msg)
+                        .hint("Set how long the circuit waits before testing again.")
+                        .example("waitDurationInOpenState: 10000")
+                        .doc("middleware/circuit-breaker")
+                        .build()
+        );
+        throw new JetProxyValidationException(msg);
+    }
+
+    public static void circuitBreakerInvalidHalfOpenCalls() {
+        final String msg = "CircuitBreaker is enabled but permittedNumberOfCallsInHalfOpenState is invalid.";
+        JetProxyExit.fatal(
+                JetProxyErrorBuilder.error(msg)
+                        .hint("Specify how many test calls are allowed in half-open state.")
+                        .example("permittedNumberOfCallsInHalfOpenState: 3")
+                        .doc("middleware/circuit-breaker")
+                        .build()
+        );
+        throw new JetProxyValidationException(msg);
+    }
+
+    public static void circuitBreakerInvalidMinimumCalls() {
+        final String msg = "CircuitBreaker is enabled but minimumNumberOfCalls is invalid.";
+        JetProxyExit.fatal(
+                JetProxyErrorBuilder.error(msg)
+                        .hint("Specify the minimum number of calls before the breaker evaluates health.")
+                        .example("minimumNumberOfCalls: 5")
+                        .doc("middleware/circuit-breaker")
+                        .build()
+        );
+        throw new JetProxyValidationException(msg);
+    }
+
+    public static void headerRequestHeadersMissing() {
+        final String msg = "Header middleware is enabled but requestHeaders are missing.";
+        JetProxyExit.fatal(
+                JetProxyErrorBuilder.error(msg)
+                        .hint("Define how incoming request headers should be transformed or filtered.")
+                        .example("requestHeaders: Remove(Authorization)")
+                        .doc("middleware/headers")
+                        .build()
+        );
+        throw new JetProxyValidationException(msg);
+    }
+
+    public static void headerResponseHeadersMissing() {
+        final String msg = "Header middleware is enabled but responseHeaders are missing.";
+        JetProxyExit.fatal(
+                JetProxyErrorBuilder.error(msg)
+                        .hint("Define how outgoing response headers should be transformed or added.")
+                        .example("responseHeaders: Add(X-Powered-By, jetty-server)")
+                        .doc("middleware/headers")
+                        .build()
+        );
+        throw new JetProxyValidationException(msg);
+    }
+    public static void idempotencyHeaderMissing() {
+        final String msg = "Idempotency middleware is enabled but header name is missing.";
+        JetProxyExit.fatal(
+                JetProxyErrorBuilder.error(msg)
+                        .hint("Specify which header to use for idempotency key tracking.")
+                        .example("headerName: Idempotency-Key")
+                        .doc("middleware/idempotency")
+                        .build()
+        );
+        throw new JetProxyValidationException(msg);
+    }
+
+    public static void mirroringServiceMissing() {
+        final String msg = "Mirroring middleware is enabled but service is missing.";
+        JetProxyExit.fatal(
+                JetProxyErrorBuilder.error(msg)
+                        .hint("Specify a target service to mirror traffic to.")
+                        .example("mirrorService: audit-service")
+                        .doc("middleware/mirroring")
+                        .build()
+        );
+        throw new JetProxyValidationException(msg);
+    }
+
 }

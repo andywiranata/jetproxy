@@ -84,7 +84,6 @@ public class AppContext {
         this.contextHandler.addServlet(HealthCheckServlet.class, "/_jetproxy/healthcheck");
         addAdminSecurityHandler(this.contextHandler);
         this.proxyConfigurationManager.setupProxiesAndAdminApi(server, this.contextHandler);
-
         startRedisSubscription();
 
     }
@@ -99,8 +98,6 @@ public class AppContext {
         adminSecurityHandler.setAuthenticator(new BasicAuthenticator());
         context.setSecurityHandler(adminSecurityHandler);
     }
-
-
     public Map<String, AppConfig.Service> getServiceMap() {
         return ConfigLoader.getServiceMap();
     }
