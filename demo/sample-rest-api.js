@@ -97,6 +97,22 @@ app.get('/user', (req, res) =>{
     });
 });
 
+app.get('/v2/user', (req, res) =>{
+    console.log('--- User Request V2 ---');
+    console.log('Headers:', req.headers);
+
+    res.setHeader('X-Custom-Header', 'CustomValue');
+    res.setHeader('X-Powered-By', 'Express with Love');
+    res.status(200).json({
+        user: {
+            id: 'user123__V2',
+            name: 'Mock User',
+            roles: ['roleA', 'roleB'],
+        }
+    });
+});
+
+
 
 app.get('/ping', (req, res) => {
     res.status(200).json({

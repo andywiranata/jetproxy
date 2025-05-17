@@ -93,7 +93,7 @@ public class ForwardAuthAuthenticator implements Authenticator {
                 return Authentication.UNAUTHENTICATED;
             }
         } catch (IOException e) {
-            logger.error("{} Authentication failed: {}", authUrl, e.getMessage());
+            logger.error("ForwardAuth failed: {} code: {}", authUrl, responseCode);
             try {
                 responseStatus = "Service Unavailable";
                 response.sendError(HttpURLConnection.HTTP_UNAVAILABLE, responseStatus);
@@ -101,8 +101,6 @@ public class ForwardAuthAuthenticator implements Authenticator {
                 logger.error("Failed to send error response: {}", ignored.getMessage());
             }
             return Authentication.SEND_FAILURE;
-        } finally {
-            logger.logAuth((Request) request, authUrl, responseCode, startTime, responseStatus);
         }
     }
 

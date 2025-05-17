@@ -1,5 +1,8 @@
 package io.jetproxy.middleware.log;
 
+import io.jetproxy.context.AppContext;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.SpanContext;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.RequestLog;
 import org.eclipse.jetty.server.Response;

@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>JetProxy Live Logs</title>
+    <style>
+        body { background: #111; color: #0f0; font-family: monospace; }
+        pre { white-space: pre-wrap; overflow-y: scroll; max-height: 90vh; }
+    </style>
+</head>
+<body>
+<h2>JetProxy Live Logs</h2>
+<pre id="log"></pre>
+<script>
+    const log = document.getElementById("log");
+    const source = new EventSource("http://localhost:8080/logs/stream");
+    source.onmessage = (e) => {
+        log.textContent += e.data + "\n";
+        log.scrollTop = log.scrollHeight;
+    };
+    source.onerror = (e) => {
+        console.error("SSE error", e);
+        log.textContent += "[disconnected]\n";
+    };
+</script>
+</body>
+</html>

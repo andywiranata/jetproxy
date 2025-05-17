@@ -56,10 +56,11 @@ dependencies {
 
     // SLF4J and Logback
     implementation("org.slf4j:slf4j-api:2.0.7")
-    implementation("ch.qos.logback:logback-classic:1.4.11")
+    implementation("ch.qos.logback:logback-classic:1.4.12")
+    implementation("net.logstash.logback:logstash-logback-encoder:7.4")
+
     implementation("org.brotli:dec:0.1.2")
     implementation("redis.clients:jedis:5.2.0")
-    implementation("com.timgroup:java-statsd-client:3.1.0")
     implementation("org.projectlombok:lombok:1.18.34")
 
     // OpenTelemetry Instrumentation BOM for managing dependencies
@@ -120,7 +121,7 @@ tasks.named<JavaExec>("run") {
     } else {
         println("Warning: .env file not found!")
     }
-
+    println("AgentPath: $agentPath")
     jvmArgs("-javaagent:$agentPath")
 }
 

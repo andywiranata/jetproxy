@@ -7,7 +7,6 @@ import io.jetproxy.middleware.cors.CorsHandlerWrapper;
 import io.jetproxy.middleware.handler.*;
 import io.jetproxy.middleware.log.AccessLog;
 import org.eclipse.jetty.security.*;
-import org.eclipse.jetty.security.authentication.BasicAuthenticator;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.HandlerCollection;
@@ -87,7 +86,7 @@ public class ProxyConfigurationManager {
 
             // Set up authentication if needed
             if (basicAuthProvider.shouldEnableAuth(proxyRule)) {
-                authenticators.add(new BasicAuthenticator());
+                authenticators.add(new CustomBasicAuthenticator());
                 this.proxyAndsecurityHandler.addConstraintMapping(
                         basicAuthProvider
                                 .createConstraintMapping(whitelistPath,
@@ -159,7 +158,7 @@ public class ProxyConfigurationManager {
             dynamicProxies.put(pathSpec, proxyServlet);
             // Set up authentication if needed
             if (basicAuthProvider.shouldEnableAuth(newProxy)) {
-                authenticators.add(new BasicAuthenticator());
+                authenticators.add(new CustomBasicAuthenticator());
                 this.proxyAndsecurityHandler.addConstraintMapping(
                         basicAuthProvider
                                 .createConstraintMapping(pathSpec,

@@ -9,6 +9,8 @@ import io.jetproxy.middleware.resilience.ResilienceFactory;
 import io.jetproxy.middleware.handler.MiddlewareChain;
 import io.jetproxy.util.Constants;
 import io.jetproxy.util.RequestUtils;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.SpanContext;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletRequestWrapper;
@@ -23,9 +25,12 @@ import io.jetproxy.context.AppConfig;
 import io.jetproxy.context.AppContext;
 import io.jetproxy.logger.DebugAwareLogger;
 import io.jetproxy.middleware.rule.header.HeaderActionFactory;
+import org.slf4j.MDC;
 
 import java.io.*;
 import java.util.*;
+
+import static io.jetproxy.util.Constants.REQUEST_ATTRIBUTE_JETPROXY_TRACE_ID;
 
 public class ProxyRequestHandler extends BaseProxyRequestHandler {
     private static final DebugAwareLogger logger = DebugAwareLogger.getLogger(ProxyRequestHandler.class);
@@ -66,6 +71,12 @@ public class ProxyRequestHandler extends BaseProxyRequestHandler {
     @Override
     protected void service(HttpServletRequest request, HttpServletResponse response) throws IOException {
         try {
+            Span span = Span.current();
+            SpanContext ctx = span.getSpanContext();
+            if (ctx.isValid()) {
+                request.setAttribute(REQUEST_ATTRIBUTE_JETPROXY_TRACE_ID, ctx.getTraceId());
+                MDC.put("traceId", ctx.getTraceId());
+            }
             if (middlewareChain != null) {
                 middlewareChain.process(request, response);
                 if (response.isCommitted()) {
@@ -82,7 +93,6 @@ public class ProxyRequestHandler extends BaseProxyRequestHandler {
             });
 
         } catch (Exception e) {
-            e.printStackTrace();
             logger.error("Error Occurred to process request {}", e.getMessage());
             if (e instanceof ResilienceRateLimitException) {
                 RequestUtils.sendErrorRateLimiterResponse(response, e.getMessage());
@@ -180,6 +190,7 @@ public class ProxyRequestHandler extends BaseProxyRequestHandler {
                 }
 
             } catch (Exception e) {
+                e.printStackTrace();
                 logger.error("Error decoding response content {}", e.getMessage());
             }
         }

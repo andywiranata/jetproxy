@@ -20,7 +20,7 @@ public class RedisCache implements Cache {
 
     @Override
     public void put(String key, String value, long ttl) {
-        if (ttl <= 0) {
+        if (ttl < 1000) {
             return;
         }
         try (Jedis jedis = jedisPool.getResource()) {
