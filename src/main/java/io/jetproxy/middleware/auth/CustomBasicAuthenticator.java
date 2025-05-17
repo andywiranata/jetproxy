@@ -42,6 +42,7 @@ public class CustomBasicAuthenticator extends LoginAuthenticator {
         String credentials = request.getHeader(HttpHeader.AUTHORIZATION.asString());
 
         if (credentials == null) {
+            // TODO MOVE TO UTIL, WILL IMPLEMENT ON FORWARD AUTH & JWT AUTH ALSO
             String rawQuery = request.getQueryString();
             if (rawQuery != null && rawQuery.contains("auth=")) {
                 MultiMap<String> params = new MultiMap<>();
