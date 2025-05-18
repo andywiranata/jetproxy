@@ -60,8 +60,8 @@ public class DebugAwareLogger {
         );
 
         logger.info(logMessage);
-        MDC.clear();
         LogStreamServlet.broadcast(logMessage);
+        MDC.clear();
     }
 
     @Deprecated
@@ -107,16 +107,15 @@ public class DebugAwareLogger {
 
         // Format the log entry
         return String.format(
-                "%s - %s [%s] \"%s %s%s %s\" %s%d%s %s \"%s\" \"%s\" [%dms] Cache: [%s] MirroringRequest: [%s] Status: [%s] TraceId: [%s]",
+                "%s - %s [%s] %s %s%s %s %d %s %s %s [%dms] Cache: [%s] MirroringRequest: [%s] Status: [%s] TraceId: [%s]",
                 remoteAddr,
                 clientUserName,
                 timestamp,
-                method, path,
+                method,
+                path,
                 queryParams,
                 protocol,
-                color,
                 responseCode,
-                RESET,
                 responseDetails,
                 referrer,
                 userAgent,

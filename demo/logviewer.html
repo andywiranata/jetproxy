@@ -12,7 +12,7 @@
 <pre id="log"></pre>
 <script>
     const log = document.getElementById("log");
-    const source = new EventSource("http://localhost:8080/logs/stream");
+    const source = new EventSource("http://localhost:8080/_jetproxy/logs/stream?authorization=Basic YWRtaW46YWRtaW4=");
     source.onmessage = (e) => {
         log.textContent += e.data + "\n";
         log.scrollTop = log.scrollHeight;
