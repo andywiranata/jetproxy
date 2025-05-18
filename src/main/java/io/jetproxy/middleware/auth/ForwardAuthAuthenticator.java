@@ -66,7 +66,6 @@ public class ForwardAuthAuthenticator implements Authenticator {
         Request request = Request.getBaseRequest(servletRequest);
         HttpServletResponse response = (HttpServletResponse) servletResponse;
 
-        long startTime = System.currentTimeMillis();
         String authUrl = service.getUrl() + path;
         String responseStatus = "";
         Map<String, String> forwardHeaders;

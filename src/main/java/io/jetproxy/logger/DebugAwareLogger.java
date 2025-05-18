@@ -91,7 +91,7 @@ public class DebugAwareLogger {
         String remoteAddr = request.getRemoteAddr();
         String traceId = request.getAttribute(Constants.REQUEST_ATTRIBUTE_JETPROXY_TRACE_ID) != null ?
                 (String) request.getAttribute(Constants.REQUEST_ATTRIBUTE_JETPROXY_TRACE_ID) : "-";
-        String clientUserName = request.getRemoteUser() != null ? request.getRemoteUser() : "-";
+        String clientUserName = request.getRemoteUser() != null ? request.getRemoteUser() : "";
         String timestamp = dateFormatter.format(new Date());
         String method = request.getMethod();
         String path = request.getRequestURI();
@@ -107,7 +107,7 @@ public class DebugAwareLogger {
 
         // Format the log entry
         return String.format(
-                "%s - %s [%s] \"%s %s%s %s\" %s%d%s %s \"%s\" \"%s\" [%dms] Cache: [%s] MirroringRequest: [%s] Status: [%s] %s",
+                "%s - %s [%s] \"%s %s%s %s\" %s%d%s %s \"%s\" \"%s\" [%dms] Cache: [%s] MirroringRequest: [%s] Status: [%s] TraceId: [%s]",
                 remoteAddr,
                 clientUserName,
                 timestamp,

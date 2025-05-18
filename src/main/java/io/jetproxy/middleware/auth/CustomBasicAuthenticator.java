@@ -9,6 +9,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import org.eclipse.jetty.http.HttpHeader;
+import org.eclipse.jetty.security.LoginService;
 import org.eclipse.jetty.security.ServerAuthException;
 import org.eclipse.jetty.security.UserAuthentication;
 import org.eclipse.jetty.security.authentication.DeferredAuthentication;
@@ -44,10 +45,10 @@ public class CustomBasicAuthenticator extends LoginAuthenticator {
         if (credentials == null) {
             // TODO MOVE TO UTIL, WILL IMPLEMENT ON FORWARD AUTH & JWT AUTH ALSO
             String rawQuery = request.getQueryString();
-            if (rawQuery != null && rawQuery.contains("auth=")) {
+            if (rawQuery != null && rawQuery.contains("authorization=")) {
                 MultiMap<String> params = new MultiMap<>();
                 UrlEncoded.decodeTo(rawQuery, params, StandardCharsets.UTF_8);
-                credentials = params.getString("auth");
+                credentials = params.getString("authorization");
             }
         }
 
@@ -101,5 +102,8 @@ public class CustomBasicAuthenticator extends LoginAuthenticator {
 
     public boolean secureResponse(ServletRequest req, ServletResponse res, boolean mandatory, Authentication.User validatedUser) throws ServerAuthException {
         return true;
+    }
+    public void setLoginService(LoginService loginService) {
+        this._loginService = loginService;
     }
 }
