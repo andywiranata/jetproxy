@@ -34,8 +34,6 @@ public class MainProxy {
                 .build();
 
         AppConfig appConfig = appContext.getConfig();
-        ServletContextHandler context = appContext.getContextHandler();
-        // Initialize the server with the configured port
         Server server = new Server(appConfig.getPort());
         server.addBean(Executors.newVirtualThreadPerTaskExecutor());
         appContext.initializeServer(server);

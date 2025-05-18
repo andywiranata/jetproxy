@@ -3,6 +3,7 @@ package io.jetproxy.context;
 import com.google.gson.Gson;
 import io.jetproxy.middleware.auth.AuthProviderFactory;
 import io.jetproxy.middleware.auth.BasicAuthProvider;
+import io.jetproxy.middleware.auth.CustomBasicAuthenticator;
 import io.jetproxy.middleware.cache.Cache;
 import io.jetproxy.middleware.cache.CacheFactory;
 import io.jetproxy.middleware.cache.RedisPoolManager;
@@ -12,14 +13,12 @@ import io.jetproxy.service.AppShutdownListener;
 import io.jetproxy.service.HealthCheckServlet;
 import io.jetproxy.service.appConfig.service.AppConfigService;
 import io.jetproxy.service.appConfig.servlet.AppConfigServlet;
+import io.jetproxy.service.appConfig.servlet.LogStreamServlet;
 import io.jetproxy.service.holder.ProxyConfigurationManager;
-import io.jetproxy.middleware.handler.CorsFilterHolderHandler;
 import io.jetproxy.util.GsonFactory;
 import lombok.Getter;
 import org.eclipse.jetty.security.ConstraintSecurityHandler;
-import org.eclipse.jetty.security.authentication.BasicAuthenticator;
 import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.slf4j.Logger;
@@ -38,7 +37,6 @@ public class AppContext {
     private static volatile AppContext instance;
     private final AppConfig config;
     private final Cache cache;
-    // private final MetricsListener metricsListener;
     private final boolean debugMode;
     private final Gson gson;
     private final ServletContextHandler contextHandler;
@@ -82,10 +80,10 @@ public class AppContext {
         // this.contextHandler.addFilter(corsFilter, "/admin/*", EnumSet.of(DispatcherType.REQUEST));
         this.contextHandler.addServlet(configServletHolder, "/_jetproxy/admin/*");
         this.contextHandler.addServlet(HealthCheckServlet.class, "/_jetproxy/healthcheck");
+        this.contextHandler.addServlet(LogStreamServlet.class, "/_jetproxy/logs/stream");
         addAdminSecurityHandler(this.contextHandler);
         this.proxyConfigurationManager.setupProxiesAndAdminApi(server, this.contextHandler);
         startRedisSubscription();
-
     }
     private void addAdminSecurityHandler(ServletContextHandler context) {
         String adminPath = "/_jetproxy/admin/*";
@@ -95,7 +93,7 @@ public class AppContext {
         adminSecurityHandler.addConstraintMapping(basicAuthProvider
                 .createConstraintMapping(adminPath,"administrator"));
         ;
-        adminSecurityHandler.setAuthenticator(new BasicAuthenticator());
+        adminSecurityHandler.setAuthenticator(new CustomBasicAuthenticator());
         context.setSecurityHandler(adminSecurityHandler);
     }
     public Map<String, AppConfig.Service> getServiceMap() {

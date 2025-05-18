@@ -1,12 +1,16 @@
 package io.jetproxy.logger;
 
+import io.jetproxy.service.appConfig.servlet.LogStreamServlet;
 import io.jetproxy.util.Constants;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.SpanContext;
 import jakarta.servlet.http.HttpServletRequest;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import io.jetproxy.context.AppContext;
+import org.slf4j.MDC;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -18,7 +22,6 @@ public class DebugAwareLogger {
     private final Logger logger;
     private final boolean debugMode;
     private final SimpleDateFormat dateFormatter = new SimpleDateFormat("dd/MMM/yyyy:HH:mm:ss Z");
-
     // ANSI color codes
     private static final String RESET = "\u001B[0m";
     private static final String GREEN = "\u001B[32m"; // Success (2xx)
@@ -57,9 +60,11 @@ public class DebugAwareLogger {
         );
 
         logger.info(logMessage);
-
+        LogStreamServlet.broadcast(logMessage);
+        MDC.clear();
     }
 
+    @Deprecated
     public void logAuth(Request request, String targetUrl, int responseCode, long startTime, String status) {
         if (!debugMode) return;
 
@@ -76,13 +81,17 @@ public class DebugAwareLogger {
                 status
         );
         logger.info(logMessage);
+        LogStreamServlet.broadcast(logMessage);
     }
 
     private String formatLogMessage(Request request, Response response, String targetUrl,
                                     int responseCode, long responseTime, String cacheIndicator, String status) {
+
         // Extract details from the request
         String remoteAddr = request.getRemoteAddr();
-        String clientUserName = request.getRemoteUser() != null ? request.getRemoteUser() : "-";
+        String traceId = request.getAttribute(Constants.REQUEST_ATTRIBUTE_JETPROXY_TRACE_ID) != null ?
+                (String) request.getAttribute(Constants.REQUEST_ATTRIBUTE_JETPROXY_TRACE_ID) : "-";
+        String clientUserName = request.getRemoteUser() != null ? request.getRemoteUser() : "";
         String timestamp = dateFormatter.format(new Date());
         String method = request.getMethod();
         String path = request.getRequestURI();
@@ -98,20 +107,23 @@ public class DebugAwareLogger {
 
         // Format the log entry
         return String.format(
-                "%s - %s [%s] \"%s %s%s %s\" %s%d%s %s \"%s\" \"%s\" [%dms] Cache: [%s] MirroringRequest: [%s] Status: [%s]",
+                "%s - %s [%s] %s %s%s %s %d %s %s %s [%dms] Cache: [%s] MirroringRequest: [%s] Status: [%s] TraceId: [%s]",
                 remoteAddr,
                 clientUserName,
                 timestamp,
-                method, path,
-                queryParams, protocol,
-                color, responseCode, RESET,
+                method,
+                path,
+                queryParams,
+                protocol,
+                responseCode,
                 responseDetails,
                 referrer,
                 userAgent,
                 responseTime,
                 cacheIndicator,
                 mirroring,
-                status
+                status,
+                traceId
         );
     }
 
