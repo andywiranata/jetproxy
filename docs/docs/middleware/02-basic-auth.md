@@ -40,6 +40,13 @@ When a user attempts to access a protected route, they must provide credentials 
 Authorization: Basic <Base64 encoded username and password>
 ```
 
+OR 
+
+You can pass the same encoded credentials using the authorization query parameter:
+```
+GET /products?authorization=Basic%20dXNlckI6dXNlckI=
+```
+
 #### Sample CURL
 ```
 curl --location 'http://localhost:8080/products' \
