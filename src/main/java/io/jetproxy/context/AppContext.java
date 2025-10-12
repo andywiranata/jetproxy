@@ -41,6 +41,7 @@ public class AppContext {
     private final Gson gson;
     private final ServletContextHandler contextHandler;
     private final ProxyConfigurationManager proxyConfigurationManager;
+    private final boolean serveStaticFiles;
     private static boolean gracefullyShutdownAllowed = true;
 
     private static final List<Consumer<ConfigChangeEvent>> eventSubscribers = new CopyOnWriteArrayList<>();
@@ -48,6 +49,7 @@ public class AppContext {
     private AppContext(Builder builder) {
         this.config = ConfigLoader.getConfig(builder.pathConfigYaml);
         this.instanceId = this.config.getUuid();
+        this.serveStaticFiles = builder.serveStaticFiles;
 
         LogbackConfigurator.configureLogging(this.config.getLogging());
         GrpcChannelManager.configureGrpcChannel(this.config.getGrpcServices());
@@ -59,13 +61,20 @@ public class AppContext {
         this.proxyConfigurationManager = new ProxyConfigurationManager(this.config, this.contextHandler);
     }
 
+    public static void init(Builder builder) {
+        if (instance != null) {
+            return;
+        }
+        synchronized (AppContext.class) {
+            if (instance == null) {
+                instance = builder.build();
+            }
+        }
+    }
+
     public static AppContext get() {
         if (instance == null) {
-            synchronized (AppContext.class) {
-                if (instance == null) {
-                    instance = new Builder().build();
-                }
-            }
+            throw new IllegalStateException("AppContext has not been initialized. Please call AppContext.init() first.");
         }
         return instance;
     }
@@ -77,12 +86,21 @@ public class AppContext {
                 new AppConfigServlet(
                         new AppConfigService()));
 
-        // this.contextHandler.addFilter(corsFilter, "/admin/*", EnumSet.of(DispatcherType.REQUEST));
         this.contextHandler.addServlet(configServletHolder, "/_jetproxy/admin/*");
         this.contextHandler.addServlet(HealthCheckServlet.class, "/_jetproxy/healthcheck");
         this.contextHandler.addServlet(LogStreamServlet.class, "/_jetproxy/logs/stream");
         addAdminSecurityHandler(this.contextHandler);
         this.proxyConfigurationManager.setupProxiesAndAdminApi(server, this.contextHandler);
+
+        if (this.serveStaticFiles) {
+            logger.info("Static file serving is enabled. Serving files from 'frontend/dist'.");
+            ServletHolder staticHolder = new ServletHolder("static-files", org.eclipse.jetty.servlet.DefaultServlet.class);
+            staticHolder.setInitParameter("resourceBase", "frontend/dist");
+            staticHolder.setInitParameter("dirAllowed","false");
+            staticHolder.setInitParameter("pathInfoOnly", "true");
+            this.contextHandler.addServlet(staticHolder, "/*");
+        }
+
         startRedisSubscription();
     }
     private void addAdminSecurityHandler(ServletContextHandler context) {
@@ -177,7 +195,13 @@ public class AppContext {
 
 
     public static class Builder {
-        private String pathConfigYaml;
+        private String pathConfigYaml = "config.yaml";
+        private boolean serveStaticFiles;
+
+        public Builder withServeStaticFiles(boolean serveStaticFiles) {
+            this.serveStaticFiles = serveStaticFiles;
+            return this;
+        }
 
         public Builder withPathConfig(String pathConfigYaml) {
             if (pathConfigYaml == null || pathConfigYaml.isEmpty()) {

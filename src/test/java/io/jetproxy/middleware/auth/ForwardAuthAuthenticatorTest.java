@@ -1,6 +1,7 @@
 package io.jetproxy.middleware.auth;
 
 import io.jetproxy.context.AppConfig;
+import io.jetproxy.context.AppContext;
 import io.jetproxy.context.ConfigLoader;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
@@ -43,6 +44,7 @@ class ForwardAuthAuthenticatorTest {
 
     @BeforeEach
     void setUp() throws IOException {
+        AppContext.init(new AppContext.Builder());
         MockitoAnnotations.openMocks(this);
 
         AppConfig.Middleware middleware = new AppConfig.Middleware();

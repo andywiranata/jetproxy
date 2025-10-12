@@ -9,7 +9,6 @@ import Head from '@docusaurus/Head';
 
 import styles from './index.module.css';
 
-import YamlDemo from '@site/src/components/YamlDemo';
 
 function HomepageHeader() {
   const {siteConfig} = useDocusaurusContext();
@@ -61,7 +60,7 @@ export default function Home(): JSX.Element {
       </Head>
       <HomepageHeader />
       <main>
-        <YamlDemo />
+       
         <HomepageFeatures />
       </main>
     </Layout>
