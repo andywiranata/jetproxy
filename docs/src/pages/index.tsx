@@ -9,6 +9,8 @@ import Head from '@docusaurus/Head';
 
 import styles from './index.module.css';
 
+import YamlDemo from '@site/src/components/YamlDemo';
+
 function HomepageHeader() {
   const {siteConfig} = useDocusaurusContext();
   useEffect(() => {
@@ -25,14 +27,12 @@ function HomepageHeader() {
         <Heading as="h1" className="hero__title">
           {siteConfig.title}
         </Heading>
-        <p className="hero__subtitle">
-          {siteConfig.tagline || 'Fast, lightweight reverse proxy powered by Jetty – configure in YAML, deploy in seconds.'}
-        </p>
+        <p className="hero__subtitle">{siteConfig.tagline}</p>
         <div className={styles.buttons}>
           <Link
             className="button button--secondary button--lg"
             to="/docs/intro">
-            🚀 Get Started in 5 Minutes
+            Get Started in 5min 🚀
           </Link>
         </div>
       </div>
@@ -61,6 +61,7 @@ export default function Home(): JSX.Element {
       </Head>
       <HomepageHeader />
       <main>
+        <YamlDemo />
         <HomepageFeatures />
       </main>
     </Layout>

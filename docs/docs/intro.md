@@ -2,12 +2,13 @@
 sidebar_position: 1
 ---
 
-# JetProxy
+# Welcome to JetProxy: The High-Performance HTTP Proxy
+
 ![alt text](jetproxy-intro.png)
 
 **JetProxy** is a lightweight, high-performance HTTP proxy library built with Jetty. It is designed for developers seeking a flexible and efficient solution for routing, caching, and managing HTTP requests.
 
-## Getting Started
+## Why JetProxy?
 
 In today’s fast-paced microservices architecture, an efficient and automated API gateway is crucial. Managing connections between microservices and external users can be challenging, especially in dynamic environments where services are frequently added, removed, or updated.
 
@@ -15,7 +16,7 @@ Traditional reverse proxies require manual configuration for each route, making 
 
 With its YAML-based configuration, JetProxy enables developers to define routing rules, apply caching, and configure middleware efficiently. Its flexibility makes it ideal for modern microservices setups where scalability and simplicity are paramount.
 
-### Key Features
+## Key Features
 
 - **Dynamic Routing**  
   Advanced routing rules based on headers, query parameters, paths, and more, allowing precise traffic management without complex scripts.
@@ -42,11 +43,12 @@ JetProxy eliminates the need for constant manual updates by offering straightfor
 
 ---
 
+## What's Next?
+
+- **[Quickstart](./getting-starter/01-quick-start.md)**: Get JetProxy up and running in minutes.
+- **[Middleware](./middleware/01-overview.md)**: Learn about the available middleware and how to use them.
+- **[Routing](./routing/01-overview.md)**: Discover how to configure routes and services.
+
+---
+
 JetProxy is the modern solution for developers seeking an efficient and scalable API proxy. It integrates seamlessly into microservices architectures, offering dynamic routing, middleware customization, and robust security features to streamline API management. Whether you’re managing simple routes or complex traffic patterns, JetProxy delivers flexibility, performance, and ease of use.
-
-
-
-
-
-
-
