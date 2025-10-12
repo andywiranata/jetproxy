@@ -34,24 +34,38 @@ For active development, a unified script `run.sh` is provided to manage both the
 
 Starts the frontend with Vite's live-reloading dev server and starts the backend. Use this for most development tasks.
 
+In this mode, the frontend is accessible at `http://localhost:5173` (Vite's default port) and connects to the backend running on the port defined in your config (e.g., `http://localhost:8080`).
+
 ```bash
 # Run dev mode with the default config (demo/config.yaml)
 ./run.sh --dev
 
-# Run dev mode with a custom config file
-./run.sh --dev --config=path/to/your.yaml
-```
 
 ### Production Mode
 
 Builds the frontend into an optimized, static bundle and serves it directly from the backend server. This is useful for testing the final application as a single unit.
 
 ```bash
-# Run production mode with the default config
+# Run production mode with the default config (demo/config.yaml)
 ./run.sh
 
 # Run production mode with a custom config file
 ./run.sh --config=path/to/your.yaml
+```
+
+### Running Services Individually
+
+You can also run the dashboard or proxy services by themselves.
+
+```bash
+# Run only the dashboard development server
+./run.sh --dashboard-only
+
+# Run only the proxy server (in production mode)
+./run.sh --proxy-only
+
+# Run only the proxy server (in development mode)
+./run.sh --proxy-only --dev
 ```
 
 # How to Run
