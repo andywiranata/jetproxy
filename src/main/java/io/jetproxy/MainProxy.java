@@ -15,23 +15,25 @@ public class MainProxy {
     private static final Logger logger = LoggerFactory.getLogger(MainProxy.class);
     public void start(String[] args) throws Exception {
 
-        // Load the configuration file path from the environment
         String externalConfigPath = System.getenv("APP_CONFIG_PATH");
-        if (externalConfigPath == null || externalConfigPath.isEmpty()) {
-            // Read `--config=...` argument
-            for (String arg : args) {
-                if (arg.startsWith("--config=")) {
-                    externalConfigPath = arg.substring("--config=".length());
-                    break;
-                }
+        boolean devMode = false;
+
+        for (String arg : args) {
+            if (arg.startsWith("--config=")) {
+                externalConfigPath = arg.substring("--config=".length());
+            } else if (arg.equals("--dev")) {
+                devMode = true;
             }
         }
+
         GlobalOpenTelemetry.get();
 
-        // Build the application context
-        AppContext appContext = new AppContext.Builder()
+        // Initialize the application context
+        AppContext.init(new AppContext.Builder()
                 .withPathConfig(externalConfigPath)
-                .build();
+                .withServeStaticFiles(!devMode)); // Serve static files if not in dev mode
+
+        AppContext appContext = AppContext.get();
 
         AppConfig appConfig = appContext.getConfig();
         Server server = new Server(appConfig.getPort());

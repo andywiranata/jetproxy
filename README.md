@@ -26,6 +26,34 @@
 ### Simplicity and Efficiency
 JetProxy eliminates the need for constant manual updates by offering straightforward YAML configuration and real-time adjustments. Its intuitive design reduces operational complexity, enabling teams to focus on service development rather than maintaining intricate proxy configurations.
 
+## Running for Development
+
+For active development, a unified script `run.sh` is provided to manage both the backend and frontend services.
+
+### Development Mode
+
+Starts the frontend with Vite's live-reloading dev server and starts the backend. Use this for most development tasks.
+
+```bash
+# Run dev mode with the default config (demo/config.yaml)
+./run.sh --dev
+
+# Run dev mode with a custom config file
+./run.sh --dev --config=path/to/your.yaml
+```
+
+### Production Mode
+
+Builds the frontend into an optimized, static bundle and serves it directly from the backend server. This is useful for testing the final application as a single unit.
+
+```bash
+# Run production mode with the default config
+./run.sh
+
+# Run production mode with a custom config file
+./run.sh --config=path/to/your.yaml
+```
+
 # How to Run
 ## Step 1: Download Latest Jar
 Download latest [jar](https://github.com/andywiranata/jetproxy/releases) 
