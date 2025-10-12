@@ -195,7 +195,7 @@ public class AppContext {
 
 
     public static class Builder {
-        private String pathConfigYaml;
+        private String pathConfigYaml = "config.yaml";
         private boolean serveStaticFiles;
 
         public Builder withServeStaticFiles(boolean serveStaticFiles) {
