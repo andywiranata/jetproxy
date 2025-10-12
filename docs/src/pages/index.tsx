@@ -60,6 +60,7 @@ export default function Home(): JSX.Element {
       </Head>
       <HomepageHeader />
       <main>
+       
         <HomepageFeatures />
       </main>
     </Layout>
