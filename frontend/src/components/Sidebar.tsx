@@ -1,113 +1,152 @@
+import { useState } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { useApp } from './contexts/AppContext';
+import { Sidebar } from './components/Sidebar';
+import { LoginPage } from './components/LoginPage';
+import { createSession } from './utils/auth';
+import { DashboardPage } from './pages/DashboardPage';
+import { ProxiesPage } from './pages/ProxiesPage';
+import { ServicesPage } from './pages/ServicesPage';
+import { UsersPage } from './pages/UsersPage';
+import { SettingsPage } from './pages/SettingsPage';
+import { YamlEditorPage } from './pages/YamlEditorPage';
+import { DataFreshnessIndicator } from './components/DataFreshnessIndicator';
+import { Config } from './types/proxy';
+import { updateConfig, fetchConfig } from './services/api';
 
-import { NavLink } from 'react-router-dom';
-import { 
-  LayoutDashboard, Shield, Server, Users, Settings, 
-  FileJson, ChevronLeft, ChevronRight, LogOut 
-} from 'lucide-react';
-import { useApp } from '../contexts/AppContext';
-import { clearSession } from '../utils/auth';
+function App() {
+  const { config, setConfig, session, setSession } = useApp();
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [canEdit, setCanEdit] = useState(true);
 
-interface SidebarProps {
-  isCollapsed: boolean;
-  onToggle: () => void;
-}
-
-const menuItems = [
-  { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
-  { id: 'proxies', icon: Shield, label: 'Proxies', path: '/proxies' },
-  { id: 'services', icon: Server, label: 'Services', path: '/services' },
-  { id: 'users', icon: Users, label: 'Users', path: '/users' },
-  { id: 'settings', icon: Settings, label: 'Settings', path: '/settings' },
-  { id: 'yaml', icon: FileJson, label: 'YAML Editor', path: '/yaml' },
-];
-
-export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
-  const { setSession } = useApp();
-
-  const handleSignOut = () => {
-    clearSession();
-    setSession(null);
-    location.href = '/';
+  const handleLogin = async (username: string, password: string) => {
+    // In a real app, validate credentials with the server
+    const newSession = createSession(username, password);
+    setSession(newSession);
   };
 
+  const handleConfigUpdate = async (newConfig: Config) => {
+    if (!canEdit) {
+      setError('Cannot update configuration while data is stale. Please refresh first.');
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const updatedConfig = await updateConfig(newConfig);
+      setConfig(updatedConfig);
+      setLastUpdated(new Date());
+      setError(null);
+    } catch (err) {
+      setError('Failed to update configuration');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  console.log('session::', session, config)
+  if (!session) {
+    return <LoginPage onLogin={handleLogin} />;
+  }
+
+  if (!config) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-copper mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading configuration...</p>
+        </div>
+      </div>
+    );
+  }
+  console.log('session:', session);
+
   return (
-    <div 
-      className={`h-screen bg-white border-r border-gray-200 fixed left-0 top-0 transition-all duration-300 ease-in-out flex flex-col ${
-        isCollapsed ? 'w-20' : 'w-64'
-      }`}
-    >
-      <div className="flex items-center h-16 px-6 border-b border-gray-200">
-        <img 
-          src={import.meta.env.VITE_LOGO_URL}
-          alt={import.meta.env.VITE_APP_NAME} 
-          className="w-8 h-8" 
+    <BrowserRouter>
+      <div className="flex h-screen overflow-hidden bg-gray-50">
+        <Sidebar 
+          isCollapsed={isSidebarCollapsed} 
+          onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)} 
         />
-        <span className={`ml-2 text-xl font-semibold text-copper transition-opacity duration-300 ${
-          isCollapsed ? 'opacity-0 hidden' : 'opacity-100'
+        <div className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ${
+          isSidebarCollapsed ? 'ml-20' : 'ml-64'
         }`}>
-          {import.meta.env.VITE_APP_NAME}
-        </span>
-      </div>
-      
-      <button
-        onClick={onToggle}
-        className="absolute -right-3 top-7 bg-white border border-gray-200 rounded-full p-1 text-gray-400 hover:text-copper transition-colors duration-200"
-      >
-        {isCollapsed ? (
-          <ChevronRight className="w-4 h-4" />
-        ) : (
-          <ChevronLeft className="w-4 h-4" />
-        )}
-      </button>
-
-      <nav className="mt-6 flex-1">
-        {menuItems.map(({ id, icon: Icon, label, path }) => (
-          <NavLink
-            key={id}
-            to={path}
-            className={({ isActive }) =>
-              `w-full flex items-center px-6 py-3 text-sm font-medium transition-colors relative group ${
-                isActive
-                  ? 'text-copper bg-primary-50'
-                  : 'text-gray-600 hover:text-copper hover:bg-primary-50'
-              }`
-            }
-          >
-            <Icon className="w-5 h-5" />
-            <span className={`ml-3 transition-all duration-300 ${
-              isCollapsed ? 'opacity-0 absolute' : 'opacity-100'
-            }`}>
-              {label}
-            </span>
-            {isCollapsed && (
-              <div className="absolute left-16 bg-gray-900 text-white px-2 py-1 rounded text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
-                {label}
+          <main className="flex-1 overflow-y-auto">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+              <div className="mb-6 bg-white shadow rounded-lg p-4">
+                <DataFreshnessIndicator
+                  lastUpdated={lastUpdated}
+                  isLoading={isLoading}
+                  error={error}
+                  onRefresh={async () => {
+                    try {
+                      setIsLoading(true);
+                      const newConfig = await fetchConfig(session.token);
+                      setConfig(newConfig);
+                      setLastUpdated(new Date());
+                      setError(null);
+                      setCanEdit(true);
+                    } catch (err) {
+                      setError('Failed to refresh configuration');
+                      setCanEdit(false);
+                    } finally {
+                      setIsLoading(false);
+                    }
+                  }}
+                />
               </div>
-            )}
-          </NavLink>
-        ))}
-      </nav>
-
-      <div className="border-t border-gray-200 p-4">
-        <button
-          onClick={handleSignOut}
-          className={`w-full flex items-center px-2 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-md transition-colors relative group ${
-            isCollapsed ? 'justify-center' : 'justify-start'
-          }`}
-        >
-          <LogOut className="w-5 h-5" />
-          <span className={`ml-3 transition-all duration-300 ${
-            isCollapsed ? 'opacity-0 absolute' : 'opacity-100'
-          }`}>
-            Sign Out
-          </span>
-          {isCollapsed && (
-            <div className="absolute left-16 bg-gray-900 text-white px-2 py-1 rounded text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
-              Sign Out
+              <Routes>
+                <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                <Route path="/dashboard" element={<DashboardPage config={config} />} />
+                <Route 
+                  path="/proxies" 
+                  element={
+                    <ProxiesPage 
+                      config={config} 
+                      onConfigUpdate={handleConfigUpdate}
+                      canEdit={canEdit}
+                    />
+                  } 
+                />
+                <Route 
+                  path="/services" 
+                  element={
+                    <ServicesPage 
+                      config={config} 
+                      onConfigUpdate={handleConfigUpdate}
+                    />
+                  } 
+                />
+                <Route 
+                  path="/users" 
+                  element={
+                    <UsersPage 
+                      config={config} 
+                      onConfigUpdate={handleConfigUpdate}
+                    />
+                  } 
+                />
+                <Route path="/settings" element={<SettingsPage config={config} />} />
+                <Route 
+                  path="/yaml" 
+                  element={
+                    <YamlEditorPage 
+                      config={config} 
+                      onConfigUpdate={handleConfigUpdate}
+                      canEdit={canEdit}
+                    />
+                  } 
+                />
+              </Routes>
             </div>
-          )}
-        </button>
+          </main>
+        </div>
       </div>
-    </div>
+    </BrowserRouter>
   );
 }
+
+export default App;
